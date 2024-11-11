@@ -10,19 +10,18 @@ SpaInterface::SpaInterface() : port(SPA_SERIAL) {
 
     SpaInterface* mySpa = this;
     Property<int>::setSendCallback([mySpa](const char* name, int value) {
-        debugV("calling sendValue int...");
+        return mySpa->sendValue(name, value);
+    });
+    Property<int>::setSendCallback([mySpa](const char* name, String value) {
         return mySpa->sendValue(name, value);
     });
     Property<String>::setSendCallback([mySpa](const char* name, String value) {
-        debugV("calling sendValue String...");
         return mySpa->sendValue(name, value);
     });
     Property<bool>::setSendCallback([mySpa](const char* name, int value) {
-        debugV("calling sendValue bool...");
         return mySpa->sendValue(name, value);
     });
     Property<time_t>::setSendCallback([mySpa](const char* name, time_t value) {
-        debugV("calling sendValue time_t...");
         return mySpa->sendValue(name, value);
     });
 }
@@ -82,149 +81,149 @@ bool SpaInterface::sendCommandCheckResult(String cmd, String expected){
 }
 
 bool SpaInterface::sendValue(const char* name, int mode) {
-    debugD("sendValue name: %s, mode: %i", name, mode);
+    debugD("sendValue int name: %s, mode: %i", name, mode);
 
-    if (name == "RB_TP_Pump1") {
+    if (strcmp(name, "RB_TP_Pump1") == 0) {
         if (sendCommandCheckResult("S22:"+String(mode),"S22-OK")) {
             RB_TP_Pump1.updateValue(mode);
             return true;
         }
         return false;
     }
-    else if (name == "RB_TP_Pump2") {
+    else if (strcmp(name, "RB_TP_Pump2") == 0) {
         if (sendCommandCheckResult("S23:"+String(mode),"S23-OK")) {
             RB_TP_Pump2.updateValue(mode);
             return true;
         }
         return false;
     }
-    else if (name == "setRB_TP_Pump3") {
+    else if (strcmp(name, "setRB_TP_Pump3") == 0) {
         if (sendCommandCheckResult("S24:"+String(mode),"S24-OK")) {
             RB_TP_Pump3.updateValue(mode);
             return true;
         }
         return false;
     }
-    else if (name == "RB_TP_Pump4") {
+    else if (strcmp(name, "RB_TP_Pump4") == 0) {
         if (sendCommandCheckResult("S25:"+String(mode),"S25-OK")) {
             RB_TP_Pump4.updateValue(mode);
             return true;
         }
         return false;
     }
-    else if (name == "RB_TP_Pump5") {
+    else if (strcmp(name, "RB_TP_Pump5") == 0) {
         if (sendCommandCheckResult("S26:"+String(mode),"S26-OK")) {
             RB_TP_Pump5.updateValue(mode);
             return true;
         }
         return false;
     }
-    else if (name == "RB_TP_Light") {
+    else if (strcmp(name, "RB_TP_Light") == 0) {
         if (sendCommandCheckResult("W14","W14")) {
             RB_TP_Light.updateValue(mode);
             return true;
         }
         return false;
     }
-    else if (name == "HELE") {
+    else if (strcmp(name, "HELE") == 0) {
         if (sendCommandCheckResult("W98:"+String(mode),String(mode))) {
             HELE.updateValue(mode);
             return true;
         }
         return false;
     }
-    else if (name == "STMP") {
+    else if (strcmp(name, "STMP") == 0) {
         if (sendCommandCheckResult("W40:" + String(mode),String(mode))) {
             STMP.updateValue(mode);
             return true;
         }
         return false;
     }
-    else if (name == "L_1SNZ_DAY") {
+    else if (strcmp(name, "L_1SNZ_DAY") == 0) {
         if (sendCommandCheckResult(String("W67:")+mode,String(mode))) {
             L_1SNZ_DAY.updateValue(mode);
             return true;
         }
         return false;
     }
-    else if (name == "L_1SNZ_BGN") {
+    else if (strcmp(name, "L_1SNZ_BGN") == 0) {
         if (sendCommandCheckResult(String("W68:")+mode,String(mode))) {
             L_1SNZ_BGN.updateValue(mode);
             return true;
         }
         return false;
     }
-    else if (name == "L_1SNZ_END") {
+    else if (strcmp(name, "L_1SNZ_END") == 0) {
         if (sendCommandCheckResult(String("W69:")+mode,String(mode))) {
             L_1SNZ_END.updateValue(mode);
             return true;
         }
         return false;
     }
-    else if (name == "L_2SNZ_DAY") {
+    else if (strcmp(name, "L_2SNZ_DAY") == 0) {
         if (sendCommandCheckResult(String("W70:")+mode,String(mode))) {
             L_2SNZ_DAY.updateValue(mode);
             return true;
         }
         return false;
     }
-    else if (name == "L_2SNZ_BGN") {
+    else if (strcmp(name, "L_2SNZ_BGN") == 0) {
         if (sendCommandCheckResult(String("W71:")+mode,String(mode))) {
             L_1SNZ_BGN.updateValue(mode);
             return true;
         }
         return false;
     }
-    else if (name == "L_2SNZ_END") {
+    else if (strcmp(name, "L_2SNZ_END") == 0) {
         if (sendCommandCheckResult(String("W72:")+mode,String(mode))) {
             L_1SNZ_END.updateValue(mode);
             return true;
         }
         return false;
     }
-    else if (name == "HPMP") {
+    else if (strcmp(name, "HPMP") == 0) {
         if (sendCommandCheckResult("W99:"+String(mode),String(mode))) {
             HPMP.updateValue(mode);
             return true;
         }
         return false;
     }
-    else if (name == "ColorMode") {
+    else if (strcmp(name, "ColorMode") == 0) {
         if (sendCommandCheckResult("S07:"+String(mode),String(mode))) {
             ColorMode.updateValue(mode);
             return true;
         }
         return false;
     }
-    else if (name == "LBRTValue") {
+    else if (strcmp(name, "LBRTValue") == 0) {
         if (sendCommandCheckResult("S08:"+String(mode),String(mode))) {
             LBRTValue.updateValue(mode);
             return true;
         }
         return false;
     }
-    else if (name == "LSPDValue") {
+    else if (strcmp(name, "LSPDValue") == 0) {
         if (sendCommandCheckResult("S09:"+String(mode),String(mode))) {
             LSPDValue.updateValue(mode);
             return true;
         }
         return false;
     }
-    else if (name == "CurrClr") {
+    else if (strcmp(name, "CurrClr") == 0) {
         if (sendCommandCheckResult("S10:"+String(mode),String(mode))) {
             CurrClr.updateValue(mode);
             return true;
         }
         return false;
     }
-    else if (name == "Outlet_Blower") {
+    else if (strcmp(name, "Outlet_Blower") == 0) {
         if (sendCommandCheckResult("S28:"+String(mode),"S28-OK")) {
             Outlet_Blower.updateValue(mode);
             return true;
         }
         return false;
     }
-    else if (name == "VARIValue") {
+    else if (strcmp(name, "VARIValue") == 0) {
         debugD("setVARIValue - %i", mode);
         if (sendCommandCheckResult("S13:"+String(mode),String(mode)+"  S13")) {
             VARIValue.updateValue(mode);
@@ -232,7 +231,7 @@ bool SpaInterface::sendValue(const char* name, int mode) {
         }
         return false;
     }
-    else if (name == "Mode") {
+    else if (strcmp(name, "Mode") == 0) {
         if (sendCommandCheckResult("W66:"+String(mode),String(mode))) {
             Mode.updateValue(spaModeStrings[mode]);
             return true;
@@ -244,40 +243,56 @@ bool SpaInterface::sendValue(const char* name, int mode) {
 }
 
 bool SpaInterface::sendValue(const char* name, String smode) {
-    debugD("sendValue name: %s, smode: %s", name, smode.c_str());
+    debugD("sendValue String name: %s, smode: %s", name, smode.c_str());
 
-    if (name == "HPMP") {
+    if (strcmp(name, "HPMP") == 0) {
         debugD("setHPMP - %s", smode.c_str());
 
         for (int x=0; x<HPMPStrings.size(); x++) {
             if (HPMPStrings[x] == smode) {
-                return sendValue(name, x);
+                if (HPMP.getValue() != x) {
+                    return sendValue(name, x);
+                } else {
+                    return true;
+                }
             }
         }
         return false;
     }
-    else if (name == "ColorMode") {
+    else if (strcmp(name, "ColorMode") == 0) {
         debugD("setColorMode - %s", smode.c_str());
         for (int x=0; x<colorModeStrings.size(); x++) {
             if (colorModeStrings[x] == smode) {
-                return sendValue(name, x);
+                if (ColorMode.getValue() != x) {
+                    return sendValue(name, x);
+                } else {
+                    return true;
+                }
             }
         }
         return false;
     }
-    else if (name == "setLSPDValue") {
+    else if (strcmp(name, "setLSPDValue") == 0) {
         debugD("setLSPDValue - %s", smode.c_str());
         int x = atoi(smode.c_str());
         if (x > 0 && x < 6) {
-            return sendValue(name, x);
+            if (LSPDValue.getValue() != x) {
+                return sendValue(name, x);
+            } else {
+                true;
+            }
         }
         return false;
     }
-    else if (name == "Mode") {
+    else if (strcmp(name, "Mode") == 0) {
         debugD("setMode - %s", smode.c_str());
         for (int x=0; x<spaModeStrings.size(); x++) {
             if (spaModeStrings[x] == smode) {
-                return sendValue(name, x);
+                if (Mode.getValue() != smode) {
+                    return sendValue(name, x);
+                } else {
+                    true;
+                }
             }
         }
         return false;
@@ -286,8 +301,8 @@ bool SpaInterface::sendValue(const char* name, String smode) {
 }
 
 bool SpaInterface::sendValue(const char* name, time_t t) {
-    debugD("sendValue name: %s", name);
-    if (name == "SpaTime") {
+    debugD("sendValue time_t name: %s", name);
+    if (strcmp(name, "SpaTime") == 0) {
         String tmp;
         bool outcome;
 

@@ -12,15 +12,15 @@ extern RemoteDebug Debug;
 template<typename T>
 void debugVT(const char* msg, const char* name, T oldValue, T newValue) {
     if (std::is_same<T, int>::value) {
-        debugV("%s, name: %s (int) - old value: %i, new value: %i", msg, name, oldValue, newValue);
+        debugV("%s int, name: %s, old value: %i, new value: %i", msg, name, oldValue, newValue);
     }
     else if (std::is_same<T, float>::value) {
-        debugV("%s, name: %s (float) - old value: %.2f, new value: %.2f", msg, name, oldValue, newValue);
+        debugV("%s float, name: %s, old value: %.2f, new value: %.2f", msg, name, oldValue, newValue);
     }
     else if (std::is_same<T, String>::value) {
-        debugV("%s, name: %s (String) - old value: %s, new value: %s", msg, name, String(oldValue).c_str(), String(newValue).c_str());
+        debugV("%s String, name: %s, old value: %s, new value: %s", msg, name, String(oldValue).c_str(), String(newValue).c_str());
     } else {
-        debugV("Property '%s' (unknown type) - old value: ?, new value: ?", name);
+        debugV("%s unknown type, name: %s, old value: ?, new value: ?", msg, name);
     }
 };
 
@@ -69,6 +69,7 @@ private:
     const char* _name;
     void (*_updateCallback)(int) = nullptr;
     static std::function<bool(const char*, int)> _sendCallback;
+    static std::function<bool(const char*, String)> _sendStringCallback;
 
     int _minValue;
     int _maxValue;
@@ -84,7 +85,7 @@ public:
 
     void sendValue(int newValue) {
         int oldValue = _value;
-        debugV("sendValue int, name: %s (int) - old value: %i, new value: %i", _name, oldValue, newValue);
+        debugV("sendValue int, name: %s, old value: %i, new value: %i", _name, oldValue, newValue);
         if (newValue > _maxValue || newValue < _minValue) {
             debugW("Value for %s out of range: %i", _name, newValue);
         }
@@ -95,12 +96,14 @@ public:
 
     // Overload setValue to accept String input and convert it to int
     void sendValue(const String& s) {
-        int newValue = s.toInt();
-        debugV("sendValue int String, name: %s (int) - old value: %s, new value: %s", _name, String(_value).c_str(), s.c_str());
-        sendValue(newValue);
+        debugV("sendValue int String, name: %s, old value: %s, new value: %s", _name, String(_value).c_str(), s.c_str());
+        if ((_sendStringCallback)) {
+            _sendStringCallback(_name, s);
+        }
     }
 
     static void setSendCallback(std::function<bool(const char*, int)> c) { _sendCallback = c; };
+    static void setSendCallback(std::function<bool(const char*, String)> c) { _sendStringCallback = c; };
     void setUpdateCallback(void (*c)(int)) { _updateCallback = c; };
 
 protected:
@@ -148,7 +151,7 @@ public:
 
     void sendValue(bool newValue) {
         bool oldValue = _value;
-        debugV("sendValue bool String, name: %s (int) - old value: %s, new value: %s", _name, String(oldValue?"true":"false"), String(newValue?"true":"false"));
+        debugV("sendValue bool String, name: %s, old value: %s, new value: %s", _name, String(oldValue?"true":"false"), String(newValue?"true":"false"));
 
         if ((_sendCallback) && (oldValue != newValue)) {
             _sendCallback(_name, newValue);
@@ -158,7 +161,7 @@ public:
     // Overload setValue to accept String input and convert it to int
     void sendValue(const String& s) {
         bool newValue = s == "1";
-        debugV("sendValue bool String, name: %s (int) - old value: %s, new value: %s", _name, String(_value?"1":"0"), s.c_str());
+        debugV("sendValue bool String, name: %s, old value: %s, new value: %s", _name, String(_value?"1":"0"), s.c_str());
         sendValue(newValue);
     }
 

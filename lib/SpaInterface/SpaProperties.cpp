@@ -8,6 +8,7 @@ template<>
 std::function<bool(const char*, long)> Property<long>::_sendCallback = nullptr;
 
 std::function<bool(const char*, int)> Property<int>::_sendCallback = nullptr;
+std::function<bool(const char*, String)> Property<int>::_sendStringCallback = nullptr;
 std::function<bool(const char*, bool)> Property<bool>::_sendCallback = nullptr;
 
 void SpaProperties::updateMeasures(String statusResponseRaw[], int R2, int R3, int R4, int R5, int R6, int R7, int R9, int RA, int RB, int RC, int RE, int RG) {
