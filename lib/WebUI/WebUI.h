@@ -68,10 +68,21 @@ function updateTempSetPoint() {
   .then(result => console.log(result))
   .catch(error => console.error('Error setting temperature:', error));
 }
+function sendCurrentTime() {
+  const status_datetime = new Date(Date() + " UTC").toISOString().slice(0, 19).replace("T", " ");
+  fetch('/set', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'status_datetime=' + status_datetime
+  })
+  .then(response => response.text())
+  .then(result => console.log(result))
+  .catch(error => console.error('Error setting temperature:', error));
+}
 window.onload = function() {
     fetchStatus();
     setInterval(fetchStatus, 10000);
-};
+}
 </script>
 </head>
 <body>
@@ -83,6 +94,7 @@ window.onload = function() {
 <p><a href="/json.html">Spa JSON HTML</a></p>
 <p><a href="/json">Spa JSON</a></p>
 <p><a href="/status">Spa Response</a></p>
+<p><a href="#" onclick="sendCurrentTime();">Send Current Time to Spa</a></p>
 <p><a href="/config">Configuration</a></p>
 <p><a href="/fota">Firmware Update</a></p>
 <p><a href="#" onclick="confirmAction('/wifi-manager'); return false;">Wi-Fi Manager</a></p>

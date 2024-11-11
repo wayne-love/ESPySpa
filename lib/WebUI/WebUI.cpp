@@ -133,7 +133,21 @@ void WebUI::begin() {
             SpaInterface &si = *_spa;
             si.STMP.sendValue(int(newTemperature*10));
             server->send(200, "text/plain", "Temperature updated");
-        } else {
+        }
+        else if (server->hasArg("status_datetime")) {
+            String p = server->arg("status_datetime");
+            SpaInterface &si = *_spa;
+            tmElements_t tm;
+            tm.Year=CalendarYrToTm(p.substring(0,4).toInt());
+            tm.Month=p.substring(5,7).toInt();
+            tm.Day=p.substring(8,10).toInt();
+            tm.Hour=p.substring(11,13).toInt();
+            tm.Minute=p.substring(14,16).toInt();
+            tm.Second=p.substring(17).toInt();
+            si.SpaTime.sendValue(makeTime(tm));
+            server->send(200, "text/plain", "Date/Time updated");
+        }
+        else {
             server->send(400, "text/plain", "Invalid temperature value");
         }
     });
