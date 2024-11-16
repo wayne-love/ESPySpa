@@ -267,7 +267,7 @@ void mqttHaAutoDiscovery() {
 
   ADConf.deviceClass = "";
   ADConf.entityCategory = "";
-  if (si.getPump1InstallState().startsWith("1") && !(si.getPump1InstallState().endsWith("4"))) {
+  if (si.Pump1InstallState.getValue().startsWith("1") && !(si.Pump1InstallState.getValue().endsWith("4"))) {
      //switchADPublish(mqttClient, spa, "Pump 1", "{{ value_json.pumps.pump1.state }}", "pump1");
     ADConf.displayName = "Pump 1";
     ADConf.valueTemplate = "{{ value_json.pumps.pump1.state }}";
@@ -276,7 +276,7 @@ void mqttHaAutoDiscovery() {
     mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
   }
 
-  if (si.getPump2InstallState().startsWith("1") && !(si.getPump2InstallState().endsWith("4"))) {
+  if (si.Pump2InstallState.getValue().startsWith("1") && !(si.Pump2InstallState.getValue().endsWith("4"))) {
     //switchADPublish(mqttClient, spa, "Pump 2","{{ value_json.pumps.pump2.state }}", "pump2");
     ADConf.displayName = "Pump 2";
     ADConf.valueTemplate = "{{ value_json.pumps.pump2.state }}";
@@ -285,7 +285,7 @@ void mqttHaAutoDiscovery() {
     mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
   }
 
-  if (si.getPump3InstallState().startsWith("1") && !(si.getPump3InstallState().endsWith("4"))) {
+  if (si.Pump3InstallState.getValue().startsWith("1") && !(si.Pump3InstallState.getValue().endsWith("4"))) {
     //switchADPublish(mqttClient, spa, "Pump 3", "{{ value_json.pumps.pump3.state }}", "pump3");
     ADConf.displayName = "Pump 3";
     ADConf.valueTemplate = "{{ value_json.pumps.pump3.state }}";
@@ -294,7 +294,7 @@ void mqttHaAutoDiscovery() {
     mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
   }
 
-  if (si.getPump4InstallState().startsWith("1") && !(si.getPump4InstallState().endsWith("4"))) {
+  if (si.Pump4InstallState.getValue().startsWith("1") && !(si.Pump4InstallState.getValue().endsWith("4"))) {
     //switchADPublish(mqttClient, spa, "Pump 4", "{{ value_json.pumps.pump4.state }}", "pump4");
     ADConf.displayName = "Pump 4";
     ADConf.valueTemplate = "{{ value_json.pumps.pump4.state }}";
@@ -303,7 +303,7 @@ void mqttHaAutoDiscovery() {
     mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
   }
 
-  if (si.getPump5InstallState().startsWith("1") && !(si.getPump5InstallState().endsWith("4"))) {
+  if (si.Pump5InstallState.getValue().startsWith("1") && !(si.Pump5InstallState.getValue().endsWith("4"))) {
     //switchADPublish(mqttClient, spa, "Pump 5", "{{ value_json.pumps.pump5.state }}", "pump5");
     ADConf.displayName = "Pump 5";
     ADConf.valueTemplate = "{{ value_json.pumps.pump5.state }}";
@@ -313,7 +313,7 @@ void mqttHaAutoDiscovery() {
 
   }
 
-  if (si.getHP_Present()) {
+  if (si.HP_Present.getValue()) {
     ADConf.displayName = "Heatpump Ambient Temperature";
     ADConf.valueTemplate = "{{ value_json.temperatures.heatpumpAmbient }}";
     ADConf.propertyId = "HPAmbTemp";
@@ -479,21 +479,21 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   debugI("Received update for %s to %s",property.c_str(),p.c_str());
 
   if (property == "temperatures_setPoint") {
-    si.setSTMP(int(p.toFloat()*10));
+    si.STMP.sendValue(int(p.toFloat()*10));
   } else if (property == "heatpump_mode") {
-    si.setHPMP(p);
+    si.HPMP.sendValue(p);
   } else if (property == "pump1") {
-    si.setRB_TP_Pump1(p=="OFF"?0:1);
+    si.RB_TP_Pump1.sendValue(p=="OFF"?0:1);
   } else if (property == "pump2") {
-    si.setRB_TP_Pump2(p=="OFF"?0:1);
+    si.RB_TP_Pump2.sendValue(p=="OFF"?0:1);
   } else if (property == "pump3") {
-    si.setRB_TP_Pump3(p=="OFF"?0:1);
+    si.RB_TP_Pump3.sendValue(p=="OFF"?0:1);
   } else if (property == "pump4") {
-    si.setRB_TP_Pump4(p=="OFF"?0:1);
+    si.RB_TP_Pump4.sendValue(p=="OFF"?0:1);
   } else if (property == "pump5") {
-    si.setRB_TP_Pump5(p=="OFF"?0:1);
+    si.RB_TP_Pump5.sendValue(p=="OFF"?0:1);
   } else if (property == "heatpump_auxheat") {
-    si.setHELE(p=="OFF"?0:1);
+    si.HELE.sendValue(p=="OFF"?0:1);
   } else if (property == "status_datetime") {
     tmElements_t tm;
     tm.Year=CalendarYrToTm(p.substring(0,4).toInt());
@@ -502,50 +502,50 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     tm.Hour=p.substring(11,13).toInt();
     tm.Minute=p.substring(14,16).toInt();
     tm.Second=p.substring(17).toInt();
-    si.setSpaTime(makeTime(tm));
+    si.SpaTime.sendValue(makeTime(tm));
   } else if (property == "lights_state") {
-    si.setRB_TP_Light(p=="ON"?1:0);
+    si.RB_TP_Light.sendValue(p=="ON"?1:0);
   } else if (property == "lights_effect") {
-    si.setColorMode(p);
+    si.ColorMode.sendValue(p);
   } else if (property == "lights_brightness") {
-    si.setLBRTValue(p.toInt());
+    si.LBRTValue.sendValue(p.toInt());
   } else if (property == "lights_color") {
     int pos = p.indexOf(',');
     if ( pos > 0) {
       int value = p.substring(0, pos).toInt();
-      si.setCurrClr(si.colorMap[value/15]);
+      si.CurrClr.sendValue(si.colorMap[value/15]);
     }
   } else if (property == "lights_speed") {
-    si.setLSPDValue(p);
+    si.LSPDValue.sendValue(p);
   } else if (property == "blower_state") {
-    si.setOutlet_Blower(p=="OFF"?2:0);
+    si.Outlet_Blower.sendValue(p=="OFF"?2:0);
   } else if (property == "blower_speed") {
-    if (p=="0") si.setOutlet_Blower(2);
-    else si.setVARIValue(p.toInt());
+    if (p=="0") si.Outlet_Blower.sendValue(2);
+    else si.VARIValue.sendValue(p.toInt());
   } else if (property == "blower_mode") {
-    si.setOutlet_Blower(p=="Variable"?0:1);
+    si.Outlet_Blower.sendValue(p=="Variable"?0:1);
   } else if (property == "sleepTimers_1_state" || property == "sleepTimers_2_state") {
     int member=0;
     for (const auto& i : si.sleepSelection) {
       if (i == p) {
         if (property == "sleepTimers_1_state")
-          si.setL_1SNZ_DAY(si.sleepBitmap[member]);
+          si.L_1SNZ_DAY.sendValue(si.sleepBitmap[member]);
         else if (property == "sleepTimers_2_state")
-          si.setL_2SNZ_DAY(si.sleepBitmap[member]);
+          si.L_2SNZ_DAY.sendValue(si.sleepBitmap[member]);
         break;
       }
       member++;
     }
   } else if (property == "sleepTimers_1_begin") {
-    si.setL_1SNZ_BGN(convertToInteger(p));
+    si.L_1SNZ_BGN.sendValue(convertToInteger(p));
   } else if (property == "sleepTimers_1_end") {
-    si.setL_1SNZ_END(convertToInteger(p));
+    si.L_1SNZ_END.sendValue(convertToInteger(p));
   } else if (property == "sleepTimers_2_begin") {
-    si.setL_2SNZ_BGN(convertToInteger(p));
+    si.L_2SNZ_BGN.sendValue(convertToInteger(p));
   } else if (property == "sleepTimers_2_end") {
-    si.setL_2SNZ_END(convertToInteger(p));
+    si.L_2SNZ_END.sendValue(convertToInteger(p));
   } else if (property == "status_spaMode") {
-    si.setMode(p);
+    si.Mode.sendValue(p);
   } else {
     debugE("Unhandled property - %s",property.c_str());
   }
@@ -649,7 +649,7 @@ void loop() {
         if ( spaSerialNumber=="" ) {
           debugI("Initialising...");
       
-          spaSerialNumber = si.getSerialNo1()+"-"+si.getSerialNo2();
+          spaSerialNumber = si.SerialNo1.getValue()+"-"+si.SerialNo2.getValue();
           debugI("Spa serial number is %s",spaSerialNumber.c_str());
 
           mqttBase = String("sn_esp32/") + spaSerialNumber + String("/");
@@ -690,7 +690,7 @@ void loop() {
             si.setUpdateCallback(mqttPublishStatus);
             mqttPublishStatus();
 
-            si.statusResponse.setCallback(mqttPublishStatusString);
+            si.statusResponse.setUpdateCallback(mqttPublishStatusString);
 
           }
           #if defined(LED_PIN)
