@@ -325,12 +325,15 @@ bool SpaInterface::setSpaTime(time_t t){
     
     tmp = String(minute(t));
     outcome = outcome && sendCommandCheckResult("S05:"+tmp,tmp);
-    
-    tmp = String(second(t));
+
+    int weekDay = weekday(t); // day of the week (1-7), Sunday is day 1 (Arduino Time Library)
+    // Convert to the format required by Spa: day of the week (0-6), Monday is day 0
+    if (weekDay == 1)  weekDay = 6;
+    else weekDay -= 2;
+    tmp = String(weekDay);
     outcome = outcome && sendCommandCheckResult("S06:"+tmp,tmp);
     
     return outcome;
-
 }
 
 bool SpaInterface::setOutlet_Blower(int mode){
