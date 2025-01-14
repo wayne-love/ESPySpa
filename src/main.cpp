@@ -54,6 +54,9 @@ String mqttAvailability = "";
 String spaSerialNumber = "";
 
 bool updateMqtt = false;
+bool setSpaCallbackReady = false;
+String spaCallbackProperty;
+String spaCallbackValue;
 
 void WMsaveConfigCallback(){
   WMsaveConfig = true;
@@ -109,10 +112,18 @@ void checkButton(){
   }
 #endif
 }
+
 void startWifiManagerCallback() {
   debugD("Starting Wi-Fi Manager...");
   startWiFiManager();
   ESP.restart(); //do we need to reboot here??
+}
+
+void setSpaCallback(String property, String value) {
+  debugD("setSpaCallback: %s: %s", property.c_str(), value.c_str());
+  spaCallbackProperty = property;
+  spaCallbackValue = value;
+  setSpaCallbackReady = true;
 }
 
 void configChangeCallbackString(const char* name, String value) {
@@ -426,6 +437,8 @@ void mqttPublishStatus() {
   }
 }
 
+// I don't exactly like this, but it makes the commit smaller. Ideally we'd move mqttCallback to after setSpaProperty...
+void setSpaProperty(String property, String p);
 
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
   String t = String(topic);
@@ -439,6 +452,10 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   debugD("MQTT subscribe received '%s' with payload '%s'",topic,p.c_str());
 
   String property = t.substring(t.lastIndexOf("/")+1);
+  setSpaProperty(property, p);
+}
+
+void setSpaProperty(String property, String p) {
 
   debugI("Received update for %s to %s",property.c_str(),p.c_str());
 
@@ -606,6 +623,7 @@ void setup() {
 
   ui.begin();
   ui.setWifiManagerCallback(startWifiManagerCallback);
+  ui.setSpaCallback(setSpaCallback);
   si.setUpdateFrequency(config.UpdateFrequency.getValue());
 
   config.setCallback(configChangeCallbackString);
@@ -630,6 +648,12 @@ void loop() {
     mqttClient.disconnect();
     mqttClient.setServer(config.MqttServer.getValue(), config.MqttPort.getValue());
     updateMqtt = false;
+  }
+
+  if (setSpaCallbackReady) {
+    debugD("Setting Spa Properties...");
+    setSpaCallbackReady = false;
+    setSpaProperty(spaCallbackProperty, spaCallbackValue);
   }
 
   if (WiFi.status() != WL_CONNECTED) {
