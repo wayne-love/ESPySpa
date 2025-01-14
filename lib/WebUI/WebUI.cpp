@@ -6,10 +6,6 @@ WebUI::WebUI(SpaInterface *spa, Config *config, MQTTClientWrapper *mqttClient) {
     _mqttClient = mqttClient;
 }
 
-void WebUI::setWifiManagerCallback(void (*f)()) {
-    _wifiManagerCallback = f;
-}
-
 const char * WebUI::getError() {
     return Update.errorString();
 }
@@ -127,29 +123,17 @@ void WebUI::begin() {
 
     // Handle /set endpoint (POST)
     server.on("/set", HTTP_POST, [this](AsyncWebServerRequest *request) {
-        // In theory with minor modification, we can reuse mqttCallback here
-        // for (uint8_t i = 0; i < request->params(); i++) updateSpaSetting("set/" + request->getParam(i)->name(), request->getParam(i)->value());
-        if (request->hasParam("temperatures_setPoint", true)) {
-            float newTemperature = request->getParam("temperatures_setPoint", true)->value().toFloat();
-            _spa->setSTMP(int(newTemperature * 10));
-            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "Temperature updated");
-            response->addHeader("Connection", "close");
-            request->send(response);
-        } else if (request->hasParam("status_datetime", true)) {
-            String p = request->getParam("status_datetime", true)->value();
-            tmElements_t tm;
-            tm.Year = CalendarYrToTm(p.substring(0, 4).toInt());
-            tm.Month = p.substring(5, 7).toInt();
-            tm.Day = p.substring(8, 10).toInt();
-            tm.Hour = p.substring(11, 13).toInt();
-            tm.Minute = p.substring(14, 16).toInt();
-            tm.Second = p.substring(17).toInt();
-            _spa->setSpaTime(makeTime(tm));
-            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "Date/Time updated");
+        debugD("uri: %s", request->url().c_str());
+
+        if (_setSpaCallback != nullptr) {
+            for (uint8_t i = 0; i < request->params(); i++) {
+                _setSpaCallback(request->getParam(i)->name(), request->getParam(i)->value());
+            }
+            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "Spa update initiated");
             response->addHeader("Connection", "close");
             request->send(response);
         } else {
-            AsyncWebServerResponse *response = request->beginResponse(400, "text/plain", "Invalid temperature value");
+            AsyncWebServerResponse *response = request->beginResponse(400, "text/plain", "setSpaCallback not set");
             response->addHeader("Connection", "close");
             request->send(response);
         }
