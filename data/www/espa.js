@@ -1,4 +1,12 @@
 /************************************************************************************************
+ *
+ * Global Veriables
+ *
+ ***********************************************************************************************/
+const repo_owner = 'wayne-love';
+const repo = 'ESPySpa';
+
+/************************************************************************************************
  * 
  * Utility Methods
  * 
@@ -22,6 +30,12 @@ function parseVersion(version) {
 }
 
 function compareVersions(current, latest) {
+    /*
+     * -1 = there is a newer version
+     *  0 = running the current version
+     *  1 = running a newer release then available in the repo
+     */
+
     if (!current) return -1;
     if (!latest) return 1;
     for (let i = 0; i < Math.max(current.length, latest.length); i++) {
@@ -392,55 +406,57 @@ function loadFotaData() {
         .then(value_json => {
             document.getElementById('espa_model').innerText = value_json.eSpa.model;
             document.getElementById('installedVersion').innerText = value_json.eSpa.update.installed_version;
+            console.log('model: ' + value_json.eSpa.model);
+            console.log('installed_version: ' + value_json.eSpa.update.installed_version);
+
+            $.ajax({
+            url: `https://api.github.com/repos/${repo_owner}/${repo}/releases`,
+            type: 'GET',
+            success: function (data) {
+                document.getElementById('lastestRelease').innerText = data[0].tag_name;
+
+                // Populate the select dropdown with all releases
+                const firmwareSelect = document.getElementById('firmware-select');
+                firmwareSelect.innerHTML = ''; // Clear existing options
+
+                // Add default disabled option
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.text = 'Select a version';
+                defaultOption.disabled = true;
+                defaultOption.selected = true;
+                firmwareSelect.appendChild(defaultOption);
+
+                // Add release options
+                data.forEach(release => {
+                    const option = document.createElement('option');
+                    option.value = release.tag_name;
+                    option.text = release.tag_name;
+                    firmwareSelect.appendChild(option);
+                });
+
+                // Enable the install button when a valid choice is selected
+                firmwareSelect.addEventListener('change', function () {
+                    if (firmwareSelect.value) {
+                        $('#remoteInstallButton').prop('disabled', false);
+                    } else {
+                        $('#remoteInstallButton').prop('disabled', true);
+                    }
+                });
+
+                // Check for new version
+                const latestVersion = parseVersion(data[0].tag_name);
+                const currentVersion = parseVersion(document.getElementById('installedVersion').innerText);
+                const comparison = compareVersions(currentVersion, latestVersion);
+                if (comparison < 0) {
+                    showAlert(`There is a new eSpa release available - it's version ${data[0].tag_name}. You can <a href="#" id="fotaLink" class="alert-link">update now</a>.`, 'alert-primary', "New eSpa release!");
+                }
+            },
+            error: function () {
+                showAlert('Failed to fetch eSpa release information. If this persists, take a look at our <a class="alert-link" href="https://espa.diy/troubleshooting.html">troubleshooting docs</a>.', 'alert-danger', "Error");
+            }
         })
         .catch(error => console.error('Error fetching FOTA data:', error));
-
-    $.ajax({
-        url: 'https://api.github.com/repos/wayne-love/ESPySpa/releases',
-        type: 'GET',
-        success: function (data) {
-            document.getElementById('lastestRelease').innerText = data[0].tag_name;
-
-            // Populate the select dropdown with all releases
-            const firmwareSelect = document.getElementById('firmware-select');
-            firmwareSelect.innerHTML = ''; // Clear existing options
-
-            // Add default disabled option
-            const defaultOption = document.createElement('option');
-            defaultOption.value = '';
-            defaultOption.text = 'Select a version';
-            defaultOption.disabled = true;
-            defaultOption.selected = true;
-            firmwareSelect.appendChild(defaultOption);
-
-            // Add release options
-            data.forEach(release => {
-                const option = document.createElement('option');
-                option.value = release.tag_name;
-                option.text = release.tag_name;
-                firmwareSelect.appendChild(option);
-            });
-
-            // Enable the install button when a valid choice is selected
-            firmwareSelect.addEventListener('change', function () {
-                if (firmwareSelect.value) {
-                    $('#remoteInstallButton').prop('disabled', false);
-                } else {
-                    $('#remoteInstallButton').prop('disabled', true);
-                }
-            });
-
-            // Check for new version
-            const latestVersion = parseVersion(data[0].tag_name);
-            const currentVersion = parseVersion(document.getElementById('installedVersion').innerText);
-            const comparison = compareVersions(currentVersion, latestVersion);
-            if (comparison < 0) {
-                showAlert(`There is a new eSpa release available - it's version ${data[0].tag_name}. You can <a href="#" id="fotaLink" class="alert-link">update now</a>.`, 'alert-primary', "New eSpa release!");
-            }
-        },
-        error: function () {
-            showAlert('Failed to fetch eSpa release information. If this persists, take a look at our <a class="alert-link" href="https://espa.diy/troubleshooting.html">troubleshooting docs</a>.', 'alert-danger', "Error");
-        }
     });
 }
 
