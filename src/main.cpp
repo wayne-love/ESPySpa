@@ -437,24 +437,6 @@ void mqttPublishStatus() {
   }
 }
 
-// I don't exactly like this, but it makes the commit smaller. Ideally we'd move mqttCallback to after setSpaProperty...
-void setSpaProperty(String property, String p);
-
-void mqttCallback(char* topic, byte* payload, unsigned int length) {
-  String t = String(topic);
-
-  String p = "";
-  for (uint x = 0; x < length; x++) {
-    p += char(*payload);
-    payload++;
-  }
-
-  debugD("MQTT subscribe received '%s' with payload '%s'",topic,p.c_str());
-
-  String property = t.substring(t.lastIndexOf("/")+1);
-  setSpaProperty(property, p);
-}
-
 void setSpaProperty(String property, String p) {
 
   debugI("Received update for %s to %s",property.c_str(),p.c_str());
@@ -538,6 +520,21 @@ void setSpaProperty(String property, String p) {
   } else {
     debugE("Unhandled property - %s",property.c_str());
   }
+}
+
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
+  String t = String(topic);
+
+  String p = "";
+  for (uint x = 0; x < length; x++) {
+    p += char(*payload);
+    payload++;
+  }
+
+  debugD("MQTT subscribe received '%s' with payload '%s'",topic,p.c_str());
+
+  String property = t.substring(t.lastIndexOf("/")+1);
+  setSpaProperty(property, p);
 }
 
 String sanitizeHostname(const String& input) {
