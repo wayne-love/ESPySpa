@@ -214,8 +214,12 @@
               <input type='text' class="form-control" name='mqttPassword' id='mqttPassword'>
             </div>
             <div class="mb-3">
-              <label for="updateFrequency">Poll Frequency (seconds)</label>
-              <input type='number' class="form-control" name='updateFrequency' id='updateFrequency' step="1" min="10" max="300">
+              <label for="spaPollFreq">Poll Frequency (seconds)</label>
+              <input type='number' class="form-control" name='spaPollFreq' id='spaPollFreq' step="1" min="10" max="300">
+            </div>
+            <div class="mb-3">
+              <label for="fwPollFreq">Poll Frequency (hours)</label>
+              <input type='number' class="form-control" name='fwPollFreq' id='fwPollFreq' step="1" min="10" max="1000">
             </div>
           </form>
         </div>

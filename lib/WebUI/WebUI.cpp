@@ -86,7 +86,8 @@ void WebUI::begin() {
         if (request->hasParam("mqttPort", true)) _config->MqttPort.setValue(request->getParam("mqttPort", true)->value().toInt());
         if (request->hasParam("mqttUsername", true)) _config->MqttUsername.setValue(request->getParam("mqttUsername", true)->value());
         if (request->hasParam("mqttPassword", true)) _config->MqttPassword.setValue(request->getParam("mqttPassword", true)->value());
-        if (request->hasParam("updateFrequency", true)) _config->UpdateFrequency.setValue(request->getParam("updateFrequency", true)->value().toInt());
+        if (request->hasParam("spaPollFreq", true)) _config->spaPollFreq.setValue(request->getParam("spaPollFreq", true)->value().toInt());
+        if (request->hasParam("fwPollFreq", true)) _config->fwPollFreq.setValue(request->getParam("fwPollFreq", true)->value().toInt());
         _config->writeConfig();
         AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "Updated");
         response->addHeader("Connection", "close");
@@ -101,7 +102,8 @@ void WebUI::begin() {
         configJson += "\"mqttPort\":\"" + String(_config->MqttPort.getValue()) + "\",";
         configJson += "\"mqttUsername\":\"" + _config->MqttUsername.getValue() + "\",";
         configJson += "\"mqttPassword\":\"" + _config->MqttPassword.getValue() + "\",";
-        configJson += "\"updateFrequency\":" + String(_config->UpdateFrequency.getValue());
+        configJson += "\"spaPollFreq\":" + String(_config->spaPollFreq.getValue()) + ",";
+        configJson += "\"fwPollFreq\":" + String(_config->fwPollFreq.getValue());
         configJson += "}";
         AsyncWebServerResponse *response = request->beginResponse(200, "application/json", configJson);
         response->addHeader("Connection", "close");
@@ -112,7 +114,7 @@ void WebUI::begin() {
         debugD("uri: %s", request->url().c_str());
         String json;
         AsyncWebServerResponse *response;
-        if (generateStatusJson(*_spa, *_mqttClient, json, true)) {
+        if (generateStatusJson(*_spa, *_mqttClient, *_config, json, true)) {
             response = request->beginResponse(200, "application/json", json);
         } else {
             response = request->beginResponse(200, "text/plain", "Error generating json");
@@ -129,7 +131,7 @@ void WebUI::begin() {
             for (uint8_t i = 0; i < request->params(); i++) {
                 _setSpaCallback(request->getParam(i)->name(), request->getParam(i)->value());
             }
-            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "Spa update initiated");
+            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "Spa setting initiated");
             response->addHeader("Connection", "close");
             request->send(response);
         } else {

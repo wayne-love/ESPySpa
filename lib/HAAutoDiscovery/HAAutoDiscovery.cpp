@@ -79,6 +79,16 @@ void generateSwitchAdJSON(String& output, const AutoDiscoveryInformationTemplate
    serializeJson(json, output);
 }
 
+void generateUpdateAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic) {
+   JsonDocument json;
+   generateCommonAdJSON(json, config, spa, discoveryTopic, "update");
+
+   json["command_topic"] = spa.commandTopic + "/" + config.propertyId;
+   json["payload_install"] = "latest";
+
+   serializeJson(json, output);
+}
+
 void generateFanAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, int min, int max, const String* modes, const size_t modesSize) {
    JsonDocument json;
    generateCommonAdJSON(json, config, spa, discoveryTopic, "fan");

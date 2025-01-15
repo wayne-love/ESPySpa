@@ -16,7 +16,6 @@
 #include "HAAutoDiscovery.h"
 #include "MQTTClientWrapper.h"
 
-
 unsigned long bootStartMillis;  // To track when the device started
 RemoteDebug Debug;
 
@@ -43,6 +42,7 @@ ulong mqttLastConnect = 0;
 ulong wifiLastConnect = millis();
 ulong bootTime = millis();
 ulong statusLastPublish = millis();
+ulong lastFirmwareCheck = 0;
 bool delayedStart = true; // Delay spa connection for 10sec after boot to allow for external debugging if required.
 bool autoDiscoveryPublished = false;
 
@@ -418,6 +418,14 @@ void mqttHaAutoDiscovery() {
   generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.spaModeStrings);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
+  ADConf.displayName = "Firmware";
+  ADConf.valueTemplate = "{{ value_json['eSpa']['update'] | to_json }}";
+  ADConf.propertyId = "espa_firmware";
+  ADConf.deviceClass = "firmware";
+  ADConf.entityCategory = "diagnostic";
+  generateUpdateAdJSON(output, ADConf, spa, discoveryTopic);
+  mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
+
 }
 
 #pragma region MQTT Publish / Subscribe
@@ -430,7 +438,7 @@ void mqttPublishStatusString(String s){
 
 void mqttPublishStatus() {
   String json;
-  if (generateStatusJson(si, mqttClient, json, false)) {
+  if (generateStatusJson(si, mqttClient, config, json, false)) {
     mqttClient.publish(mqttStatusTopic.c_str(),json.c_str());
   } else {
     debugD("Error generating json");
@@ -517,6 +525,35 @@ void setSpaProperty(String property, String p) {
     si.setL_2SNZ_END(convertToInteger(p));
   } else if (property == "status_spaMode") {
     si.setMode(p);
+  } else if (property == "espa_firmware") {
+    String firmwareUrl;
+    String spiffsUrl;
+    if (p == "latest") {
+      firmwareUrl = config.firmwareUrl.getValue();
+      spiffsUrl = config.spiffsUrl.getValue();
+    } else {
+      int separatorIndex = p.indexOf('|');
+      if (separatorIndex != -1) {
+        firmwareUrl = p.substring(0, separatorIndex);
+        spiffsUrl = p.substring(separatorIndex + 1);
+      } else {
+        debugE("Invalid firmware URL format");
+        return;
+      }
+    }
+    HttpContent httpContent;
+    if (httpContent.updateFirmware(firmwareUrl, "firmware")) {
+      debugD("Firmware update successful...");
+      if (httpContent.updateFirmware(spiffsUrl, "filesystem")) {
+        debugD("Spiffs update successful! Rebooting...");
+        delay(100);
+        ESP.restart();
+      } else {
+        debugE("Spiffs update Error");
+      }
+    } else {
+      debugE("Firmware update Error");
+    }
   } else {
     debugE("Unhandled property - %s",property.c_str());
   }
@@ -617,11 +654,12 @@ void setup() {
   mqttClient.setBufferSize(2048);
 
   bootStartMillis = millis();  // Record the current boot time in milliseconds
+  lastFirmwareCheck = millis() - (config.fwPollFreq.getValue() * 60 * 60 * 1000) + 30000; // check for update 30 seconds after start up.
 
   ui.begin();
   ui.setWifiManagerCallback(startWifiManagerCallback);
   ui.setSpaCallback(setSpaCallback);
-  si.setUpdateFrequency(config.UpdateFrequency.getValue());
+  si.setUpdateFrequency(config.spaPollFreq.getValue());
 
   config.setCallback(configChangeCallbackString);
   config.setCallback(configChangeCallbackInt);
@@ -666,6 +704,12 @@ void loop() {
     if (delayedStart) {
       delayedStart = !(bootTime + 10000 < millis());
     } else {
+
+      if (config.fwPollFreq.getValue() > 0 && millis()-lastFirmwareCheck > (config.fwPollFreq.getValue() * 60 * 60 * 1000)) {
+        firmwareCheckUpdates(config);
+        lastFirmwareCheck = millis();
+      }
+
       si.loop();
 
       if (!si.isInitialised()) {

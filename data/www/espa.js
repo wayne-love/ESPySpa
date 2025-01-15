@@ -194,7 +194,8 @@ function loadConfig() {
             document.getElementById('mqttPort').value = data.mqttPort;
             document.getElementById('mqttUsername').value = data.mqttUsername;
             document.getElementById('mqttPassword').value = data.mqttPassword;
-            document.getElementById('updateFrequency').value = data.updateFrequency;
+            document.getElementById('spaPollFreq').value = data.spaPollFreq;
+            document.getElementById('fwPollFreq').value = data.fwPollFreq;
 
             // Enable form fields and save button
             $('#config_form input').prop('disabled', false);

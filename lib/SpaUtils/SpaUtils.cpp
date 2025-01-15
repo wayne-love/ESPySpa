@@ -126,7 +126,7 @@ int getPumpSpeedMin(String pumpInstallState) {
   return min;
 }
 
-bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String &output, bool prettyJson) {
+bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, Config &config, String &output, bool prettyJson) {
   JsonDocument json;
 
   json["temperatures"]["setPoint"] = si.getSTMP() / 10.0;
@@ -154,7 +154,20 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
   json["status"]["mqtt"] = mqttClient.connected()?"connected":"disconnected";
 
   json["eSpa"]["model"] = xstr(PIOENV);
+  json["eSpa"]["updateAvailable"] = config.updateAvailable.getValue() == 1;
   json["eSpa"]["update"]["installed_version"] = xstr(BUILD_INFO);
+  json["eSpa"]["update"]["latest_version"] = config.latestVersion.getValue();
+  String releaseNotes = config.releaseNotes.getValue();
+  int newLineIndex = releaseNotes.indexOf("\n");
+  if (newLineIndex > 0) {
+    releaseNotes = releaseNotes.substring(0, newLineIndex);
+  }
+  json["eSpa"]["update"]["release_summary"] = releaseNotes;
+  json["eSpa"]["update"]["release_url"] = config.releaseUrl.getValue();
+  json["eSpa"]["update"]["in_progress"] = false; //TODO
+  if (false) { //if updating...
+    json["eSpa"]["update"]["update_percentage"] = 75; //TODO
+  }
 
   json["heatpump"]["mode"] = si.HPMPStrings[si.getHPMP()];
   json["heatpump"]["auxheat"] = si.getHELE()==0? "OFF" : "ON";
@@ -233,3 +246,95 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
   return (jsonSize > 0);
 }
 
+bool parseVersion(const String version, int parsedVersion[3]) {
+  if (!version.startsWith("v")) {
+    return false;
+  }
+
+  String numPart = version.substring(1); // Remove 'v'
+  int start = 0, end = 0, index = 0;
+
+  while (index < 3 && (end = numPart.indexOf('.', start)) != -1) {
+    parsedVersion[index++] = numPart.substring(start, end).toInt();
+    start = end + 1;
+  }
+
+  if (index < 3) {
+    parsedVersion[index++] = numPart.substring(start).toInt();
+  }
+
+  // Fill remaining parts with 0
+  while (index < 3) {
+    parsedVersion[index++] = 0;
+  }
+
+  return true;
+}
+
+int compareVersions(const int current[3], const int latest[3]) {
+  for (int i = 0; i < 3; i++) {
+    if (current[i] < latest[i]) return -1;
+    if (current[i] > latest[i]) return 1;
+  }
+  return 0;
+}
+
+void firmwareCheckUpdates(Config &config) {
+  HttpContent httpContent;
+  String content;
+  if (httpContent.fetchHttpContent(RELEASES_URL, content)) {
+    JsonDocument doc;
+    deserializeJson(doc, content);
+    String latestRelease = doc["tag_name"].as<String>();
+
+    if (latestRelease.isEmpty()) {
+      debugE("Failed to fetch the latest release.");
+      return;
+    }
+
+    debugD("Latest release: %s\n", latestRelease.c_str());
+    config.latestVersion.setValue(latestRelease);
+    config.releaseNotes.setValue(doc["body"].as<String>());
+    config.releaseUrl.setValue(doc["html_url"].as<String>());
+
+    String firmwareFilename = "firmware_" xstr(PIOENV) "_ota.bin";
+
+    // Search for the correct asset
+    JsonArray assets = doc["assets"].as<JsonArray>();
+    for (JsonObject asset : assets) {
+      String name = asset["name"].as<String>();
+      if (name == firmwareFilename) {
+        String downloadUrl = asset["browser_download_url"].as<String>();
+        config.firmwareUrl.setValue(downloadUrl); // Store the firmware URL
+        debugD("Firmware URL found: %s\n", downloadUrl.c_str());
+      } else if (name == spiffsFilename) {
+        String downloadUrl = asset["browser_download_url"].as<String>();
+        config.spiffsUrl.setValue(downloadUrl); // Store the SPIFFS URL
+        debugD("SPIFFS URL found: %s\n", downloadUrl.c_str());
+      }
+    }
+
+    int latestVersion[3] = {0};
+    int currentVersion[3] = {0};
+
+    if (!parseVersion(latestRelease, latestVersion)) {
+      debugE("Failed to parse latest release version.");
+      return;
+    }
+
+    if (!parseVersion(xstr(BUILD_INFO), currentVersion)) {
+      debugE("Failed to parse current build version.");
+      return;
+    }
+
+    int comparison = compareVersions(currentVersion, latestVersion);
+    config.updateAvailable.setValue((comparison < 0?1:0));
+    if (comparison < 0) {
+      debugD("New version available: %s\n", latestRelease.c_str());
+    } else if (comparison == 0) {
+      debugD("You are using the latest version.");
+    } else {
+      debugD("You are ahead of the latest release!");
+    }
+  }
+}
