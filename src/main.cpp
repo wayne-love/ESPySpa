@@ -542,9 +542,13 @@ void setSpaProperty(String property, String p) {
       }
     }
     HttpContent httpContent;
-    if (httpContent.updateFirmware(firmwareUrl, "firmware")) {
+    if (firmwareUrl != "" && httpContent.updateFirmware(firmwareUrl, "application")) {
       debugD("Firmware update successful...");
-      if (httpContent.updateFirmware(spiffsUrl, "filesystem")) {
+      if (spiffsUrl == "") {
+        debugD("No spiffs update required");
+        delay(100);
+        ESP.restart();
+      } else if (httpContent.updateFirmware(spiffsUrl, "filesystem")) {
         debugD("Spiffs update successful! Rebooting...");
         delay(100);
         ESP.restart();

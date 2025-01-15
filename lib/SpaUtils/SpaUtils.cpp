@@ -298,6 +298,7 @@ void firmwareCheckUpdates(Config &config) {
     config.releaseUrl.setValue(doc["html_url"].as<String>());
 
     String firmwareFilename = "firmware_" xstr(PIOENV) "_ota.bin";
+    String spiffsFilename = "spiffs_" xstr(PIOENV) ".bin";
 
     // Search for the correct asset
     JsonArray assets = doc["assets"].as<JsonArray>();

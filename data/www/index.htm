@@ -241,19 +241,19 @@
         </div>
         <div class="modal-body" id="fotaModalBody">
           <form id="updateForm">
-          <div class="mb-0 row">
+          <div class="mb-2 row">
             <label for="installedVersion" class="col-sm-4 col-form-label">Installed version:</label>
             <div class="col-sm-8">
               <span id="installedVersion" class="form-control-plaintext">Loading...</span>
             </div>
           </div>
-          <div class="mb-0 row">
+          <div class="mb-2 row">
             <label for="lastestRelease" class="col-sm-4 col-form-label">Latest version:</label>
             <div class="col-sm-8">
               <span id="lastestRelease" class="form-control-plaintext">Loading...</span>
             </div>
           </div>
-          <div class="mb-0 row" style="display: none;">
+          <div class="mb-3 row">
             <label for="updateMethod" class="col-sm-4 col-form-label"><strong>Select Update Method:</strong></label>
             <div class="col-sm-8">
               <select id="updateMethod" class="form-select">
@@ -263,37 +263,37 @@
               </select>
             </div>
           </div>
-          <div id="remoteUpdate" class="update-section" style="display: none;">
-            <strong>Auto Update</strong>
-            <div class="d-flex">
+          <div id="remoteUpdate" class="mb-3 update-section" style="display: none;">
+            <div class="mb-2"><strong>Auto Update</strong></div>
+            <div class="mb-2 d-flex">
               <select class="form-select w-100" id="firmware-select">
                 <option value="" disabled selected>Select a version</option>
               </select>
               <button class="btn btn-primary ms-2" type="button" id="remoteInstallButton" disabled>Install</button>
             </div>
           </div>
-          <div id="localUpdate" class="update-section" style="display: none;">
-            <strong>Upload Update</strong>
-            <div class="mb-0 row">
+          <div id="localUpdate" class="mb-3 update-section" style="display: none;">
+            <div class="mb-2"><strong>Upload Update</strong></div>
+            <div class="mb-2 row">
               <label class="col-sm-4 col-form-label" for="appFile">Application Update File:</label>
               <div class="col-sm-8">
-                <input type="file" accept=".bin,.bin.gz" name="appFile" id="appFile">
+                <input class="form-control" type="file" accept=".bin,.bin.gz" name="appFile" id="appFile">
               </div>
             </div>
-            <div class="mb-0 row">
+            <div class="mb-2 row">
               <label class="col-sm-4 col-form-label" for="fsFile">File System Update File:</label>
               <div class="col-sm-8">
-                <input type="file" accept=".bin,.bin.gz" name="fsFile" id="fsFile"></td>
+                <input class="form-control" type="file" accept=".bin,.bin.gz" name="fsFile" id="fsFile"></td>
               </div>
             </div>
-            <div>
+            <div class="mb-2 d-flex justify-content-end">
               <button class="btn btn-primary" type="button" id="localInstallButton" disabled>Install</button>
             </div>
           </div>
-          <div class="progress" id="progressDiv" style="margin-top: 10px; display: none;">
-            <div class="progress-bar" role="progressbar" id="progressBar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+          <div class="progress" id="progressDiv" style="display: none;">
+            <div class="mb-3 progress-bar" role="progressbar" id="progressBar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
           </div>
-          <div id='msg'></div>
+          <div class="mb-3" id='msg'></div>
         </form>
         </div>
         <div class="modal-footer">
