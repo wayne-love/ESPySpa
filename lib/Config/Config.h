@@ -79,6 +79,9 @@ public:
     Setting<String> releaseUrl = Setting<String>("releaseUrl", "unknown");
     Setting<String> firmwareUrl = Setting<String>("firmwareUrl");
     Setting<String> spiffsUrl = Setting<String>("spiffsUrl");
+    Setting<int> updateInProgress = Setting<int>("updateInProgress", 0, 0, 1);
+    Setting<int> updatePercentage = Setting<int>("updatePercentage", 0, 0, 100);
+    Setting<String> updateStatus = Setting<String>("updateStatus", "idle");
 };
 
 class Config : public ControllerConfig {

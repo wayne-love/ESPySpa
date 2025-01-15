@@ -136,9 +136,14 @@ void configChangeCallbackString(const char* name, String value) {
                                   // delete the entities in MQTT then reboot the ESP
 }
 
+void mqttPublishStatus();
+
 void configChangeCallbackInt(const char* name, int value) {
   debugD("%s: %i", name, value);
   if (strcmp(name, "UpdateFrequency") == 0) si.setUpdateFrequency(value);
+  if (strcmp(name, "updateAvailable") == 0 || strcmp(name, "updateInProgress") == 0 || strcmp(name, "updatePercentage") == 0 || strcmp(name, "updateStatus") == 0) {
+    mqttPublishStatus();
+  }
 }
 
 void mqttHaAutoDiscovery() {
@@ -541,22 +546,9 @@ void setSpaProperty(String property, String p) {
         return;
       }
     }
-    HttpContent httpContent;
-    if (firmwareUrl != "" && httpContent.updateFirmware(firmwareUrl, "application")) {
-      debugD("Firmware update successful...");
-      if (spiffsUrl == "") {
-        debugD("No spiffs update required");
-        delay(100);
-        ESP.restart();
-      } else if (httpContent.updateFirmware(spiffsUrl, "filesystem")) {
-        debugD("Spiffs update successful! Rebooting...");
-        delay(100);
-        ESP.restart();
-      } else {
-        debugE("Spiffs update Error");
-      }
-    } else {
-      debugE("Firmware update Error");
+    if (firmwareUrl.length() > 0) {
+      debugI("Updating firmware from %s", firmwareUrl.c_str());
+      updateFirmware(firmwareUrl, spiffsUrl, config, p == "latest");
     }
   } else {
     debugE("Unhandled property - %s",property.c_str());

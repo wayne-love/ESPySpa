@@ -393,8 +393,35 @@ $(document).ready(function () {
                 .then(response => response.text())
                 .then(result => {
                     console.log(result);
-                    $('#fotaModal').modal('hide');
-                    //setTimeout(() => reboot('The firmware has been updated successfully. The spa will now restart to apply the changes.'), 500);
+                    $('#progressDiv').show();
+                    const checkUpdateStatus = setInterval(() => {
+                        fetch('/json')
+                            .then(response => response.json())
+                            .then(data => {
+                                const updateStatus = data.eSpa.update_status;
+                                const inProgress = data.eSpa.update.in_progress;
+                                const percentComplete = data.eSpa.update.update_percentage;
+
+                                $('#msg').html(`<p style="color:blue;">${updateStatus}</p>`);
+                                $('#progressBar').css('width', percentComplete + '%').attr('aria-valuenow', percentComplete).text(percentComplete + '%');
+
+                                if (!inProgress && updateStatus === "Update complete.") {
+                                    clearInterval(checkUpdateStatus);
+                                    $('#fotaModal').modal('hide');
+                                    setTimeout(() => reboot('The firmware has been updated successfully. The spa will now restart to apply the changes.'), 500);
+                                } else if (!inProgress) {
+                                    clearInterval(checkUpdateStatus);
+                                    $('#fotaModal').modal('hide');
+                                    showAlert('Error updating firmware. Please try again.', 'alert-danger', 'Error');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error fetching update status:', error);
+                                clearInterval(checkUpdateStatus);
+                                $('#fotaModal').modal('hide');
+                                showAlert('Error checking update status. Please try again.', 'alert-danger', 'Error');
+                            });
+                    }, 2000);
                 })
                 .catch(error => console.error('Error starting update:', error));
 

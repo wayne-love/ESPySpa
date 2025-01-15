@@ -155,6 +155,7 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, Config 
 
   json["eSpa"]["model"] = xstr(PIOENV);
   json["eSpa"]["updateAvailable"] = config.updateAvailable.getValue() == 1;
+  json["eSpa"]["update_status"] = config.updateStatus.getValue();
   json["eSpa"]["update"]["installed_version"] = xstr(BUILD_INFO);
   json["eSpa"]["update"]["latest_version"] = config.latestVersion.getValue();
   String releaseNotes = config.releaseNotes.getValue();
@@ -164,9 +165,9 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, Config 
   }
   json["eSpa"]["update"]["release_summary"] = releaseNotes;
   json["eSpa"]["update"]["release_url"] = config.releaseUrl.getValue();
-  json["eSpa"]["update"]["in_progress"] = false; //TODO
-  if (false) { //if updating...
-    json["eSpa"]["update"]["update_percentage"] = 75; //TODO
+  json["eSpa"]["update"]["in_progress"] = config.updateInProgress.getValue() == 1;
+  if (config.updateInProgress.getValue() == 1) { //if updating...
+    json["eSpa"]["update"]["update_percentage"] = config.updatePercentage.getValue();
   }
 
   json["heatpump"]["mode"] = si.HPMPStrings[si.getHPMP()];
@@ -338,4 +339,42 @@ void firmwareCheckUpdates(Config &config) {
       debugD("You are ahead of the latest release!");
     }
   }
+}
+
+void updateFirmware(const String firmwareUrl, const String spiffsUrl, Config &config, bool reboot) {
+  HttpContent httpContent;
+  bool success = false;
+  int updates = 0;
+
+  if (firmwareUrl != "") updates++;
+  if (spiffsUrl != "") updates++;
+
+  config.updateInProgress.setValue(1);
+  if (firmwareUrl != "" && httpContent.flashFirmware(firmwareUrl, "application", config, 1, updates)) {
+    debugD("Firmware update successful...");
+    success = true;
+  } else {
+    debugE("Firmware update Error");
+    success = false;
+  }
+  if (success && spiffsUrl != "" && httpContent.flashFirmware(spiffsUrl, "filesystem", config, 2, updates)) {
+    debugD("SPIFFS update successful! Rebooting...");
+    success = true;
+  } else {
+    debugE("SPIFFS update Error");
+    success = false;
+  }
+
+  config.updatePercentage.setValue(100);
+  if (success) {
+    config.updateStatus.setValue("Update complete.");
+  } else {
+    config.updateStatus.setValue("Update failed.");
+  }
+
+  if (success && reboot) {
+    delay(100);
+    ESP.restart();
+  }
+  config.updateInProgress.setValue(0);
 }

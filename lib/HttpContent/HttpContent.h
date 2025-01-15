@@ -6,6 +6,8 @@
 #include <Update.h>
 #include <RemoteDebug.h>
 
+#include "Config.h"
+
 extern RemoteDebug Debug;
 
 #define MAX_REDIRECTS 5
@@ -32,12 +34,12 @@ public:
     bool fetchHttpContent(const String url, String& content);
 
     /**
-     * Updates the firmware from the given URL.
+     * Flashes the firmware from the given URL.
      * @param firmwareUrl The URL of the firmware file.
      * @param updateType Integer defining the type of update (firmware update or filesystem)
      * @return True if the firmware update was successful; false otherwise.
      */
-    bool updateFirmware(const String firmwareUrl, const String updateType);
+    bool flashFirmware(const String firmwareUrl, const String updateType, Config &config, const int updateNum, const int numUpdates);
 };
 
 #endif // HTTP_CONTENT_H
