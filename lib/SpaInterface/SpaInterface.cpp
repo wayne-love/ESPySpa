@@ -529,9 +529,12 @@ void SpaInterface::updateMeasures() {
     update_MainsCurrent(statusResponseRaw[R2+1]);
     update_MainsVoltage(statusResponseRaw[R2+2]);
     update_CaseTemperature(statusResponseRaw[R2+3]);
+/*
     update_PortCurrent(statusResponseRaw[R2+4]);
+*/
     update_SpaTime(statusResponseRaw[R2+11], statusResponseRaw[R2+10], statusResponseRaw[R2+9], statusResponseRaw[R2+6], statusResponseRaw[R2+7], statusResponseRaw[R2+8]);
     update_HeaterTemperature(statusResponseRaw[R2+12]);
+/*
     update_PoolTemperature(statusResponseRaw[R2+13]);
     update_WaterPresent(statusResponseRaw[R2+14]);
     update_AwakeMinutesRemaining(statusResponseRaw[R2+16]);
@@ -548,17 +551,21 @@ void SpaInterface::updateMeasures() {
     update_Relay7(statusResponseRaw[R2+27]);
     update_Relay8(statusResponseRaw[R2+28]);
     update_Relay9(statusResponseRaw[R2+29]); 
+*/
     #pragma endregion
     #pragma region R3
+/*
     update_CLMT(statusResponseRaw[R3+1]);
     update_PHSE(statusResponseRaw[R3+2]);
     update_LLM1(statusResponseRaw[R3+3]);
     update_LLM2(statusResponseRaw[R3+4]);
     update_LLM3(statusResponseRaw[R3+5]);
+*/
     update_SVER(statusResponseRaw[R3+6]);
     update_Model(statusResponseRaw[R3+7]); 
     update_SerialNo1(statusResponseRaw[R3+8]);
     update_SerialNo2(statusResponseRaw[R3+9]); 
+/*
     update_D1(statusResponseRaw[R3+10]);
     update_D2(statusResponseRaw[R3+11]);
     update_D3(statusResponseRaw[R3+12]);
@@ -569,15 +576,19 @@ void SpaInterface::updateMeasures() {
     update_LS(statusResponseRaw[R3+17]);
     update_HV(statusResponseRaw[R3+18]);
     update_SnpMR(statusResponseRaw[R3+19]);
+*/
     update_Status(statusResponseRaw[R3+20]);
+/*
     update_PrimeCount(statusResponseRaw[R3+21]);
     update_EC(statusResponseRaw[R3+22]);
     update_HAMB(statusResponseRaw[R3+23]);
     update_HCON(statusResponseRaw[R3+24]);
     // update_HV_2(statusResponseRaw[R3+25]);
+*/
     #pragma endregion
     #pragma region R4
     update_Mode(statusResponseRaw[R4+1]);
+/*
     update_Ser1_Timer(statusResponseRaw[R4+2]);
     update_Ser2_Timer(statusResponseRaw[R4+3]);
     update_Ser3_Timer(statusResponseRaw[R4+4]);
@@ -586,10 +597,12 @@ void SpaInterface::updateMeasures() {
     update_PumpRunTimer(statusResponseRaw[R4+7]);
     update_AdtPoolHys(statusResponseRaw[R4+8]);
     update_AdtHeaterHys(statusResponseRaw[R4+9]);
+*/
     update_Power(statusResponseRaw[R4+10]);
     update_Power_kWh(statusResponseRaw[R4+11]);
     update_Power_Today(statusResponseRaw[R4+12]);
     update_Power_Yesterday(statusResponseRaw[R4+13]);
+/*
     update_ThermalCutOut(statusResponseRaw[R4+14]);
     update_Test_D1(statusResponseRaw[R4+15]);
     update_Test_D2(statusResponseRaw[R4+16]);
@@ -602,19 +615,26 @@ void SpaInterface::updateMeasures() {
     update_Vari_Speed(statusResponseRaw[R4+24]);
     update_Vari_Percent(statusResponseRaw[R4+25]);
     update_Vari_Mode(statusResponseRaw[R4+23]);
+*/
     #pragma endregion
     #pragma region R5
     //R5
     // Unknown encoding - TouchPad2.updateValue();
     // Unknown encoding - TouchPad1.updateValue();
     //RB_TP_Blower.updateValue(statusResponseRaw[R5 + 5]);
+/*
     update_RB_TP_Sleep(statusResponseRaw[R5 + 10]);
+*/
     update_RB_TP_Ozone(statusResponseRaw[R5 + 11]);
     update_RB_TP_Heater(statusResponseRaw[R5 + 12]);
+/*
     update_RB_TP_Auto(statusResponseRaw[R5 + 13]);
+*/
     update_RB_TP_Light(statusResponseRaw[R5 + 14]);
     update_WTMP(statusResponseRaw[R5 + 15]);
+/*
     update_CleanCycle(statusResponseRaw[R5 + 16]);
+*/
     update_RB_TP_Pump1(statusResponseRaw[R5 + 18]);
     update_RB_TP_Pump2(statusResponseRaw[R5 + 19]);
     update_RB_TP_Pump3(statusResponseRaw[R5 + 20]);
@@ -627,19 +647,24 @@ void SpaInterface::updateMeasures() {
     update_CurrClr(statusResponseRaw[R6 + 3]);
     update_ColorMode(statusResponseRaw[R6 + 4]);
     update_LSPDValue(statusResponseRaw[R6 + 5]);
+/*
     update_FiltSetHrs(statusResponseRaw[R6 + 6]);
     update_FiltBlockHrs(statusResponseRaw[R6 + 7]);
+*/
     update_STMP(statusResponseRaw[R6 + 8]);
+/*
     update_L_24HOURS(statusResponseRaw[R6 + 9]);
     update_PSAV_LVL(statusResponseRaw[R6 + 10]);
     update_PSAV_BGN(statusResponseRaw[R6 + 11]);
     update_PSAV_END(statusResponseRaw[R6 + 12]);
+*/
     update_L_1SNZ_DAY(statusResponseRaw[R6 + 13]);
     update_L_2SNZ_DAY(statusResponseRaw[R6 + 14]);
     update_L_1SNZ_BGN(statusResponseRaw[R6 + 15]);
     update_L_2SNZ_BGN(statusResponseRaw[R6 + 16]);
     update_L_1SNZ_END(statusResponseRaw[R6 + 17]);
     update_L_2SNZ_END(statusResponseRaw[R6 + 18]);
+/*
     update_DefaultScrn(statusResponseRaw[R6 + 19]);
     update_TOUT(statusResponseRaw[R6 + 20]);
     update_VPMP(statusResponseRaw[R6 + 21]);
@@ -649,8 +674,10 @@ void SpaInterface::updateMeasures() {
     update_ELMT(statusResponseRaw[R6 + 25]);
     update_TYPE(statusResponseRaw[R6 + 26]);
     update_GAS(statusResponseRaw[R6 + 27]);
+*/
     #pragma endregion
     #pragma region R7
+/*
     update_WCLNTime(statusResponseRaw[R7 + 1]);
     // The following 2 may be reversed
     update_TemperatureUnits(statusResponseRaw[R7 + 3]);
@@ -677,14 +704,18 @@ void SpaInterface::updateMeasures() {
     update_VMAX(statusResponseRaw[R7 + 22]);
     update_AHYS(statusResponseRaw[R7 + 23]);
     update_HUSE(statusResponseRaw[R7 + 24]);
+*/
     update_HELE(statusResponseRaw[R7 + 25]);
     update_HPMP(statusResponseRaw[R7 + 26]);
+/*
     update_PMIN(statusResponseRaw[R7 + 27]);
     update_PFLT(statusResponseRaw[R7 + 28]);
     update_PHTR(statusResponseRaw[R7 + 29]);
     update_PMAX(statusResponseRaw[R7 + 30]);
+*/
     #pragma endregion
     #pragma region R9
+/*
     update_F1_HR(statusResponseRaw[R9 + 2]);
     update_F1_Time(statusResponseRaw[R9 + 3]);
     update_F1_ER(statusResponseRaw[R9 + 4]);
@@ -696,8 +727,10 @@ void SpaInterface::updateMeasures() {
     update_F1_PU(statusResponseRaw[R9 + 10]);
     update_F1_VE(statusResponseRaw[R9 + 11]);
     update_F1_ST(statusResponseRaw[R9 + 12]);
+*/
     #pragma endregion
     #pragma region RA
+/*
     update_F2_HR(statusResponseRaw[RA + 2]);
     update_F2_Time(statusResponseRaw[RA + 3]);
     update_F2_ER(statusResponseRaw[RA + 4]);
@@ -709,8 +742,10 @@ void SpaInterface::updateMeasures() {
     update_F2_PU(statusResponseRaw[RA + 10]);
     update_F2_VE(statusResponseRaw[RA + 11]);
     update_F2_ST(statusResponseRaw[RA + 12]);
+*/
     #pragma endregion
     #pragma region RB
+/*
     update_F3_HR(statusResponseRaw[RB + 2]);
     update_F3_Time(statusResponseRaw[RB + 3]);
     update_F3_ER(statusResponseRaw[RB + 4]);
@@ -722,8 +757,10 @@ void SpaInterface::updateMeasures() {
     update_F3_PU(statusResponseRaw[RB + 10]);
     update_F3_VE(statusResponseRaw[RB + 11]);
     update_F3_ST(statusResponseRaw[RB + 12]);
+*/
     #pragma endregion
     #pragma region RC
+/*
     //Outlet_Heater.updateValue(statusResponseRaw[]);
     //Outlet_Circ.updateValue(statusResponseRaw[]);
     //Outlet_Sanitise.updateValue(statusResponseRaw[]);
@@ -731,6 +768,7 @@ void SpaInterface::updateMeasures() {
     //Outlet_Pump2.updateValue(statusResponseRaw[]);
     //Outlet_Pump4.updateValue(statusResponseRaw[]);
     //Outlet_Pump5.updateValue(statusResponseRaw[]);
+*/
     update_Outlet_Blower(statusResponseRaw[RC + 10]);
     #pragma endregion
     #pragma region RE
@@ -745,6 +783,7 @@ void SpaInterface::updateMeasures() {
     //HP_D3.updateValue(statusResponseRaw[]);
     update_HP_Ambient(statusResponseRaw[RE + 10]);
     update_HP_Condensor(statusResponseRaw[RE + 11]);
+/*
     update_HP_Compressor_State(statusResponseRaw[RE + 12]);
     update_HP_Fan_State(statusResponseRaw[RE + 13]);
     update_HP_4W_Valve(statusResponseRaw[RE + 14]);
@@ -768,6 +807,7 @@ void SpaInterface::updateMeasures() {
     //HP_Compressor.updateValue(statusResponseRaw[]);
     //HP_Pump_State.updateValue(statusResponseRaw[]);
     //HP_Status.updateValue(statusResponseRaw[]);
+*/
     #pragma endregion
     #pragma region RG
     update_Pump1InstallState(statusResponseRaw[RG + 7]);
@@ -775,12 +815,14 @@ void SpaInterface::updateMeasures() {
     update_Pump3InstallState(statusResponseRaw[RG + 9]);
     update_Pump4InstallState(statusResponseRaw[RG + 10]);
     update_Pump5InstallState(statusResponseRaw[RG + 11]);
+/*
     update_Pump1OkToRun(statusResponseRaw[RG + 1]);
     update_Pump2OkToRun(statusResponseRaw[RG + 2]);
     update_Pump3OkToRun(statusResponseRaw[RG + 3]);
     update_Pump4OkToRun(statusResponseRaw[RG + 4]);
     update_Pump5OkToRun(statusResponseRaw[RG + 5]);
     update_LockMode(statusResponseRaw[RG + 12]);
+*/
     #pragma endregion
 
 };

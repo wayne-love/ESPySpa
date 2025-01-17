@@ -54,7 +54,7 @@ boolean SpaProperties::update_CaseTemperature(String s){
     CaseTemperature.update_Value(s.toInt());
     return true;
 }
-
+/*
 boolean SpaProperties::update_PortCurrent(String s){
     if (!isNumber(s)) {
         return false;
@@ -63,7 +63,7 @@ boolean SpaProperties::update_PortCurrent(String s){
     PortCurrent.update_Value(s.toInt());
     return true;
 }
-
+*/
 boolean SpaProperties::update_HeaterTemperature(String s){
     if (!isNumber(s)) {
         return false;
@@ -72,7 +72,7 @@ boolean SpaProperties::update_HeaterTemperature(String s){
     HeaterTemperature.update_Value(s.toInt());
     return true;
 }
-
+/*
 boolean SpaProperties::update_PoolTemperature(String s){
     if (!isNumber(s)) {
         return false;
@@ -261,7 +261,7 @@ boolean SpaProperties::update_LLM3(String s){
     LLM3.update_Value(s.toInt());
     return true;
 }
-
+*/
 boolean SpaProperties::update_SVER(String s){
     SVER.update_Value(s);
     return true;
@@ -281,7 +281,7 @@ boolean SpaProperties::update_SerialNo2(String s){
     SerialNo2.update_Value(s);
     return true;
 }
-
+/*
 boolean SpaProperties::update_D1(String s) {
     if (s!="0" && s!="1") {
         return false;
@@ -367,12 +367,12 @@ boolean SpaProperties::update_SnpMR(String s){
     SnpMR.update_Value(s.toInt());
     return true;
 }
-
+*/
 boolean SpaProperties::update_Status(String s){
     Status.update_Value(s);
     return true;
 }
-
+/*
 boolean SpaProperties::update_PrimeCount(String s){
     if (!isNumber(s)) {
         return false;
@@ -408,12 +408,12 @@ boolean SpaProperties::update_HCON(String s){
     HCON.update_Value(s.toInt());
     return true;
 }
-
+*/
 boolean SpaProperties::update_Mode(String s){
     Mode.update_Value(s);
     return true;
 }
-
+/*
 boolean SpaProperties::update_Ser1_Timer(String s){
     if (!isNumber(s)) {
         return false;
@@ -485,7 +485,7 @@ boolean SpaProperties::update_AdtHeaterHys(String s){
     AdtHeaterHys.update_Value(s.toInt());
     return true;
 }
-
+*/
 boolean SpaProperties::update_Power(String s){
     if (!isNumber(s)) {
         return false;
@@ -521,7 +521,7 @@ boolean SpaProperties::update_Power_Yesterday(String s){
     Power_Yesterday.update_Value(s.toInt());
     return true;
 }
-
+/*
 boolean SpaProperties::update_ThermalCutOut(String s){
     if (!isNumber(s)) {
         return false;
@@ -629,7 +629,7 @@ boolean SpaProperties::update_Vari_Mode(String s){
     Vari_Mode.update_Value(s.toInt());
     return true;
 }
-
+*/
 boolean SpaProperties::update_RB_TP_Pump1(String s){
     if (!isNumber(s)) {
         return false;
@@ -674,7 +674,7 @@ boolean SpaProperties::update_RB_TP_Pump5(String s){
     RB_TP_Pump5.update_Value(s.toInt());
     return true;
 }
-
+/*
 boolean SpaProperties::update_RB_TP_Blower(String s){
     if (!isNumber(s)) {
         return false;
@@ -683,7 +683,7 @@ boolean SpaProperties::update_RB_TP_Blower(String s){
     RB_TP_Blower.update_Value(s.toInt());
     return true;
 }
-
+*/
 boolean SpaProperties::update_RB_TP_Light(String s){
     if (!isNumber(s)) {
         return false;
@@ -692,7 +692,7 @@ boolean SpaProperties::update_RB_TP_Light(String s){
     RB_TP_Light.update_Value(s.toInt());
     return true;
 }
-
+/*
 boolean SpaProperties::update_RB_TP_Auto(String s) {
     if (s!="0" && s!="1") {
         return false;
@@ -701,7 +701,7 @@ boolean SpaProperties::update_RB_TP_Auto(String s) {
     RB_TP_Auto.update_Value( s == "1" );
     return true;
 }
-
+*/
 boolean SpaProperties::update_RB_TP_Heater(String s) {
     if (s!="0" && s!="1") {
         return false;
@@ -719,7 +719,7 @@ boolean SpaProperties::update_RB_TP_Ozone(String s) {
     RB_TP_Ozone.update_Value( s == "1" );
     return true;
 }
-
+/*
 boolean SpaProperties::update_RB_TP_Sleep(String s) {
     if (s!="0" && s!="1") {
         return false;
@@ -728,7 +728,7 @@ boolean SpaProperties::update_RB_TP_Sleep(String s) {
     RB_TP_Sleep.update_Value( s == "1" );
     return true;
 }
-
+*/
 boolean SpaProperties::update_WTMP(String s){
     if (!isNumber(s)) {
         return false;
@@ -737,7 +737,7 @@ boolean SpaProperties::update_WTMP(String s){
     WTMP.update_Value(s.toInt());
     return true;
 }
-
+/*
 boolean SpaProperties::update_CleanCycle(String s) {
     if (s!="0" && s!="1") {
         return false;
@@ -746,7 +746,7 @@ boolean SpaProperties::update_CleanCycle(String s) {
     CleanCycle.update_Value( s == "1" );
     return true;
 }
-
+*/
 boolean SpaProperties::update_VARIValue(String s){
     if (!isNumber(s)) {
         return false;
@@ -791,7 +791,7 @@ boolean SpaProperties::update_LSPDValue(String s){
     LSPDValue.update_Value(s.toInt());
     return true;
 }
-
+/*
 boolean SpaProperties::update_FiltSetHrs(String s){
     if (!isNumber(s)) {
         return false;
@@ -809,7 +809,7 @@ boolean SpaProperties::update_FiltBlockHrs(String s){
     FiltBlockHrs.update_Value(s.toInt());
     return true;
 }
-
+*/
 boolean SpaProperties::update_STMP(String s){
     if (!isNumber(s)) {
         return false;
@@ -818,7 +818,7 @@ boolean SpaProperties::update_STMP(String s){
     STMP.update_Value(s.toInt());
     return true;
 }
-
+/*
 boolean SpaProperties::update_L_24HOURS(String s){
     if (!isNumber(s)) {
         return false;
@@ -854,7 +854,7 @@ boolean SpaProperties::update_PSAV_END(String s){
     PSAV_END.update_Value(s.toInt());
     return true;
 }
-
+*/
 boolean SpaProperties::update_L_1SNZ_DAY(String s){
     if (!isNumber(s)) {
         return false;
@@ -908,7 +908,7 @@ boolean SpaProperties::update_L_2SNZ_END(String s){
     L_2SNZ_END.update_Value(s.toInt());
     return true;
 }
-
+/*
 boolean SpaProperties::update_DefaultScrn(String s){
     if (!isNumber(s)) {
         return false;
@@ -1169,7 +1169,7 @@ boolean SpaProperties::update_HUSE(String s){
     HUSE.update_Value(s.toInt());
     return true;
 }
-
+*/
 boolean SpaProperties::update_HELE(String s) {
     if (s!="0" && s!="1") {
         return false;
@@ -1187,7 +1187,7 @@ boolean SpaProperties::update_HPMP(String s){
     HPMP.update_Value(s.toInt());
     return true;
 }
-
+/*
 boolean SpaProperties::update_PMIN(String s){
     if (!isNumber(s)) {
         return false;
@@ -1520,7 +1520,7 @@ boolean SpaProperties::update_F3_VE(String s) {
     F3_VE.update_Value( s == "1" );
     return true;
 }
-
+*/
 boolean SpaProperties::update_Outlet_Blower(String s){
     if (!isNumber(s)) {
         return false;
@@ -1557,7 +1557,7 @@ boolean SpaProperties::update_HP_Condensor(String s){
     HP_Condensor.update_Value(s.toInt());
     return true;
 }
-
+/*
 boolean SpaProperties::update_HP_Compressor_State(String s) {
     if (s!="0" && s!="1") {
         return false;
@@ -1729,7 +1729,7 @@ boolean SpaProperties::update_DPMP(String s){
     DPMP.update_Value(s.toInt());
     return true;
 }
-
+*/
 boolean SpaProperties::update_Pump1InstallState(String s){
     Pump1InstallState.update_Value(s);
     return true;
@@ -1754,7 +1754,7 @@ boolean SpaProperties::update_Pump5InstallState(String s){
     Pump5InstallState.update_Value(s);
     return true;
 }
-
+/*
 boolean SpaProperties::update_Pump1OkToRun(String s) {
     if (s!="0" && s!="1") {
         return false;
@@ -1808,3 +1808,4 @@ boolean SpaProperties::update_LockMode(String s) {
     LockMode.update_Value( s == "1" );
     return true;
 }
+*/
