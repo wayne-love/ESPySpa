@@ -1,3 +1,4 @@
+#ifdef INCLUDE_WEBSERVER
 #include "WebUI.h"
 
 WebUI::WebUI(SpaInterface *spa, Config *config, MQTTClientWrapper *mqttClient) {
@@ -87,7 +88,9 @@ void WebUI::begin() {
         if (request->hasParam("mqttUsername", true)) _config->MqttUsername.setValue(request->getParam("mqttUsername", true)->value());
         if (request->hasParam("mqttPassword", true)) _config->MqttPassword.setValue(request->getParam("mqttPassword", true)->value());
         if (request->hasParam("spaPollFreq", true)) _config->spaPollFreq.setValue(request->getParam("spaPollFreq", true)->value().toInt());
+#ifdef INCLUDE_UPDATES
         if (request->hasParam("fwPollFreq", true)) _config->fwPollFreq.setValue(request->getParam("fwPollFreq", true)->value().toInt());
+#endif // INCLUDE_UPDATES
         _config->writeConfig();
         AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "Updated");
         response->addHeader("Connection", "close");
@@ -102,8 +105,10 @@ void WebUI::begin() {
         configJson += "\"mqttPort\":\"" + String(_config->MqttPort.getValue()) + "\",";
         configJson += "\"mqttUsername\":\"" + _config->MqttUsername.getValue() + "\",";
         configJson += "\"mqttPassword\":\"" + _config->MqttPassword.getValue() + "\",";
-        configJson += "\"spaPollFreq\":" + String(_config->spaPollFreq.getValue()) + ",";
-        configJson += "\"fwPollFreq\":" + String(_config->fwPollFreq.getValue());
+#ifdef INCLUDE_UPDATES
+        configJson += "\"fwPollFreq\":" + String(_config->fwPollFreq.getValue()) + ",";
+#endif // INCLUDE_UPDATES
+        configJson += "\"spaPollFreq\":" + String(_config->spaPollFreq.getValue());
         configJson += "}";
         AsyncWebServerResponse *response = request->beginResponse(200, "application/json", configJson);
         response->addHeader("Connection", "close");
@@ -164,3 +169,4 @@ void WebUI::begin() {
 
     initialised = true;
 }
+#endif // INCLUDE_WEBSERVER

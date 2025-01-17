@@ -70,6 +70,7 @@ public:
     Setting<String> MqttPassword = Setting<String>("MqttPassword");
     Setting<String> SpaName = Setting<String>("SpaName", "eSpa");
     Setting<int> spaPollFreq = Setting<int>("spaPollFrequency", 60, 10, 300);
+#ifdef INCLUDE_UPDATES
     Setting<int> fwPollFreq = Setting<int>("firmwareUpdateCheckFrequency", 24, 0, 1000);
 
     // The following settings aren't saved but are used as in memory storage
@@ -82,6 +83,7 @@ public:
     Setting<int> updateInProgress = Setting<int>("updateInProgress", 0, 0, 1);
     Setting<int> updatePercentage = Setting<int>("updatePercentage", 0, 0, 100);
     Setting<String> updateStatus = Setting<String>("updateStatus", "idle");
+#endif // INCLUDE_UPDATES
 };
 
 class Config : public ControllerConfig {

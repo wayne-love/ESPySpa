@@ -154,9 +154,10 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, Config 
   json["status"]["mqtt"] = mqttClient.connected()?"connected":"disconnected";
 
   json["eSpa"]["model"] = xstr(PIOENV);
+  json["eSpa"]["update"]["installed_version"] = xstr(BUILD_INFO);
+#ifdef INCLUDE_UPDATES
   json["eSpa"]["updateAvailable"] = config.updateAvailable.getValue() == 1;
   json["eSpa"]["update_status"] = config.updateStatus.getValue();
-  json["eSpa"]["update"]["installed_version"] = xstr(BUILD_INFO);
   json["eSpa"]["update"]["latest_version"] = config.latestVersion.getValue();
   String releaseNotes = config.releaseNotes.getValue();
   int newLineIndex = releaseNotes.indexOf("\n");
@@ -169,6 +170,7 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, Config 
   if (config.updateInProgress.getValue() == 1) { //if updating...
     json["eSpa"]["update"]["update_percentage"] = config.updatePercentage.getValue();
   }
+#endif // INCLUDE_UPDATES
 
   json["heatpump"]["mode"] = si.HPMPStrings[si.getHPMP()];
   json["heatpump"]["auxheat"] = si.getHELE()==0? "OFF" : "ON";
@@ -280,6 +282,7 @@ int compareVersions(const int current[3], const int latest[3]) {
   return 0;
 }
 
+#ifdef INCLUDE_UPDATES
 void firmwareCheckUpdates(Config &config) {
   HttpContent httpContent;
   String content;
@@ -378,3 +381,4 @@ void updateFirmware(const String firmwareUrl, const String spiffsUrl, Config &co
   }
   config.updateInProgress.setValue(0);
 }
+#endif // INCLUDE_UPDATES

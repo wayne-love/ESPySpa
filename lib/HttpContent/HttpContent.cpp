@@ -1,3 +1,4 @@
+#ifdef INCLUDE_UPDATES
 #include "HttpContent.h"
 
 HttpContent::HttpContent() {}
@@ -122,3 +123,4 @@ bool HttpContent::flashFirmware(const String firmwareUrl, const String type, Con
     config.updateStatus.setValue("Update failed.");
     return false;
 }
+#endif // INCLUDE_UPDATES

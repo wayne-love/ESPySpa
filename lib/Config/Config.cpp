@@ -23,7 +23,9 @@ bool Config::readConfig() {
     MqttPassword.setValue(preferences.getString("MqttPassword", ""));
     SpaName.setValue(preferences.getString("SpaName", "eSpa"));
     spaPollFreq.setValue(preferences.getInt("spaPollFreq", 60));
+  #ifdef INCLUDE_UPDATES
     fwPollFreq.setValue(preferences.getInt("fwPollFreq", 24));
+  #endif // INCLUDE_UPDATES
 
     preferences.end();
     return true;
@@ -43,7 +45,9 @@ void Config::writeConfig() {
     preferences.putString("MqttPassword", MqttPassword.getValue());
     preferences.putString("SpaName", SpaName.getValue());
     preferences.putInt("spaPollFreq", spaPollFreq.getValue());
+  #ifdef INCLUDE_UPDATES
     preferences.putInt("fwPollFreq", fwPollFreq.getValue());
+  #endif // INCLUDE_UPDATES
     preferences.end();
   } else {
     debugE("Failed to open Preferences for writing");

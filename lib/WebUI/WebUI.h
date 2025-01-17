@@ -1,3 +1,4 @@
+#ifdef INCLUDE_WEBSERVER
 #ifndef WEBUI_H
 #define WEBUI_H
 
@@ -157,3 +158,4 @@ $(function() {
 };
 
 #endif // WEBUI_H
+#endif // INCLUDE_WEBSERVER

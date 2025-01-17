@@ -1,3 +1,4 @@
+#ifdef INCLUDE_UPDATES
 #ifndef HTTP_CONTENT_H
 #define HTTP_CONTENT_H
 
@@ -43,3 +44,4 @@ public:
 };
 
 #endif // HTTP_CONTENT_H
+#endif  // INCLUDE_UPDATES

@@ -9,7 +9,9 @@
 
 #include "MultiBlinker.h"
 
+#ifdef INCLUDE_WEBSERVER
 #include "WebUI.h"
+#endif // INCLUDE_WEBSERVER
 #include "Config.h"
 #include "SpaInterface.h"
 #include "SpaUtils.h"
@@ -33,7 +35,9 @@ Config config;
 WiFiClient wifi;
 MQTTClientWrapper mqttClient(wifi);
 
+#ifdef INCLUDE_WEBSERVER
 WebUI ui(&si, &config, &mqttClient);
+#endif // INCLUDE_WEBSERVER
 
 
 
@@ -42,7 +46,9 @@ ulong mqttLastConnect = 0;
 ulong wifiLastConnect = millis();
 ulong bootTime = millis();
 ulong statusLastPublish = millis();
+#ifdef INCLUDE_UPDATES
 ulong lastFirmwareCheck = 0;
+#endif // INCLUDE_UPDATES
 bool delayedStart = true; // Delay spa connection for 10sec after boot to allow for external debugging if required.
 bool autoDiscoveryPublished = false;
 
@@ -141,9 +147,11 @@ void mqttPublishStatus();
 void configChangeCallbackInt(const char* name, int value) {
   debugD("%s: %i", name, value);
   if (strcmp(name, "UpdateFrequency") == 0) si.setUpdateFrequency(value);
+#ifdef INCLUDE_UPDATES
   if (strcmp(name, "updateAvailable") == 0 || strcmp(name, "updateInProgress") == 0 || strcmp(name, "updatePercentage") == 0 || strcmp(name, "updateStatus") == 0) {
     mqttPublishStatus();
   }
+#endif // INCLUDE_UPDATES
 }
 
 void mqttHaAutoDiscovery() {
@@ -423,6 +431,7 @@ void mqttHaAutoDiscovery() {
   generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.spaModeStrings);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
+#ifdef INCLUDE_UPDATES
   ADConf.displayName = "Firmware";
   ADConf.valueTemplate = "{{ value_json['eSpa']['update'] | to_json }}";
   ADConf.propertyId = "espa_firmware";
@@ -430,6 +439,7 @@ void mqttHaAutoDiscovery() {
   ADConf.entityCategory = "diagnostic";
   generateUpdateAdJSON(output, ADConf, spa, discoveryTopic);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
+#endif // INCLUDE_UPDATES
 
 }
 
@@ -530,6 +540,7 @@ void setSpaProperty(String property, String p) {
     si.setL_2SNZ_END(convertToInteger(p));
   } else if (property == "status_spaMode") {
     si.setMode(p);
+#ifdef INCLUDE_UPDATES
   } else if (property == "espa_firmware") {
     String firmwareUrl;
     String spiffsUrl;
@@ -550,6 +561,7 @@ void setSpaProperty(String property, String p) {
       debugI("Updating firmware from %s", firmwareUrl.c_str());
       updateFirmware(firmwareUrl, spiffsUrl, config, p == "latest");
     }
+#endif // INCLUDE_UPDATES
   } else {
     debugE("Unhandled property - %s",property.c_str());
   }
@@ -650,11 +662,15 @@ void setup() {
   mqttClient.setBufferSize(2048);
 
   bootStartMillis = millis();  // Record the current boot time in milliseconds
+#ifdef INCLUDE_UPDATES
   lastFirmwareCheck = millis() - (config.fwPollFreq.getValue() * 60 * 60 * 1000) + 30000; // check for update 30 seconds after start up.
+#endif // INCLUDE_UPDATES
 
+#ifdef INCLUDE_WEBSERVER
   ui.begin();
   ui.setWifiManagerCallback(startWifiManagerCallback);
   ui.setSpaCallback(setSpaCallback);
+#endif // INCLUDE_WEBSERVER
   si.setUpdateFrequency(config.spaPollFreq.getValue());
 
   config.setCallback(configChangeCallbackString);
@@ -701,10 +717,12 @@ void loop() {
       delayedStart = !(bootTime + 10000 < millis());
     } else {
 
+#ifdef INCLUDE_UPDATES
       if (config.fwPollFreq.getValue() > 0 && millis()-lastFirmwareCheck > (config.fwPollFreq.getValue() * 60 * 60 * 1000)) {
         firmwareCheckUpdates(config);
         lastFirmwareCheck = millis();
       }
+#endif // INCLUDE_UPDATES
 
       si.loop();
 

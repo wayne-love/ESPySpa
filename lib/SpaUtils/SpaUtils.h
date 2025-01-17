@@ -37,7 +37,9 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, Config 
 String fetchLatestVersion(const String& url);
 bool parseVersion(const String version, int parsedVersion[3]);
 int compareVersions(const int current[3], const int latest[3]);
+#ifdef INCLUDE_UPDATES
 void firmwareCheckUpdates(Config &config);
 void updateFirmware(const String firmwareUrl, const String spiffsUrl, Config &config, bool reboot);
+#endif // INCLUDE_UPDATES
 
 #endif // SPAUTILS_H
