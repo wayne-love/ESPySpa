@@ -3,8 +3,8 @@
  * Global Veriables
  *
  ***********************************************************************************************/
-const repo_owner = 'wayne-love';
-const repo = 'ESPySpa';
+let repo_owner = 'wayne-love';
+let repo = 'ESPySpa';
 
 /************************************************************************************************
  * 
@@ -98,6 +98,12 @@ function fetchStatus() {
             updateStatusElement('status_mqtt', value_json.status.mqtt);
             updateStatusElement('espa_model', value_json.eSpa.model);
             updateStatusElement('espa_build', value_json.eSpa.update.installed_version);
+
+            if (repo != value_json.eSpa.repo || repo_owner != value_json.eSpa.repo_owner) {
+                repo = value_json.eSpa.repo;
+                repo_owner = value_json.eSpa.repo_owner;
+                updateGitHubLink();
+            }
         })
         .catch(error => {
             console.error('Error fetching status:', error);
@@ -146,9 +152,17 @@ function clearAlert() {
     pageAlertParent.hide();
 }
 
+function updateGitHubLink() {
+    const githubLink = $('#githubLink');
+    if (githubLink.length) {
+        githubLink.attr('href', `https://github.com/${repo_owner}/${repo}`);
+    }
+}
+
 window.onload = function () {
     fetchStatus();
     loadFotaData();
+    updateGitHubLink();
     setInterval(fetchStatus, 10000);
 }
 

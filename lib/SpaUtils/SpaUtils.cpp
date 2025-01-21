@@ -155,6 +155,8 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, Config 
 
   json["eSpa"]["model"] = xstr(PIOENV);
   json["eSpa"]["update"]["installed_version"] = xstr(BUILD_INFO);
+  json["eSpa"]["repo_owner"] = REPO_OWNER;
+  json["eSpa"]["repo"] = REPO;
 #ifdef INCLUDE_UPDATES
   json["eSpa"]["updateAvailable"] = config.updateAvailable.getValue() == 1;
   json["eSpa"]["update_status"] = config.updateStatus.getValue();
