@@ -215,7 +215,7 @@ void mqttHaAutoDiscovery() {
   ADConf.propertyId = "TotalEnergy";
   ADConf.deviceClass = "energy";
   ADConf.entityCategory = "diagnostic";
-  generateSensorAdJSON(output, ADConf, spa, discoveryTopic, "measurement", "kWh");
+  generateSensorAdJSON(output, ADConf, spa, discoveryTopic, "total_increasing", "kWh");
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
   ADConf.displayName = "State";
