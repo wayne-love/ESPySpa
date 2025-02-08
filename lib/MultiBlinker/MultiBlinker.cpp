@@ -2,23 +2,23 @@
 
 // Define the on/off times for each state (-1 to 15)
 const LEDPattern LED_PATTERNS[17] = {
-    {2000, 2000}, //KNIGHT_RIDER
-    {UINT_MAX, 0},   // STATE_NONE: Always off
-    {100, 100}, // STATE_WIFI_NOT_CONNECTED
-    {0, 0},   // Reserved
-    {0, 0},   // Reserved
-    {500, 500}, // STATE_MQTT_NOT_CONNECTED
-    {0, 0},   // Reserved
-    {0, 0},   // Reserved
-    {0, 0},   // Reserved
-    {0, 0},   // Reserved
-    {0, 0},   // Reserved
-    {0, 0},   // Reserved
-    {0, 0},   // Reserved
-    {0, 0},   // Reserved
-    {0, 0},   // Reserved
-    {0, 0},   // Reserved
-    {0, UINT_MAX} // STATE_STARTED_WIFI_AP: Always on
+    {2000, 2000},   //KNIGHT_RIDER
+    {UINT_MAX, 0},  // STATE_NONE: Always off
+    {100, 100},     // STATE_WIFI_NOT_CONNECTED
+    {1000, 1000},   // STATE_WAITING_FOR_SPA
+    {0, 0},         // Reserved
+    {500, 500},     // STATE_MQTT_NOT_CONNECTED
+    {0, 0},         // Reserved
+    {0, 0},         // Reserved
+    {0, 0},         // Reserved
+    {0, 0},         // Reserved
+    {0, 0},         // Reserved
+    {0, 0},         // Reserved
+    {0, 0},         // Reserved
+    {0, 0},         // Reserved
+    {0, 0},         // Reserved
+    {0, 0},         // Reserved
+    {0, UINT_MAX}   // STATE_STARTED_WIFI_AP: Always on
 };
 
 MultiBlinker::MultiBlinker(int led1, int led2, int led3, int led4) {

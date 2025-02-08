@@ -3,6 +3,7 @@
 # Adds PlatformIO post-processing to merge all the ESP flash images into a single image.
 
 import os
+import csv
 
 Import("env", "projenv")
 
@@ -19,6 +20,24 @@ def merge_bin_action(source, target, env):
     ]
     if board_config.get("build.mcu", "") == 'esp8266':
         return
+
+    partition_csv = env.get("PARTITIONS_TABLE_CSV")
+    fs_image_name = env.get("ESP32_FS_IMAGE_NAME")
+    offset = 0
+    print("partition_csv: ", partition_csv)
+    print("fs_image_name: ", fs_image_name)
+
+    if partition_csv and fs_image_name:
+        with open(partition_csv, "r") as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                if row["# Name"] == fs_image_name:
+                    offset = row[" Offset"]
+                    break
+
+    if offset:
+        flash_images.append(offset)
+        flash_images.append("${BUILD_DIR}/%s.bin" % fs_image_name)
 
     merge_cmd = " ".join(
         [

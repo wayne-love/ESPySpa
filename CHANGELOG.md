@@ -1,5 +1,6 @@
-**Prereq for New Web UI**
+**New Web UI**
 
-* Move settings to Preferences
-* Updated OTA to support flashing file system
-* Bug fixes
+***Breaking change*** *You should deploy v1.0.9 if migrating from an ealier version, this will ensure your settings (mqtt server, spa name, etc) are migrated.*
+
+* Changed settings to be stored in Preferences
+* New Web UI

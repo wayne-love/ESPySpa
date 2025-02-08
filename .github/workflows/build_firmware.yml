@@ -41,19 +41,21 @@ jobs:
           python-version: "3.x"
       - name: Install PlatformIO
         run: pip install platformio
+      - name: Build file system image for ${{ inputs.platform }}
+        run: pio run --target buildfs -e ${{ inputs.platform }}
       - name: Build for ${{ inputs.platform }}
         run: pio run -e ${{ inputs.platform }} -t mergebin
       #- name: Display firmware files
       #  run: ls -la .pio/build/${{ inputs.platform }}/firmware*.bin
       - name: Rename and move firmware files
         run: |
+          ls -la .pio/build/${{ inputs.platform }}/*.bin
           mv .pio/build/${{ inputs.platform }}/firmware.bin firmware_${{ inputs.platform }}_ota.bin
-          if [ "${{ inputs.platform }}" != "esp8266dev" ]; then
-            mv .pio/build/${{ inputs.platform }}/firmware_factory.bin firmware_${{ inputs.platform }}_factory.bin
-          fi
-          ls -la firmware*.bin
+          mv .pio/build/${{ inputs.platform }}/firmware_factory.bin firmware_${{ inputs.platform }}_factory.bin
+          mv .pio/build/${{ inputs.platform }}/spiffs.bin spiffs_${{ inputs.platform }}.bin
+          ls -la *.bin
       - name: Archive Firmware
         uses: actions/upload-artifact@v4
         with:
           name: firmware_${{ inputs.platform }}
-          path: firmware_${{ inputs.platform }}*.bin
+          path: "*_${{ inputs.platform }}*.bin"

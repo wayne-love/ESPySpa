@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous"> -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link rel="stylesheet" href="styles.css">
+
+  <title>eSpa</title>
+</head>
+
+<body>
+  <nav class="navbar navbar-expand-lg bg-body-secondary">
+    <div class="container-fluid">
+      <a class="navbar-brand">
+        <img src="images/logo_eSpa_64px.png" width="30" height="30" class="d-inline-block align-top" alt="" />
+        &nbsp;&nbsp;
+        eSpa
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+          <!-- Config Menu-->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Config
+            </a>
+            <div class="dropdown-menu">
+              <a class="dropdown-item" href="#" id="configLink">Settings</a>
+              <a class="dropdown-item" href="#" onclick="confirmAction('/wifi-manager'); return false;">Wi-Fi Manager</a>
+              <a class="dropdown-item" href="#" id="fotaLink">Firmware Updater</a>
+              <a class="dropdown-item" href="#" onclick="sendCurrentTime();">Send Current Time to Spa</a>
+              <div class="dropdown-divider"></div>
+              <a class="dropdown-item" href="#" onclick="confirmFunction(reboot('Reboot initiated.')); return false;">Reboot eSpa</a>
+            </div>
+          </li>
+
+          <!-- Experts Only Menu -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Experts Only
+            </a>
+            <div class="dropdown-menu">
+              <a class="dropdown-item" href="#" id="jsonLink">Show Spa JSON</a>
+              <a class="dropdown-item" href="#" id="statusLink">Show Spa Response</a>
+            </div>
+          </li>
+
+          <!-- eSpa external links menu -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              eSpa
+            </a>
+            <div class="dropdown-menu">
+              <a class="dropdown-item" href="https://espa.diy" target="_blank">eSpa Home</a>
+              <a class="dropdown-item" href="https://espa.diy/troubleshooting.html" target="_blank">eSpa Troubleshooting</a>
+              <div class="dropdown-divider"></div>
+              <a class="dropdown-item" href="https://discord.gg/faK8Ag4wHn" target="_blank">eSpa Discord</a>
+              <a class="dropdown-item" href="https://github.com/wayne-love/espyspa" target="_blank">eSpa GitHub</a>
+            </div>
+          </li>
+        </ul>
+
+        <div class="form-check form-switch">
+            <!-- <svg class="bi me-2 opacity-50 theme-icon"><use href="#sun-fill"></use></svg> -->
+            <input class="form-check-input" type="checkbox" id="darkModeSwitch" checked>
+            <label class="form-check-label" for="darkModeSwitch">Dark Mode</label>
+            <!-- <svg class="bi me-2 opacity-50 theme-icon"><use href="#moon-stars-fill"></use></svg> -->
+        </div>
+
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <span id="spa-status-section">
+
+      <div class="row pt-2 page-alert-parent" style="display: none;">
+        <div class="col">
+          <div class="alert" role="alert" id="page-alert"></div>
+        </div>
+      </div>
+
+      <!-- status information -->
+      <div class="row">
+          <div class="col">
+              <h3>Status</h3>
+          </div>
+      </div>
+      <div class="row">
+          <div class="col">
+            <table class="table table-striped" id="status-table">
+              <tr>
+                <td>Spa status:</td>
+                <td><span id="status_state" class="badge text-bg-warning">Loading...</span></td>
+              </tr>
+              <tr>
+                <td>Spa temperature:</td>
+                <td><span id="temperatures_water" class="badge text-bg-warning">Loading...</span></td>
+              </tr>
+              <tr>
+                <td>Spa controller:</td>
+                <td><span id="status_controller" class="badge text-bg-warning">Loading...</span></td>
+              </tr>
+              <tr>
+                <td>Spa controller firmware:</td>
+                <td><span id="status_firmware" class="badge text-bg-warning">Loading...</span>
+                </td>
+              </tr>
+              <tr>
+                <td>Spa serial number:</td>
+                <td><span id="status_serial" class="badge text-bg-warning">Loading...</span></td>
+              </tr>
+              <tr>
+                <td>Spa interface initialised:</td>
+                <td><span id="status_siInitialised" class="badge text-bg-warning">Loading...</span></td>
+              </tr>
+              <tr>
+                <td>MQTT status:</td>
+                <td><span id="status_mqtt" class="badge text-bg-warning">Loading...</span></td>
+              </tr>
+              <tr>
+                <td>eSpa Model:</td>
+                <td><span id="espa_model" class="badge text-bg-warning">Loading...</span></td>
+              </tr>
+              <tr>
+                <td>eSpa Build:</td>
+                <td><span id="espa_build" class="badge text-bg-warning">Loading...</span></td>
+              </tr>
+            </table>
+          </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="row">
+        <div class="col">
+            <h3>Controls</h3>
+        </div>
+      </div>
+      <div class="row">
+          <div class="col">
+            <table class="table table-striped" id="status-table">
+              <tr>
+                <td>Set Temperature:</td>
+                <td><input type="number" id="temperatures_setPoint" step="0.2" min="10" max="41">
+                  <button onclick="updateTempSetPoint();">Set</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+      </div>
+
+      <!-- footer -->
+      <small class="text-muted footer">
+      <p>Built with <img style="display: inline; margin-bottom: 0px;" src="images/heart.svg" alt="heart" width="10" height="10" /> by the <a href="https://espa.diy">eSpa Team</a></p>
+      </small>
+    </span>
+  </div>
+
+  <!-- Modal for spa response and spa JSON -->
+  <div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="infoModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fs-5" id="infoModalTitle"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="infoModalBody">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for configuration -->
+  <div id="configModal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="configModalTitle">Change Settings</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="configModalBody">
+          <div class="alert alert-danger" role="alert" id="configErrorAlert" style="display: none;">
+            Error loading configuration. Please try again.
+          </div>
+          <form id="config_form" action='#' method='POST'>
+            <div class="mb-3">
+              <label for="spaName">Spa Name</label>
+              <input type='text' class="form-control" name='spaName' id='spaName'>
+            </div>
+            <div class="mb-3">
+              <label for="mqttServer">MQTT Server</label>
+              <input type='text' class="form-control" name='mqttServer' id='mqttServer'>
+            </div>
+            <div class="mb-3">
+              <label for="mqttPort">MQTT Port</label>
+              <input type='number' class="form-control" name='mqttPort' id='mqttPort'>
+            </div>
+            <div class="mb-3">
+              <label for="mqttUsername">MQTT Username</label>
+              <input type='text' class="form-control" name='mqttUsername' id='mqttUsername'>
+            </div>
+            <div class="mb-3">
+              <label for="mqttPassword">MQTT Password</label>
+              <input type='text' class="form-control" name='mqttPassword' id='mqttPassword'>
+            </div>
+            <div class="mb-3">
+              <label for="updateFrequency">Poll Frequency (seconds)</label>
+              <input type='number' class="form-control" name='updateFrequency' id='updateFrequency' step="1" min="10" max="300">
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="saveConfigButton">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for firmware update -->
+  <div id="fotaModal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="fotaModalTitle">Firmware Update</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="fotaModalBody">
+          <form id="updateForm">
+          <div class="mb-0 row">
+            <label for="installedVersion" class="col-sm-4 col-form-label">Installed version:</label>
+            <div class="col-sm-8">
+              <span id="installedVersion" class="form-control-plaintext">Loading...</span>
+            </div>
+          </div>
+          <div class="mb-0 row">
+            <label for="lastestRelease" class="col-sm-4 col-form-label">Latest version:</label>
+            <div class="col-sm-8">
+              <span id="lastestRelease" class="form-control-plaintext">Loading...</span>
+            </div>
+          </div>
+          <div class="mb-0 row" style="display: none;">
+            <label for="updateMethod" class="col-sm-4 col-form-label"><strong>Select Update Method:</strong></label>
+            <div class="col-sm-8">
+              <select id="updateMethod" class="form-select">
+                <option value="" disabled selected>Select Update Method</option>
+                <option value="remote">Auto Update</option>
+                <option value="local">Upload Update</option>
+              </select>
+            </div>
+          </div>
+          <div id="remoteUpdate" class="update-section" style="display: none;">
+            <strong>Auto Update</strong>
+            <div class="d-flex">
+              <select class="form-select w-100" id="firmware-select">
+                <option value="" disabled selected>Select a version</option>
+              </select>
+              <button class="btn btn-primary ms-2" type="button" id="remoteInstallButton" disabled>Install</button>
+            </div>
+          </div>
+          <div id="localUpdate" class="update-section" style="display: none;">
+            <strong>Upload Update</strong>
+            <div class="mb-0 row">
+              <label class="col-sm-4 col-form-label" for="appFile">Application Update File:</label>
+              <div class="col-sm-8">
+                <input type="file" accept=".bin,.bin.gz" name="appFile" id="appFile">
+              </div>
+            </div>
+            <div class="mb-0 row">
+              <label class="col-sm-4 col-form-label" for="fsFile">File System Update File:</label>
+              <div class="col-sm-8">
+                <input type="file" accept=".bin,.bin.gz" name="fsFile" id="fsFile"></td>
+              </div>
+            </div>
+            <div>
+              <button class="btn btn-primary" type="button" id="localInstallButton" disabled>Install</button>
+            </div>
+          </div>
+          <div class="progress" id="progressDiv" style="margin-top: 10px; display: none;">
+            <div class="progress-bar" role="progressbar" id="progressBar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+          </div>
+          <div id='msg'></div>
+        </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct" crossorigin="anonymous"></script> -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  <script src="espa.js"></script>
+</body>
+
+</html>

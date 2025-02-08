@@ -14,70 +14,46 @@ const char * WebUI::getError() {
     return Update.errorString();
 }
 
-
 void WebUI::begin() {
-        
-    server.reset(new WebServer(80));
-
-    server->on("/", HTTP_GET, [&]() {
-        debugD("uri: %s", server->uri().c_str());
-        server->sendHeader("Connection", "close");
-        server->send(200, "text/html", WebUI::indexPageTemplate);
-    });
-
-    server->on("/json", HTTP_GET, [&]() {
-        debugD("uri: %s", server->uri().c_str());
-        server->sendHeader("Connection", "close");
-        String json;
-        if (generateStatusJson(*_spa, *_mqttClient, json, true)) {
-            server->send(200, "text/json", json.c_str());
-        } else {
-            server->send(200, "text/text", "Error generating json");
-        }
-    });
-
-    server->on("/reboot", HTTP_GET, [&]() {
-        debugD("uri: %s", server->uri().c_str());
-        server->send(200, "text/html", WebUI::rebootPage);
+    server.on("/reboot", HTTP_GET, [&](AsyncWebServerRequest *request) {
+        debugD("uri: %s", request->url().c_str());
+        request->send(200, "text/plain", "Rebooting ESP...");
         debugD("Rebooting...");
         delay(200);
-        server->client().stop();
         ESP.restart();
     });
 
-    server->on("/styles.css", HTTP_GET, [&]() {
-        debugD("uri: %s", server->uri().c_str());
-        server->send(200, "text/css", WebUI::styleSheet);
+    server.on("/fota", HTTP_GET, [&](AsyncWebServerRequest *request) {
+        debugD("uri: %s", request->url().c_str());
+        request->send(200, "text/html", fotaPage);
     });
 
-    server->on("/fota", HTTP_GET, [&]() {
-        debugD("uri: %s", server->uri().c_str());
-        server->sendHeader("Connection", "close");
-        server->send(200, "text/html", WebUI::fotaPage);
+    server.on("/config", HTTP_GET, [&](AsyncWebServerRequest *request) {
+        debugD("uri: %s", request->url().c_str());
+        request->send(SPIFFS, "/www/config.htm");
     });
 
-    server->on("/fota", HTTP_POST, [&]() {
-        debugD("uri: %s", server->uri().c_str());
+    server.on("/fota", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        debugD("uri: %s", request->url().c_str());
         if (Update.hasError()) {
-            server->sendHeader("Connection", "close");
-            server->send(200, F("text/plain"), String(F("Update error: ")) + String(getError()));
+            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", String("Update error: ") + String(this->getError()));
+            response->addHeader("Connection", "close");
+            request->send(response);
         } else {
-            server->client().setNoDelay(true);
-            server->sendHeader("Connection", "close");
-            server->send(200, "text/plain", "OK");
+            request->client()->setNoDelay(true);
+            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "OK");
+            response->addHeader("Connection", "close");
+            request->send(response);
         }
-    }, [&]() {
-        debugD("uri: %s", server->uri().c_str());
-        HTTPUpload& upload = server->upload();
-        if (upload.status == UPLOAD_FILE_START) {
+    }, [this](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
+        if (index == 0) {
             static int updateType = U_FLASH; // Default to firmware update
 
-            if (server->hasArg("updateType")) {
-                String type = server->arg("updateType");
+            if (request->hasArg("updateType")) {
+                String type = request->arg("updateType");
                 if (type == "filesystem") {
                     updateType = U_SPIFFS;
                     debugD("Filesystem update selected.");
-                    if (!SPIFFS.begin()) SPIFFS.format();
                 } else if (type == "application") {
                     updateType = U_FLASH;
                     debugD("Application (firmware) update selected.");
@@ -90,45 +66,39 @@ void WebUI::begin() {
                 debugD("No update type specified. Defaulting to application update.");
             }
 
-            debugD("Update: %s", upload.filename.c_str());
-            if (!Update.begin(UPDATE_SIZE_UNKNOWN, updateType)) { //start with max available size
-                debugD("Update Error: %s",getError());
+            debugD("Update: %s", filename.c_str());
+            if (!Update.begin(UPDATE_SIZE_UNKNOWN, updateType)) { // start with max available size
+                debugD("Update Error: %s", this->getError());
             }
-        } else if (upload.status == UPLOAD_FILE_WRITE) {
-            /* flashing firmware to ESP*/
-            if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
-                debugD("Update Error: %s",getError());
-            }
-        } else if (upload.status == UPLOAD_FILE_END) {
-            if (Update.end(true)) { //true to set the size to the current progress
-                debugD("Update Success: %u\n", upload.totalSize);
+        }
+        if (Update.write(data, len) != len) {
+            debugD("Update Error: %s", this->getError());
+        }
+        if (final) {
+            if (Update.end(true)) { // true to set the size to the current progress
+                debugD("Update Success: %u\n", index + len);
             } else {
-                debugD("Update Error: %s",getError());
+                debugD("Update Error: %s", this->getError());
             }
         }
     });
 
-    server->on("/config", HTTP_GET, [&]() {
-        debugD("uri: %s", server->uri().c_str());
-        server->sendHeader("Connection", "close");
-        server->send(200, "text/html", WebUI::configPageTemplate);
-    });
-
-    server->on("/config", HTTP_POST, [&]() {
-        debugD("uri: %s", server->uri().c_str());
-        if (server->hasArg("spaName")) _config->SpaName.setValue(server->arg("spaName"));
-        if (server->hasArg("mqttServer")) _config->MqttServer.setValue(server->arg("mqttServer"));
-        if (server->hasArg("mqttPort")) _config->MqttPort.setValue(server->arg("mqttPort").toInt());
-        if (server->hasArg("mqttUsername")) _config->MqttUsername.setValue(server->arg("mqttUsername"));
-        if (server->hasArg("mqttPassword")) _config->MqttPassword.setValue(server->arg("mqttPassword"));
-        if (server->hasArg("updateFrequency")) _config->UpdateFrequency.setValue(server->arg("updateFrequency").toInt());
+    server.on("/config", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        debugD("uri: %s", request->url().c_str());
+        if (request->hasParam("spaName", true)) _config->SpaName.setValue(request->getParam("spaName", true)->value());
+        if (request->hasParam("mqttServer", true)) _config->MqttServer.setValue(request->getParam("mqttServer", true)->value());
+        if (request->hasParam("mqttPort", true)) _config->MqttPort.setValue(request->getParam("mqttPort", true)->value().toInt());
+        if (request->hasParam("mqttUsername", true)) _config->MqttUsername.setValue(request->getParam("mqttUsername", true)->value());
+        if (request->hasParam("mqttPassword", true)) _config->MqttPassword.setValue(request->getParam("mqttPassword", true)->value());
+        if (request->hasParam("updateFrequency", true)) _config->UpdateFrequency.setValue(request->getParam("updateFrequency", true)->value().toInt());
         _config->writeConfig();
-        server->sendHeader("Connection", "close");
-        server->send(200, "text/plain", "Updated");
+        AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "Updated");
+        response->addHeader("Connection", "close");
+        request->send(response);
     });
 
-    server->on("/json/config", HTTP_GET, [&]() {
-        debugD("uri: %s", server->uri().c_str());
+    server.on("/json/config", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        debugD("uri: %s", request->url().c_str());
         String configJson = "{";
         configJson += "\"spaName\":\"" + _config->SpaName.getValue() + "\",";
         configJson += "\"mqttServer\":\"" + _config->MqttServer.getValue() + "\",";
@@ -137,54 +107,74 @@ void WebUI::begin() {
         configJson += "\"mqttPassword\":\"" + _config->MqttPassword.getValue() + "\",";
         configJson += "\"updateFrequency\":" + String(_config->UpdateFrequency.getValue());
         configJson += "}";
-        server->send(200, "application/json", configJson);
+        AsyncWebServerResponse *response = request->beginResponse(200, "application/json", configJson);
+        response->addHeader("Connection", "close");
+        request->send(response);
     });
 
-    server->on("/set", HTTP_POST, [&]() {
-        //In theory with minor modification, we can reuse mqttCallback here
-        //for (uint8_t i = 0; i < server->args(); i++) updateSpaSetting("set/" + server->argName(0), server->arg(0));
-        if (server->hasArg("temperatures_setPoint")) {
-            float newTemperature = server->arg("temperatures_setPoint").toFloat();
-            _spa->setSTMP(int(newTemperature*10));
-            server->send(200, "text/plain", "Temperature updated");
+    server.on("/json", HTTP_GET, [&](AsyncWebServerRequest *request) {
+        debugD("uri: %s", request->url().c_str());
+        String json;
+        AsyncWebServerResponse *response;
+        if (generateStatusJson(*_spa, *_mqttClient, json, true)) {
+            response = request->beginResponse(200, "application/json", json);
+        } else {
+            response = request->beginResponse(200, "text/plain", "Error generating json");
         }
-        else if (server->hasArg("status_datetime")) {
-            String p = server->arg("status_datetime");
+        response->addHeader("Connection", "close");
+        request->send(response);
+    });
+
+    // Handle /set endpoint (POST)
+    server.on("/set", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        // In theory with minor modification, we can reuse mqttCallback here
+        // for (uint8_t i = 0; i < request->params(); i++) updateSpaSetting("set/" + request->getParam(i)->name(), request->getParam(i)->value());
+        if (request->hasParam("temperatures_setPoint", true)) {
+            float newTemperature = request->getParam("temperatures_setPoint", true)->value().toFloat();
+            _spa->setSTMP(int(newTemperature * 10));
+            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "Temperature updated");
+            response->addHeader("Connection", "close");
+            request->send(response);
+        } else if (request->hasParam("status_datetime", true)) {
+            String p = request->getParam("status_datetime", true)->value();
             tmElements_t tm;
-            tm.Year=CalendarYrToTm(p.substring(0,4).toInt());
-            tm.Month=p.substring(5,7).toInt();
-            tm.Day=p.substring(8,10).toInt();
-            tm.Hour=p.substring(11,13).toInt();
-            tm.Minute=p.substring(14,16).toInt();
-            tm.Second=p.substring(17).toInt();
+            tm.Year = CalendarYrToTm(p.substring(0, 4).toInt());
+            tm.Month = p.substring(5, 7).toInt();
+            tm.Day = p.substring(8, 10).toInt();
+            tm.Hour = p.substring(11, 13).toInt();
+            tm.Minute = p.substring(14, 16).toInt();
+            tm.Second = p.substring(17).toInt();
             _spa->setSpaTime(makeTime(tm));
-            server->send(200, "text/plain", "Date/Time updated");
-        }
-        else {
-            server->send(400, "text/plain", "Invalid temperature value");
+            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "Date/Time updated");
+            response->addHeader("Connection", "close");
+            request->send(response);
+        } else {
+            AsyncWebServerResponse *response = request->beginResponse(400, "text/plain", "Invalid temperature value");
+            response->addHeader("Connection", "close");
+            request->send(response);
         }
     });
 
-    server->on("/wifi-manager", HTTP_GET, [&]() {
-        debugD("uri: %s", server->uri().c_str());
-        server->sendHeader("Connection", "close");
-        server->send(200, "text/plain", "WiFi Manager launching, connect to ESP WiFi...");
+    // Handle /wifi-manager endpoint (GET)
+    server.on("/wifi-manager", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        debugD("uri: %s", request->url().c_str());
+        AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "WiFi Manager launching, connect to ESP WiFi...");
+        response->addHeader("Connection", "close");
+        request->send(response);
         if (_wifiManagerCallback != nullptr) { _wifiManagerCallback(); }
     });
 
-    server->on("/json.html", HTTP_GET, [&]() {
-        debugD("uri: %s", server->uri().c_str());
-        server->sendHeader("Connection", "close");
-        server->send(200, "text/html", WebUI::jsonHTMLTemplate);
+    server.on("/status", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        debugD("uri: %s", request->url().c_str());
+        AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", _spa->statusResponse.getValue());
+        response->addHeader("Connection", "close");
+        request->send(response);
     });
 
-    server->on("/status", HTTP_GET, [&]() {
-        debugD("uri: %s", server->uri().c_str());
-        server->sendHeader("Connection", "close");
-        server->send(200, "text/plain", _spa->statusResponse.getValue());
-    });
+    // As a fallback we try to load from /www any requested URL
+    server.serveStatic("/", SPIFFS, "/www/");
 
-    server->begin();
+    server.begin();
 
     initialised = true;
 }

@@ -1,0 +1,72 @@
+/* input[type=file]::file-selector-button, input[type="submit"], a, button {
+    padding: 7px 15px;
+    border: none;
+    background: #007BFF;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    margin-top: 5px;
+    display: inline-block;
+    font-size: 16px;
+    font-family: Arial, sans-serif;
+    cursor: pointer;
+    text-align: center;
+}
+input[type=file]::file-selector-button:hover, input[type="submit"]:hover, a:hover, button:hover {
+    background-color: #0056b3;
+}
+table, td, th {
+  border: 1px solid;
+  padding: 5px;
+}
+table {
+  border-collapse: collapse;
+} */
+
+h1, h2, h3 {
+  text-align: left;
+  font-weight: 300;
+  padding-top: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.footer {
+  font-size: 10px;
+  text-align: center;
+}
+
+/* .navbar-dark .navbar-nav .nav-link {
+  color: white;
+} */
+
+/* html[data-bs-theme="light"] .dropdown-menu {
+  background-color: white;
+} */
+/* 
+html[data-bs-theme="dark"] .dropdown-menu {
+  background-color: #0069d9;
+} */
+
+.modal-content {
+  border: none;
+}
+
+/* .modal-header {
+  background-color: #0069d9;
+  color: white;
+} */
+
+.modal-header .modal-title {
+  font-weight: 400;
+}
+
+/* .modal-header .close {
+  color: white;
+} */
+
+input[type="submit"]:disabled, button:disabled {
+  background: #cccccc;
+  color: #666666;
+  cursor: not-allowed;
+}
