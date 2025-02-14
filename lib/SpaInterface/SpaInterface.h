@@ -220,6 +220,11 @@ class SpaInterface : public SpaProperties {
         /// @return True if successful
         bool setHELE(int mode);
 
+        /// @brief Sets the day of week on the spa
+        /// @param d Day of week (0 = Monday - 6 = Sunday)
+        /// @return True if successful
+        bool setSpaDayOfWeek(int d);
+
         /// @brief Sets the clock on the spa
         /// @param t Time
         /// @return True if successful
