@@ -1,4 +1,12 @@
 /************************************************************************************************
+ *
+ * Global Veriables
+ *
+ ***********************************************************************************************/
+let repo_owner = 'wayne-love';
+let repo = 'ESPySpa';
+
+/************************************************************************************************
  * 
  * Utility Methods
  * 
@@ -22,6 +30,12 @@ function parseVersion(version) {
 }
 
 function compareVersions(current, latest) {
+    /*
+     * -1 = there is a newer version
+     *  0 = running the current version
+     *  1 = running a newer release then available in the repo
+     */
+
     if (!current) return -1;
     if (!latest) return 1;
     for (let i = 0; i < Math.max(current.length, latest.length); i++) {
@@ -84,6 +98,12 @@ function fetchStatus() {
             updateStatusElement('status_mqtt', value_json.status.mqtt);
             updateStatusElement('espa_model', value_json.eSpa.model);
             updateStatusElement('espa_build', value_json.eSpa.update.installed_version);
+
+            if (repo != value_json.eSpa.repo || repo_owner != value_json.eSpa.repo_owner) {
+                repo = value_json.eSpa.repo;
+                repo_owner = value_json.eSpa.repo_owner;
+                updateGitHubLink();
+            }
         })
         .catch(error => {
             console.error('Error fetching status:', error);
@@ -132,9 +152,17 @@ function clearAlert() {
     pageAlertParent.hide();
 }
 
+function updateGitHubLink() {
+    const githubLink = $('#githubLink');
+    if (githubLink.length) {
+        githubLink.attr('href', `https://github.com/${repo_owner}/${repo}`);
+    }
+}
+
 window.onload = function () {
     fetchStatus();
     loadFotaData();
+    updateGitHubLink();
     setInterval(fetchStatus, 10000);
 }
 
@@ -180,7 +208,8 @@ function loadConfig() {
             document.getElementById('mqttPort').value = data.mqttPort;
             document.getElementById('mqttUsername').value = data.mqttUsername;
             document.getElementById('mqttPassword').value = data.mqttPassword;
-            document.getElementById('updateFrequency').value = data.updateFrequency;
+            document.getElementById('spaPollFreq').value = data.spaPollFreq;
+            document.getElementById('fwPollFreq').value = data.fwPollFreq;
 
             // Enable form fields and save button
             $('#config_form input').prop('disabled', false);
@@ -244,17 +273,25 @@ $(document).ready(function () {
  ***********************************************************************************************/
 
 $(document).ready(function () {
-    $('#progressDiv').hide();
-    $('#localInstallButton').prop('disabled', true);
-    $('#localUpdate').show();
-    document.getElementById('updateForm').reset();
-
     // Delegate event listener for dynamically added #fotaLink
     $(document).on('click', '#fotaLink', function (event) {
         event.preventDefault();
+        resetForm();
+        loadFotaData();
         $('#fotaModal').modal('show');
         // loadFotaData();
     });
+
+    function resetForm() {
+        $('#firmware-select').prop("selectedIndex", -1);
+        $('#updateMethod').prop("selectedIndex", -1);
+        $('#localInstallButton').prop('disabled', true);
+        $('#remoteInstallButton').prop('disabled', true);
+        document.getElementById('updateForm').reset();
+        $('#progressDiv').hide();
+        $('#remoteUpdate').hide();
+        $('#localUpdate').hide();
+    }
 
     // Enable the local install button when a file is selected
     $('#fsFile').change(updateLocalInstallButton);
@@ -268,7 +305,9 @@ $(document).ready(function () {
     };
 
     // Handle local install button click
-    $('#localInstallButton').click(async function () {
+    $('#localInstallButton').click(async function (event) {
+        event.preventDefault();
+        $('#localInstallButton').prop('disabled', true);
         const appFile = $('#appFile')[0].files[0];
         const fsFile = $('#fsFile')[0].files[0];
         let appSuccess = false, fsSuccess = false;
@@ -346,27 +385,65 @@ $(document).ready(function () {
             });
         });
     }
-}
 
     // Handle remote update installation
-    /*
-    $('#remoteInstallButton').click(function (event) {
+    $('#remoteInstallButton').off().click(async function (event) {
         event.preventDefault();
-        var selectedVersion = $('#firmware-select').val();
-        if (selectedVersion) {
-            $.ajax({
-                url: '/install',
-                type: 'POST',
-                data: { version: selectedVersion },
-                success: function (data) {
-                    showAlert('The firmware has been updated successfully. The spa will now restart to apply the changes.', 'alert-success', 'Firmware updated');
-                    $('#fotaModal').modal('hide');
-                },
-                error: function () {
-                    showAlert('The firmware update failed. Please try again.', 'alert-danger', 'Error');
-                }
-            });
+        $('#localInstallButton').prop('disabled', true);
+
+        try {
+            const version = $('#firmware-select').val();
+            const urls = await getReleaseURLs(version);
+            const urlString = (urls.appUrl || '') + '|' + (urls.fsUrl || '');
+
+            console.log('URLs:', urls);
+            console.log('URLString:', urlString);
+
+            fetch('/set', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'espa_firmware=' + urlString
+            })
+                .then(response => response.text())
+                .then(result => {
+                    console.log(result);
+                    $('#progressDiv').show();
+                    const checkUpdateStatus = setInterval(() => {
+                        fetch('/json')
+                            .then(response => response.json())
+                            .then(data => {
+                                const updateStatus = data.eSpa.update_status;
+                                const inProgress = data.eSpa.update.in_progress;
+                                const percentComplete = data.eSpa.update.update_percentage;
+
+                                $('#msg').html(`<p style="color:blue;">${updateStatus}</p>`);
+                                $('#progressBar').css('width', percentComplete + '%').attr('aria-valuenow', percentComplete).text(percentComplete + '%');
+
+                                if (!inProgress && updateStatus === "Update complete.") {
+                                    clearInterval(checkUpdateStatus);
+                                    $('#fotaModal').modal('hide');
+                                    setTimeout(() => reboot('The firmware has been updated successfully. The spa will now restart to apply the changes.'), 500);
+                                } else if (!inProgress) {
+                                    clearInterval(checkUpdateStatus);
+                                    $('#fotaModal').modal('hide');
+                                    showAlert('Error updating firmware. Please try again.', 'alert-danger', 'Error');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error fetching update status:', error);
+                                clearInterval(checkUpdateStatus);
+                                $('#fotaModal').modal('hide');
+                                showAlert('Error checking update status. Please try again.', 'alert-danger', 'Error');
+                            });
+                    }, 2000);
+                })
+                .catch(error => console.error('Error starting update:', error));
+
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('Failed to fetch release URLs or process updates.', 'alert-danger', 'Error');
         }
+        $('#localInstallButton').prop('disabled', false);
     });
 
     // Show/hide update sections based on selected update method
@@ -383,8 +460,43 @@ $(document).ready(function () {
             $('#localUpdate').hide();
         }
     });
-    */
-);
+});
+
+function getReleaseURLs(version) {
+    if (!version) return Promise.reject('Version is required');
+
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url: `https://api.github.com/repos/${repo_owner}/${repo}/releases`,
+            type: 'GET',
+            success: function (data) {
+                const release = data.find(release => release.tag_name === version);
+                if (!release) {
+                    return reject('Release not found');
+                }
+
+                let appUrl = null;
+                let fsUrl = null;
+                const model = document.getElementById('espa_model').innerText;
+
+                const appAsset = release.assets.find(asset => asset.name === `firmware_${model}_ota.bin`);
+                if (appAsset) {
+                    appUrl = appAsset.browser_download_url;
+                }
+
+                const fsAsset = release.assets.find(asset => asset.name === `spiffs_${model}.bin`);
+                if (fsAsset) {
+                    fsUrl = fsAsset.browser_download_url;
+                }
+
+                resolve({ appUrl, fsUrl });
+            },
+            error: function () {
+                reject('Failed to fetch release URLs.');
+            }
+        });
+    });
+}
 
 function loadFotaData() {
     fetch('/json')
@@ -392,55 +504,57 @@ function loadFotaData() {
         .then(value_json => {
             document.getElementById('espa_model').innerText = value_json.eSpa.model;
             document.getElementById('installedVersion').innerText = value_json.eSpa.update.installed_version;
+            console.log('model: ' + value_json.eSpa.model);
+            console.log('installed_version: ' + value_json.eSpa.update.installed_version);
+
+            $.ajax({
+            url: `https://api.github.com/repos/${repo_owner}/${repo}/releases`,
+            type: 'GET',
+            success: function (data) {
+                document.getElementById('lastestRelease').innerText = data[0].tag_name;
+
+                // Populate the select dropdown with all releases
+                const firmwareSelect = document.getElementById('firmware-select');
+                firmwareSelect.innerHTML = ''; // Clear existing options
+
+                // Add default disabled option
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.text = 'Select a version';
+                defaultOption.disabled = true;
+                defaultOption.selected = true;
+                firmwareSelect.appendChild(defaultOption);
+
+                // Add release options
+                data.forEach(release => {
+                    const option = document.createElement('option');
+                    option.value = release.tag_name;
+                    option.text = release.tag_name;
+                    firmwareSelect.appendChild(option);
+                });
+
+                // Enable the install button when a valid choice is selected
+                firmwareSelect.addEventListener('change', function () {
+                    if (firmwareSelect.value) {
+                        $('#remoteInstallButton').prop('disabled', false);
+                    } else {
+                        $('#remoteInstallButton').prop('disabled', true);
+                    }
+                });
+
+                // Check for new version
+                const latestVersion = parseVersion(data[0].tag_name);
+                const currentVersion = parseVersion(document.getElementById('installedVersion').innerText);
+                const comparison = compareVersions(currentVersion, latestVersion);
+                if (comparison < 0) {
+                    showAlert(`There is a new eSpa release available - it's version ${data[0].tag_name}. You can <a href="#" id="fotaLink" class="alert-link">update now</a>.`, 'alert-primary', "New eSpa release!");
+                }
+            },
+            error: function () {
+                showAlert('Failed to fetch eSpa release information. If this persists, take a look at our <a class="alert-link" href="https://espa.diy/troubleshooting.html">troubleshooting docs</a>.', 'alert-danger', "Error");
+            }
         })
         .catch(error => console.error('Error fetching FOTA data:', error));
-
-    $.ajax({
-        url: 'https://api.github.com/repos/wayne-love/ESPySpa/releases',
-        type: 'GET',
-        success: function (data) {
-            document.getElementById('lastestRelease').innerText = data[0].tag_name;
-
-            // Populate the select dropdown with all releases
-            const firmwareSelect = document.getElementById('firmware-select');
-            firmwareSelect.innerHTML = ''; // Clear existing options
-
-            // Add default disabled option
-            const defaultOption = document.createElement('option');
-            defaultOption.value = '';
-            defaultOption.text = 'Select a version';
-            defaultOption.disabled = true;
-            defaultOption.selected = true;
-            firmwareSelect.appendChild(defaultOption);
-
-            // Add release options
-            data.forEach(release => {
-                const option = document.createElement('option');
-                option.value = release.tag_name;
-                option.text = release.tag_name;
-                firmwareSelect.appendChild(option);
-            });
-
-            // Enable the install button when a valid choice is selected
-            firmwareSelect.addEventListener('change', function () {
-                if (firmwareSelect.value) {
-                    $('#remoteInstallButton').prop('disabled', false);
-                } else {
-                    $('#remoteInstallButton').prop('disabled', true);
-                }
-            });
-
-            // Check for new version
-            const latestVersion = parseVersion(data[0].tag_name);
-            const currentVersion = parseVersion(document.getElementById('installedVersion').innerText);
-            const comparison = compareVersions(currentVersion, latestVersion);
-            if (comparison < 0) {
-                showAlert(`There is a new eSpa release available - it's version ${data[0].tag_name}. You can <a href="#" id="fotaLink" class="alert-link">update now</a>.`, 'alert-primary', "New eSpa release!");
-            }
-        },
-        error: function () {
-            showAlert('Failed to fetch eSpa release information. If this persists, take a look at our <a class="alert-link" href="https://espa.diy/troubleshooting.html">troubleshooting docs</a>.', 'alert-danger', "Error");
-        }
     });
 }
 

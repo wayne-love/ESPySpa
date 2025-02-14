@@ -1,13 +1,10 @@
+#ifdef INCLUDE_WEBSERVER
 #include "WebUI.h"
 
 WebUI::WebUI(SpaInterface *spa, Config *config, MQTTClientWrapper *mqttClient) {
     _spa = spa;
     _config = config;
     _mqttClient = mqttClient;
-}
-
-void WebUI::setWifiManagerCallback(void (*f)()) {
-    _wifiManagerCallback = f;
 }
 
 const char * WebUI::getError() {
@@ -90,7 +87,10 @@ void WebUI::begin() {
         if (request->hasParam("mqttPort", true)) _config->MqttPort.setValue(request->getParam("mqttPort", true)->value().toInt());
         if (request->hasParam("mqttUsername", true)) _config->MqttUsername.setValue(request->getParam("mqttUsername", true)->value());
         if (request->hasParam("mqttPassword", true)) _config->MqttPassword.setValue(request->getParam("mqttPassword", true)->value());
-        if (request->hasParam("updateFrequency", true)) _config->UpdateFrequency.setValue(request->getParam("updateFrequency", true)->value().toInt());
+        if (request->hasParam("spaPollFreq", true)) _config->spaPollFreq.setValue(request->getParam("spaPollFreq", true)->value().toInt());
+#ifdef INCLUDE_UPDATES
+        if (request->hasParam("fwPollFreq", true)) _config->fwPollFreq.setValue(request->getParam("fwPollFreq", true)->value().toInt());
+#endif // INCLUDE_UPDATES
         _config->writeConfig();
         AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "Updated");
         response->addHeader("Connection", "close");
@@ -105,7 +105,10 @@ void WebUI::begin() {
         configJson += "\"mqttPort\":\"" + String(_config->MqttPort.getValue()) + "\",";
         configJson += "\"mqttUsername\":\"" + _config->MqttUsername.getValue() + "\",";
         configJson += "\"mqttPassword\":\"" + _config->MqttPassword.getValue() + "\",";
-        configJson += "\"updateFrequency\":" + String(_config->UpdateFrequency.getValue());
+#ifdef INCLUDE_UPDATES
+        configJson += "\"fwPollFreq\":" + String(_config->fwPollFreq.getValue()) + ",";
+#endif // INCLUDE_UPDATES
+        configJson += "\"spaPollFreq\":" + String(_config->spaPollFreq.getValue());
         configJson += "}";
         AsyncWebServerResponse *response = request->beginResponse(200, "application/json", configJson);
         response->addHeader("Connection", "close");
@@ -116,7 +119,7 @@ void WebUI::begin() {
         debugD("uri: %s", request->url().c_str());
         String json;
         AsyncWebServerResponse *response;
-        if (generateStatusJson(*_spa, *_mqttClient, json, true)) {
+        if (generateStatusJson(*_spa, *_mqttClient, *_config, json, true)) {
             response = request->beginResponse(200, "application/json", json);
         } else {
             response = request->beginResponse(200, "text/plain", "Error generating json");
@@ -127,29 +130,17 @@ void WebUI::begin() {
 
     // Handle /set endpoint (POST)
     server.on("/set", HTTP_POST, [this](AsyncWebServerRequest *request) {
-        // In theory with minor modification, we can reuse mqttCallback here
-        // for (uint8_t i = 0; i < request->params(); i++) updateSpaSetting("set/" + request->getParam(i)->name(), request->getParam(i)->value());
-        if (request->hasParam("temperatures_setPoint", true)) {
-            float newTemperature = request->getParam("temperatures_setPoint", true)->value().toFloat();
-            _spa->setSTMP(int(newTemperature * 10));
-            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "Temperature updated");
-            response->addHeader("Connection", "close");
-            request->send(response);
-        } else if (request->hasParam("status_datetime", true)) {
-            String p = request->getParam("status_datetime", true)->value();
-            tmElements_t tm;
-            tm.Year = CalendarYrToTm(p.substring(0, 4).toInt());
-            tm.Month = p.substring(5, 7).toInt();
-            tm.Day = p.substring(8, 10).toInt();
-            tm.Hour = p.substring(11, 13).toInt();
-            tm.Minute = p.substring(14, 16).toInt();
-            tm.Second = p.substring(17).toInt();
-            _spa->setSpaTime(makeTime(tm));
-            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "Date/Time updated");
+        debugD("uri: %s", request->url().c_str());
+
+        if (_setSpaCallback != nullptr) {
+            for (uint8_t i = 0; i < request->params(); i++) {
+                _setSpaCallback(request->getParam(i)->name(), request->getParam(i)->value());
+            }
+            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "Spa setting initiated");
             response->addHeader("Connection", "close");
             request->send(response);
         } else {
-            AsyncWebServerResponse *response = request->beginResponse(400, "text/plain", "Invalid temperature value");
+            AsyncWebServerResponse *response = request->beginResponse(400, "text/plain", "setSpaCallback not set");
             response->addHeader("Connection", "close");
             request->send(response);
         }
@@ -178,3 +169,4 @@ void WebUI::begin() {
 
     initialised = true;
 }
+#endif // INCLUDE_WEBSERVER

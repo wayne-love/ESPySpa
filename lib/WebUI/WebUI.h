@@ -1,16 +1,16 @@
+#ifdef INCLUDE_WEBSERVER
 #ifndef WEBUI_H
 #define WEBUI_H
 
 #include <Arduino.h>
-
-#include "ESPAsyncWebServer.h"
-#include <Update.h>
 #include <SPIFFS.h>
+#include <Update.h>
 
 #include "SpaInterface.h"
 #include "SpaUtils.h"
 #include "Config.h"
 #include "MQTTClientWrapper.h"
+#include "ESPAsyncWebServer.h"
 
 extern RemoteDebug Debug;
 
@@ -18,9 +18,16 @@ class WebUI {
     public:
         WebUI(SpaInterface *spa, Config *config, MQTTClientWrapper *mqttClient);
 
+        /// @brief Set the function to be called to start Wi-Fi Manager.
+        /// @param f
+        void setWifiManagerCallback(void (*f)()) {
+          _wifiManagerCallback = f;
+        }
         /// @brief Set the function to be called when properties have been updated.
         /// @param f
-        void setWifiManagerCallback(void (*f)());
+        void setSpaCallback(void (*f)(const String, const String)) {
+          _setSpaCallback = f;
+        }
         void begin();
         bool initialised = false;
 
@@ -30,6 +37,7 @@ class WebUI {
         Config *_config;
         MQTTClientWrapper *_mqttClient;
         void (*_wifiManagerCallback)() = nullptr;
+        void (*_setSpaCallback)(const String, const String) = nullptr;
 
         const char* getError();
 
@@ -150,3 +158,4 @@ $(function() {
 };
 
 #endif // WEBUI_H
+#endif // INCLUDE_WEBSERVER

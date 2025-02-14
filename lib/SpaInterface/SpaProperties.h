@@ -43,13 +43,18 @@ private:
     Property<int> MainsVoltage;
     /// @brief Internal case temperature ('C)
     Property<int> CaseTemperature;
+/*
     /// @brief 12v port current (mA)
     Property<int> PortCurrent;
-    /// @brief Current time on Spa RTC
-    // TODO #1 this should be settable.
+*/
+    /// @brief Current day of week on Spa RTC
+    /// 0 = Monday, 1 = Tuesday, ..., 6 = Sunday
+    Property<int> SpaDayOfWeek;
+        /// @brief Current time on Spa RTC
     Property<time_t> SpaTime;
     /// @brief Heater temperature ('C)
     Property<int> HeaterTemperature;
+/*
     /// @brief Pool temperature ('C). Note this seems to return rubbish most of the time.
     Property<int> PoolTemperature;
     /// @brief Water present
@@ -83,8 +88,10 @@ private:
     Property<int> Relay8;
     /// @brief Relay9 (?)
     Property<int> Relay9;
+*/
 #pragma endregion
 #pragma region R3
+/*
     // R3
     /// @brief Current limit (A)
     Property<int> CLMT;
@@ -106,6 +113,7 @@ private:
     /// See SV-Series-OEM-Install-Manual.pdf page 20.
     Property<int> LLM3;
     /// @brief Software version
+*/
     Property<String> SVER;
     /// @brief Model
     Property<String> Model; 
@@ -113,6 +121,7 @@ private:
     Property<String> SerialNo1;
     /// @brief SerialNo2
     Property<String> SerialNo2;
+/*
     /// @brief Dipswitch 1
     Property<bool> D1;
     /// @brief Dipswitch 2
@@ -135,8 +144,10 @@ private:
     Property<bool> HV;
     /// @brief MR / name clash with MR constant from specreg.h
     Property<int> SnpMR;
+*/
     /// @brief Status (Filtering, etc)
     Property<String> Status;
+/*
     /// @brief PrimeCount
     Property<int> PrimeCount;
     /// @brief Heat element current draw (A)
@@ -149,6 +160,7 @@ private:
 /// @brief HV_2
 Property<bool> HV_2;
 //
+*/
 #pragma endregion
 #pragma region R4
     // R4
@@ -156,6 +168,7 @@ Property<bool> HV_2;
     ///
     /// One of NORM, ECON, AWAY, WEEK
     Property<String> Mode;
+/*
     /// @brief Service Timer 1 (wks) 0 = off
     Property<int> Ser1_Timer;
     /// @brief Service Timer 2 (wks) 0 = off
@@ -175,6 +188,7 @@ Property<bool> HV_2;
     Property<int> AdtPoolHys;
     /// @brief  Heater temperature adaptive hysteresis
     Property<int> AdtHeaterHys;
+*/
     /// @brief Power consumtion * 10
     Property<int> Power; 
     Property<int> Power_kWh;
@@ -182,6 +196,7 @@ Property<bool> HV_2;
     Property<int> Power_Today;
     // (kWh)
     Property<int> Power_Yesterday;
+/*
     // 0 = ok
     Property<int> ThermalCutOut;
     Property<int> Test_D1;
@@ -193,6 +208,7 @@ Property<bool> HV_2;
     // 100 = 0!?
     Property<int> HPHeatSourceOffset_Cool;
     Property<int> HeatSourceOffTime;
+
     Property<int> Vari_Speed;
     Property<int> Vari_Percent;
     // 5 = Filt
@@ -201,6 +217,7 @@ Property<bool> HV_2;
     ///
     /// 5 = Filtering, 4 = Off
     Property<int> Vari_Mode;
+*/
 #pragma endregion
 #pragma region R5
     // R5
@@ -226,12 +243,16 @@ Property<bool> HV_2;
     ///
     /// 0 = off, 1 = running, 4 = auto
     Property<int> RB_TP_Pump5;
+/*
     Property<int> RB_TP_Blower;
+*/
     Property<int> RB_TP_Light;
+/*
     /// @brief Auto enabled
     ///
     /// True when auto enabled
     Property<bool> RB_TP_Auto;
+*/
     /// @brief Heating running
     ///
     /// True when heating/cooling active
@@ -240,16 +261,20 @@ Property<bool> HV_2;
     ///
     /// True when Ozone/UV is cleaning spa.
     Property<bool> RB_TP_Ozone;
+/*
     /// @brief Sleeping
     ///
     /// True when spa is sleeping due to sleep timer
     Property<bool> RB_TP_Sleep;
+*/
     /// @brief Water temperature ('C)
     Property<int> WTMP;
+/*
     /// @brief Clean cycle running
     ///
     /// True when a clean cycle is running
     Property<bool> CleanCycle;
+*/
 #pragma endregion
 #pragma region R6
     // R6
@@ -273,13 +298,16 @@ Property<bool> HV_2;
     ///
     /// min 1, max 5
     Property<int> LSPDValue;
+/*
     /// @brief Filter run time (in hours) per block
     Property<int> FiltSetHrs;
     /// @brief Filter block duration (hours)
     Property<int> FiltBlockHrs;
+*/
     /// @brief Water temperature set point ('C)
     Property<int> STMP;
     // 1 = 12 hrs
+/*
     Property<int> L_24HOURS;
     /// @brief Power save level
     ///
@@ -293,6 +321,7 @@ Property<bool> HV_2;
     ///
     /// Formula h*256+m (ie: for 20:00, integer will be 20*256+0 = 5120; for 13:47, integer will be 13*256+47 = 3375)
     Property<int> PSAV_END;
+*/
     /// @brief Sleep timer 1
     ///
     /// 128 = off, 127 = every day, 96 = weekends, 31 = weekdays
@@ -317,6 +346,7 @@ Property<bool> HV_2;
     ///
     /// Formula h*256+m (ie: for 20:00, integer will be 20*256+0 = 5120; for 13:47, integer will be 13*256+47 = 3375)
     Property<int> L_2SNZ_END;
+/*
     /// @brief Default screen for control panels
     ///
     /// 0 = WTPM
@@ -341,8 +371,10 @@ Property<bool> HV_2;
     /// 3 = SV3
     Property<int> TYPE;
     Property<int> GAS;
+*/
 #pragma endregion
 #pragma region R7
+/*
     // R7
     /// @brief Daily clean cycle start time
     ///
@@ -399,6 +431,7 @@ Property<bool> HV_2;
     ///
     /// 1 = Off
     Property<bool> HUSE;
+*/
     /// @brief Heat pump active whilst spa is in use
     ///
     /// If false then when spa is in use then heat pump will not run to reduce noise levels
@@ -408,6 +441,7 @@ Property<bool> HV_2;
     ///
     /// 0 = Auto, 1 = Heat, 2 = Cool, 3 = disabled
     Property<int> HPMP;
+/*
     /// @brief Varible pump minimum speed setting
     ///
     /// Min 20%, Max 100%
@@ -428,8 +462,10 @@ Property<bool> HV_2;
     /// Maximum speed the varible pump will run at.
     /// Min 20%, Max 100%
     Property<int> PMAX;
+*/
 #pragma endregion
 #pragma region R9
+/*
     // R9
     /// @brief Fault runtime occurance (hrs)
     Property<int> F1_HR;
@@ -452,8 +488,10 @@ Property<bool> HV_2;
     Property<bool> F1_VE;
     /// @brief Heater setpoint at time of error ('C)
     Property<int> F1_ST;
+*/
 #pragma endregion
 #pragma region RA
+/*
     // RA
     /// @brief Fault runtime occurance (hrs)
     Property<int> F2_HR;
@@ -476,8 +514,10 @@ Property<bool> HV_2;
     Property<bool> F2_VE;
     /// @brief Heater setpoint at time of error ('C)
     Property<int> F2_ST;
+*/
 #pragma endregion
 #pragma region RB
+/*
     // RB
     /// @brief Fault runtime occurance (hrs)
     Property<int> F3_HR;
@@ -500,6 +540,7 @@ Property<bool> HV_2;
     Property<bool> F3_VE;
     /// @brief Heater setpoint at time of error ('C)
     Property<int> F3_ST;
+*/
 #pragma endregion
 #pragma region RC
     // RC
@@ -533,6 +574,7 @@ Property<bool> HV_2;
     Property<int> HP_Ambient;
     /// @brief Compressor temperature ('C)
     Property<int> HP_Condensor;
+/*
     /// @brief Compressor running
     Property<bool> HP_Compressor_State;
     /// @brief Fan running
@@ -564,6 +606,7 @@ Property<bool> HV_2;
 // Attribute<int> HP_Compressor;
 // Attribute<int> HP_Pump_State;
 // Attribute<int> HP_Status;
+*/
 #pragma endregion
 #pragma region RG
     /// @brief Pump 1 install state
@@ -596,6 +639,7 @@ Property<bool> HV_2;
     /// means it is), the second part (1- above) indicates it's speed type. The third
     /// part (014 above) represents it's possible states (0 OFF, 1 ON, 4 AUTO)
     Property<String> Pump5InstallState;
+/*
     /// @brief Pump 1 is in safe state to start
     Property<bool> Pump1OkToRun;
     /// @brief Pump 2 is in safe state to start
@@ -610,19 +654,23 @@ Property<bool> HV_2;
     ///
     /// 0 = keypad unlocked, 1 = partial lock, 2 = full lock
     Property<int> LockMode;
-
+*/
 #pragma endregion
 
 
 protected:
 #pragma region R2
     boolean update_MainsCurrent(String);
+    boolean update_SpaDayOfWeek(String);
     boolean update_SpaTime(String year, String month, String day, String hour, String minute, String second);
     boolean update_MainsVoltage(String);
     boolean update_CaseTemperature(String);
+/*
     boolean update_PortCurrent(String);
+*/
     boolean update_SpaTime(String);
     boolean update_HeaterTemperature(String);
+/*
     boolean update_PoolTemperature(String);
     boolean update_WaterPresent(String);
     boolean update_AwakeMinutesRemaining(String);
@@ -639,17 +687,21 @@ protected:
     boolean update_Relay7(String);
     boolean update_Relay8(String);
     boolean update_Relay9(String);
+*/
 #pragma endregion
 #pragma region R3
+/*
     boolean update_CLMT(String);
     boolean update_PHSE(String);
     boolean update_LLM1(String);
     boolean update_LLM2(String);
     boolean update_LLM3(String);
+*/
     boolean update_SVER(String);
     boolean update_Model(String);
     boolean update_SerialNo1(String);
     boolean update_SerialNo2(String);
+/*
     boolean update_D1(String);
     boolean update_D2(String);
     boolean update_D3(String);
@@ -660,15 +712,19 @@ protected:
     boolean update_LS(String);
     boolean update_HV(String);
     boolean update_SnpMR(String);
+*/
     boolean update_Status(String);
+/*
     boolean update_PrimeCount(String);
     boolean update_EC(String);
     boolean update_HAMB(String);
     boolean update_HCON(String);
 //    boolean update_HV_2(String);
+*/
 #pragma endregion
 #pragma region R4
     boolean update_Mode(String);
+/*
     boolean update_Ser1_Timer(String);
     boolean update_Ser2_Timer(String);
     boolean update_Ser3_Timer(String);
@@ -677,10 +733,12 @@ protected:
     boolean update_PumpRunTimer(String);
     boolean update_AdtPoolHys(String);
     boolean update_AdtHeaterHys(String);
+*/
     boolean update_Power(String);
     boolean update_Power_kWh(String);
     boolean update_Power_Today(String);
     boolean update_Power_Yesterday(String);
+/*
     boolean update_ThermalCutOut(String);
     boolean update_Test_D1(String);
     boolean update_Test_D2(String);
@@ -693,6 +751,7 @@ protected:
     boolean update_Vari_Speed(String);
     boolean update_Vari_Percent(String);
     boolean update_Vari_Mode(String);
+*/
 #pragma endregion
 #pragma region R5
     // R5
@@ -703,14 +762,22 @@ protected:
     boolean update_RB_TP_Pump3(String);
     boolean update_RB_TP_Pump4(String);
     boolean update_RB_TP_Pump5(String);
+/*
     boolean update_RB_TP_Blower(String);
+*/
     boolean update_RB_TP_Light(String);
+/*
     boolean update_RB_TP_Auto(String);
+*/
     boolean update_RB_TP_Heater(String);
     boolean update_RB_TP_Ozone(String);
+/*
     boolean update_RB_TP_Sleep(String);
+*/
     boolean update_WTMP(String);
+/*
     boolean update_CleanCycle(String);
+*/
 #pragma endregion
 #pragma region R6
     boolean update_VARIValue(String);
@@ -718,19 +785,24 @@ protected:
     boolean update_CurrClr(String);
     boolean update_ColorMode(String);
     boolean update_LSPDValue(String);
+/*
     boolean update_FiltSetHrs(String);
     boolean update_FiltBlockHrs(String);
+*/
     boolean update_STMP(String);
+/*
     boolean update_L_24HOURS(String);
     boolean update_PSAV_LVL(String);
     boolean update_PSAV_BGN(String);
     boolean update_PSAV_END(String);
+*/
     boolean update_L_1SNZ_DAY(String);
     boolean update_L_2SNZ_DAY(String);
     boolean update_L_1SNZ_BGN(String);
     boolean update_L_2SNZ_BGN(String);
     boolean update_L_1SNZ_END(String);
     boolean update_L_2SNZ_END(String);
+/*
     boolean update_DefaultScrn(String);
     boolean update_TOUT(String);
     boolean update_VPMP(String);
@@ -740,8 +812,10 @@ protected:
     boolean update_ELMT(String);
     boolean update_TYPE(String);
     boolean update_GAS(String);
+*/
 #pragma endregion
 #pragma region R7
+/*
     boolean update_WCLNTime(String);
     // The following 2 may be reversed
     boolean update_TemperatureUnits(String);
@@ -764,14 +838,18 @@ protected:
     boolean update_VMAX(String);
     boolean update_AHYS(String);
     boolean update_HUSE(String);
+*/
     boolean update_HELE(String);
     boolean update_HPMP(String);
+/*
     boolean update_PMIN(String);
     boolean update_PFLT(String);
     boolean update_PHTR(String);
     boolean update_PMAX(String);
+*/
 #pragma endregion
 #pragma region R9
+/*
     boolean update_F1_HR(String);
     boolean update_F1_Time(String);
     boolean update_F1_ER(String);
@@ -783,8 +861,10 @@ protected:
     boolean update_F1_PU(String);
     boolean update_F1_VE(String);
     boolean update_F1_ST(String);
+*/
 #pragma endregion
 #pragma region RA
+/*
     boolean update_F2_HR(String);
     boolean update_F2_Time(String);
     boolean update_F2_ER(String);
@@ -796,8 +876,10 @@ protected:
     boolean update_F2_PU(String);
     boolean update_F2_VE(String);
     boolean update_F2_ST(String);
+*/
 #pragma endregion
 #pragma region RB
+/*
     boolean update_F3_HR(String);
     boolean update_F3_Time(String);
     boolean update_F3_ER(String);
@@ -809,8 +891,10 @@ protected:
     boolean update_F3_PU(String);
     boolean update_F3_VE(String);
     boolean update_F3_ST(String);
+*/
 #pragma endregion
 #pragma region RC
+/*
     // Outlet_Heater.update_Value(String);
     // Outlet_Circ.update_Value(String);
     // Outlet_Sanitise.update_Value(String);
@@ -818,6 +902,7 @@ protected:
     // Outlet_Pump2.update_Value(String);
     // Outlet_Pump4.update_Value(String);
     // Outlet_Pump5.update_Value(String);
+*/
     boolean update_Outlet_Blower(String);
 #pragma endregion
 #pragma region RE
@@ -832,6 +917,7 @@ protected:
     // HP_D3.update_Value(String);
     boolean update_HP_Ambient(String);
     boolean update_HP_Condensor(String);
+/*
     boolean update_HP_Compressor_State(String);
     boolean update_HP_Fan_State(String);
     boolean update_HP_4W_Valve(String);
@@ -855,6 +941,7 @@ protected:
 // HP_Compressor.update_Value(String);
 // HP_Pump_State.update_Value(String);
 // HP_Status.update_Value(String);
+*/
 #pragma endregion
 #pragma region RG
     boolean update_Pump1InstallState(String);
@@ -862,12 +949,14 @@ protected:
     boolean update_Pump3InstallState(String);
     boolean update_Pump4InstallState(String);
     boolean update_Pump5InstallState(String);
+/*
     boolean update_Pump1OkToRun(String);
     boolean update_Pump2OkToRun(String);
     boolean update_Pump3OkToRun(String);
     boolean update_Pump4OkToRun(String);
     boolean update_Pump5OkToRun(String);
     boolean update_LockMode(String);
+*/
 #pragma endregion
 
 
@@ -884,9 +973,15 @@ public:
     /// @return 
     int getCaseTemperature() { return CaseTemperature.getValue(); }
     void setCaseTemperatureCallback(void (*callback)(int)) { CaseTemperature.setCallback(callback); }
-
+/*
     int getPortCurrent() { return PortCurrent.getValue(); }
     void setPortCurrentCallback(void (*callback)(int)) { PortCurrent.setCallback(callback); }
+*/
+    /// @brief Gets the day of week from the spa
+    /// @return
+    int getSpaDayOfWeek() { return SpaDayOfWeek.getValue(); }
+    void SpaDayOfWeekCallback(void (*callback)(int)) { SpaDayOfWeek.setCallback(callback); }
+    const std::array <String, 7> spaDayOfWeekStrings = {"Monday","Tuesday", "Wednesday","Thursday","Friday","Saturday","Sunday"};
 
     /// @brief Gets the current time from the spa clock
     /// @return 
@@ -898,7 +993,7 @@ public:
     /// @return 
     int getHeaterTemperature() { return HeaterTemperature.getValue(); }
     void setHeaterTemperatureCallback(void (*callback)(int)) { HeaterTemperature.setCallback(callback); }
-
+/*
     int getPoolTemperature() { return PoolTemperature.getValue(); }
     void setPoolTemperatureCallback(void (*callback)(int)) { PoolTemperature.setCallback(callback); }
 
@@ -963,7 +1058,7 @@ public:
 
     int getLLM3() { return LLM3.getValue(); }
     void setLLM3Callback(void (*callback)(int)) { LLM3.setCallback(callback); }
-
+*/
     String getSVER() { return SVER.getValue(); }
     void setSVERCallback(void (*callback)(String)) { SVER.setCallback(callback); }
 
@@ -975,7 +1070,7 @@ public:
 
     String getSerialNo2() { return SerialNo2.getValue(); }
     void setSerialNo2Callback(void (*callback)(String)) { SerialNo2.setCallback(callback); }
-
+/*
     bool getD1() { return D1.getValue(); }
     void setD1Callback(void (*callback)(bool)) { D1.setCallback(callback); }
 
@@ -1005,10 +1100,10 @@ public:
 
     int getSnpMR() { return SnpMR.getValue(); }
     void setSnpMRCallback(void (*callback)(int)) { SnpMR.setCallback(callback); }
-
+*/
     String getStatus() { return Status.getValue(); }
     void setStatusCallback(void (*callback)(String)) { Status.setCallback(callback); }
-
+/*
     int getPrimeCount() { return PrimeCount.getValue(); }
     void setPrimeCountCallback(void (*callback)(int)) { PrimeCount.setCallback(callback); }
 
@@ -1022,11 +1117,11 @@ public:
 
     int getHCON() { return HCON.getValue(); }
     void setHCONCallback(void (*callback)(int)) { HCON.setCallback(callback); }
-
+*/
     String getMode() { return Mode.getValue(); }
     void setModeCallback(void (*callback)(String)) { Mode.setCallback(callback); }
     const std::array <String, 4> spaModeStrings = {"NORM","ECON", "AWAY","WEEK"};
-
+/*
     int getSer1_Timer() { return Ser1_Timer.getValue(); }
     void setSer1_TimerCallback(void (*callback)(int)) { Ser1_Timer.setCallback(callback); }
 
@@ -1054,7 +1149,7 @@ public:
     /// @return 
     int getAdtHeaterHys() { return AdtHeaterHys.getValue(); }
     void setAdtHeaterHysCallback(void (*callback)(int)) { AdtHeaterHys.setCallback(callback); }
-
+*/
     /// @brief Get current power consumption (W) multiplied by 10 (24350 = 2435.0)
     /// @return 
     int getPower() { return Power.getValue(); }
@@ -1074,7 +1169,7 @@ public:
     /// @return 
     int getPower_Yesterday() { return Power_Yesterday.getValue(); }
     void setPower_YesterdayCallback(void (*callback)(int)) { Power_Yesterday.setCallback(callback); }
-
+/*
     int getThermalCutOut() { return ThermalCutOut.getValue(); }
     void setThermalCutOutCallback(void (*callback)(int)) { ThermalCutOut.setCallback(callback); }
 
@@ -1116,7 +1211,7 @@ public:
 
     int getVari_Mode() { return Vari_Mode.getValue(); }
     void setVari_ModeCallback(void (*callback)(int)) { Vari_Mode.setCallback(callback); }
-
+*/
     int getRB_TP_Pump1() { return RB_TP_Pump1.getValue(); }
     void setRB_TP_Pump1Callback(void (*callback)(int)) { RB_TP_Pump1.setCallback(callback); }
 
@@ -1132,34 +1227,35 @@ public:
     int getRB_TP_Pump5() { return RB_TP_Pump5.getValue(); }
     void setRB_TP_Pump5Callback(void (*callback)(int)) { RB_TP_Pump5.setCallback(callback); }
     const std::array<String, 2> autoPumpOptions = {"Manual", "Auto"};
-
+/*
     int getRB_TP_Blower() { return RB_TP_Blower.getValue(); }
     void setRB_TP_BlowerCallback(void (*callback)(int)) { RB_TP_Blower.setCallback(callback); }
+*/
     const std::array <String, 2> blowerStrings = {"Variable", "Ramp"};
 
     int getRB_TP_Light() { return RB_TP_Light.getValue(); }
     void setRB_TP_LightCallback(void (*callback)(int)) { RB_TP_Light.setCallback(callback); }
-
+/*
     bool getRB_TP_Auto() { return RB_TP_Auto.getValue(); }
     void setRB_TP_AutoCallback(void (*callback)(bool)) { RB_TP_Auto.setCallback(callback); }
-
+*/
     bool getRB_TP_Heater() { return RB_TP_Heater.getValue(); }
     void setRB_TP_HeaterCallback(void (*callback)(bool)) { RB_TP_Heater.setCallback(callback); }
 
     bool getRB_TP_Ozone() { return RB_TP_Ozone.getValue(); }
     void setRB_TP_OzoneCallback(void (*callback)(bool)) { RB_TP_Ozone.setCallback(callback); }
-
+/*
     bool getRB_TP_Sleep() { return RB_TP_Sleep.getValue(); }
     void setRB_TP_SleepCallback(void (*callback)(bool)) { RB_TP_Sleep.setCallback(callback); }
-
+*/
     /// @brief Get current water temperature divide by 10 to get actual temp (384 = 38.4 )
     /// @return 
     int getWTMP() { return WTMP.getValue(); }
     void setWTMPCallback(void (*callback)(int)) { WTMP.setCallback(callback); }
-
+/*
     bool getCleanCycle() { return CleanCycle.getValue(); }
     void setCleanCycleCallback(void (*callback)(bool)) { CleanCycle.setCallback(callback); }
-
+*/
     int getVARIValue() { return VARIValue.getValue(); }
     void setVARIValueCallback(void (*callback)(int)) { VARIValue.setCallback(callback); }
 
@@ -1177,18 +1273,18 @@ public:
     int getLSPDValue() { return LSPDValue.getValue(); }
     void setLSPDValueCallback(void (*callback)(int)) { LSPDValue.setCallback(callback); }
     const std::array <String, 5> lightSpeedMap = {"1","2","3","4","5"};
-
+/*
     int getFiltSetHrs() { return FiltSetHrs.getValue(); }
     void setFiltSetHrsCallback(void (*callback)(int)) { FiltSetHrs.setCallback(callback); }
 
     int getFiltBlockHrs() { return FiltBlockHrs.getValue(); }
     void setFiltBlockHrsCallback(void (*callback)(int)) { FiltBlockHrs.setCallback(callback); }
-
+*/
     /// @brief Get water temperature setpoint divide by 10 to get actual temp (384 = 38.4 )
     /// @return 
     int getSTMP() { return STMP.getValue(); }
     void setSTMPCallback(void (*callback)(int)) { STMP.setCallback(callback); }
-
+/*
     int getL_24HOURS() { return L_24HOURS.getValue(); }
     void setL_24HOURSCallback(void (*callback)(int)) { L_24HOURS.setCallback(callback); }
 
@@ -1200,7 +1296,7 @@ public:
 
     int getPSAV_END() { return PSAV_END.getValue(); }
     void setPSAV_ENDCallback(void (*callback)(int)) { PSAV_END.setCallback(callback); }
-
+*/
     int getL_1SNZ_DAY() { return L_1SNZ_DAY.getValue(); }
     void setL_1SNZ_DAYCallback(void (*callback)(int)) { L_1SNZ_DAY.setCallback(callback); }
     const std::array <String, 11> sleepSelection = {"Off", "Everyday", "Weekends", "Weekdays", "Monday", "Tuesday", "Wednesday", "Thuesday", "Friday", "Saturday", "Sunday"};
@@ -1220,7 +1316,7 @@ public:
 
     int getL_2SNZ_END() { return L_2SNZ_END.getValue(); }
     void setL_2SNZ_ENDCallback(void (*callback)(int)) { L_2SNZ_END.setCallback(callback); }
-
+/*
     int getDefaultScrn() { return DefaultScrn.getValue(); }
     void setDefaultScrnCallback(void (*callback)(int)) { DefaultScrn.setCallback(callback); }
 
@@ -1310,14 +1406,14 @@ public:
 
     bool getHUSE() { return HUSE.getValue(); }
     void setHUSECallback(void (*callback)(bool)) { HUSE.setCallback(callback); }
-
+*/
     bool getHELE() { return HELE.getValue(); }
     void setHELECallback(void (*callback)(bool)) { HELE.setCallback(callback); }
 
     int getHPMP() { return HPMP.getValue(); }
     void setHPMPCallback(void (*callback)(int)) { HPMP.setCallback(callback); }
     const std::array <String, 4> HPMPStrings = {"Auto","Heat","Cool","Off"};
-
+/*
     int getPMIN() { return PMIN.getValue(); }
     void setPMINCallback(void (*callback)(int)) { PMIN.setCallback(callback); }
 
@@ -1464,7 +1560,7 @@ public:
 
     int getF3_ST() { return F3_ST.getValue(); }
     void setF3_STCallback(void (*callback)(int)) { F3_ST.setCallback(callback); }
-
+*/
     int getOutlet_Blower() { return Outlet_Blower.getValue(); }
     void setOutlet_BlowerCallback(void (*callback)(int)) { Outlet_Blower.setCallback(callback); }
 
@@ -1476,7 +1572,7 @@ public:
 
     int getHP_Condensor() { return HP_Condensor.getValue(); }
     void setHP_CondensorCallback(void (*callback)(int)) { HP_Condensor.setCallback(callback); }
-
+/*
     bool getHP_Compressor_State() { return HP_Compressor_State.getValue(); }
     void setHP_Compressor_StateCallback(void (*callback)(bool)) { HP_Compressor_State.setCallback(callback); }
 
@@ -1527,7 +1623,7 @@ public:
 
     int getDPMP() { return DPMP.getValue(); }
     void setDPMPCallback(void (*callback)(int)) { DPMP.setCallback(callback); }
-
+*/
     String getPump1InstallState() { return Pump1InstallState.getValue(); }
     void setPump1InstallStateCallback(void (*callback)(String)) { Pump1InstallState.setCallback(callback); }
 
@@ -1542,7 +1638,7 @@ public:
 
     String getPump5InstallState() { return Pump5InstallState.getValue(); }
     void setPump5InstallStateCallback(void (*callback)(String)) { Pump5InstallState.setCallback(callback); }
-
+/*
     bool getPump1OkToRun() { return Pump1OkToRun.getValue(); }
     void setPump1OkToRunCallback(void (*callback)(bool)) { Pump1OkToRun.setCallback(callback); }
 
@@ -1560,6 +1656,7 @@ public:
 
     int getLockMode() { return LockMode.getValue(); }
     void setLockModeCallback(void (*callback)(int)) { LockMode.setCallback(callback); }
+*/
 };
 
 #endif

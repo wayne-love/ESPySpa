@@ -42,7 +42,7 @@ jobs:
       - name: Install PlatformIO
         run: pip install platformio
       - name: Build file system image for ${{ inputs.platform }}
-        run: pio run --target buildfs -e ${{ inputs.platform }} 
+        run: pio run --target buildfs -e ${{ inputs.platform }}
       - name: Build for ${{ inputs.platform }}
         run: pio run -e ${{ inputs.platform }} -t mergebin
       #- name: Display firmware files
