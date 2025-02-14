@@ -198,6 +198,7 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, Config 
   if (second(si.getSpaTime())<10) s = "0"+s;
 
   json["status"]["datetime"]=y+"-"+m+"-"+d+" "+h+":"+min+":"+s;
+  json["status"]["dayOfWeek"]=si.spaDayOfWeekStrings[si.getSpaDayOfWeek()];
 
   json["blower"]["state"] = si.getOutlet_Blower()==2? "OFF" : "ON";
   json["blower"]["mode"] = si.getOutlet_Blower()==1? "Ramp" : "Variable";
