@@ -381,6 +381,14 @@ void mqttHaAutoDiscovery() {
   generateTextAdJSON(output, ADConf, spa, discoveryTopic, "[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}");
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
+  ADConf.displayName = "Day of Week";
+  ADConf.valueTemplate = "{{ value_json.status.dayOfWeek }}";
+  ADConf.propertyId = "status_dayOfWeek";
+  ADConf.deviceClass = "";
+  ADConf.entityCategory = "config";
+  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.spaDayOfWeekStrings);
+  mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
+
   ADConf.displayName = "Sleep Timer 1 Begin";
   ADConf.valueTemplate = "{{ value_json.sleepTimers.timer1.begin }}";
   ADConf.propertyId = "sleepTimers_1_begin";
@@ -497,6 +505,13 @@ void setSpaProperty(String property, String p) {
     tm.Minute=p.substring(14,16).toInt();
     tm.Second=p.substring(17).toInt();
     si.setSpaTime(makeTime(tm));
+  } else if (property == "status_dayOfWeek") {
+    for (int i = 0; i < si.spaDayOfWeekStrings.size(); i++) {
+      if (si.spaDayOfWeekStrings[i] == p) {
+      si.setSpaDayOfWeek(i);
+      break;
+      }
+    }
   } else if (property == "lights_state") {
     si.setRB_TP_Light(p=="ON"?1:0);
   } else if (property == "lights_effect") {
