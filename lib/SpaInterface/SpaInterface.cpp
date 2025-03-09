@@ -152,9 +152,18 @@ bool SpaInterface::setHELE(int mode){
 /// @return 
 bool SpaInterface::setSTMP(int temp){
     debugD("setSTMP - %i", temp);
+
+    // check the temperate is within the valid range
+    if (temp < 50 || temp > 410) {
+        return false;
+    }
+    if (temp % 2 != 0) {
+        temp++;
+    }
+
     String stemp = String(temp);
 
-    if (sendCommandCheckResult("W40:" + stemp,stemp)) {
+    if (sendCommandCheckResult("W40:" + stemp, stemp)) {
         update_STMP(stemp);
         return true;
     }
