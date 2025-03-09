@@ -548,13 +548,26 @@ void SpaInterface::updateStatus() {
     debugD("Update status called");
     sendCommand("RF");
 
-    _nextUpdateDue = millis() + FAILEDREADFREQUENCY;    
-    if (readStatus()) {
-        debugD("readStatus returned true");
-        _nextUpdateDue = millis() + (_updateFrequency * 1000);
-        _initialised = true;
-        if (updateCallback != nullptr) { updateCallback(); }
+    // have two tries at reading the status, then back off...
+    for (size_t i = 0; i < 2; i++) {
+       if (readStatus()) {
+            debugD("readStatus returned true");
+            _initialised = true;
+            if (updateCallback != nullptr) { updateCallback(); }
+            break;
+       } else {
+            debugD("readStatus returned false");
+            delay(FAILEDREADFREQUENCY);
+       }
     }
+
+    if (_resultRegistersDirty) {
+        flushSerialReadBuffer();
+        _resultRegistersDirty = false;
+    }
+
+    _nextUpdateDue = millis() + (_updateFrequency * 1000);
+
 }
 
 
