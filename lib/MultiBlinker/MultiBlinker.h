@@ -19,8 +19,9 @@ extern RemoteDebug Debug;
 const int KNIGHT_RIDER = -1;                    // Knight Rider animation or 2000ms blink
 const int STATE_NONE = 0;                       // ON: (nothing)
 const int STATE_STARTED_WIFI_AP     = 15;       // ON: ALL or solid on
-const int STATE_WIFI_NOT_CONNECTED  = 1;        // ON: 4 or 100ms blink
-const int STATE_MQTT_NOT_CONNECTED  = 4;        // ON: 2 or 500ms blink
+const int STATE_WIFI_NOT_CONNECTED  = 1;        // ON: LED 4 or 100ms blink
+const int STATE_WAITING_FOR_SPA     = 2;        // ON: LED 3 or 1000ms blink
+const int STATE_MQTT_NOT_CONNECTED  = 4;        // ON: LED 2 or 500ms blink
 
 const int MULTI_BLINKER_INTERVAL = 100;
 

@@ -5,7 +5,6 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <RemoteDebug.h>
-#include <LittleFS.h>
 
 extern RemoteDebug Debug;
 
@@ -70,7 +69,21 @@ public:
     Setting<String> MqttUsername = Setting<String>("MqttUsername");
     Setting<String> MqttPassword = Setting<String>("MqttPassword");
     Setting<String> SpaName = Setting<String>("SpaName", "eSpa");
-    Setting<int> UpdateFrequency = Setting<int>("UpdateFrequency", 60, 10, 300);
+    Setting<int> spaPollFreq = Setting<int>("spaPollFrequency", 60, 10, 300);
+#ifdef INCLUDE_UPDATES
+    Setting<int> fwPollFreq = Setting<int>("firmwareUpdateCheckFrequency", 24, 0, 1000);
+
+    // The following settings aren't saved but are used as in memory storage
+    Setting<String> latestVersion = Setting<String>("latestVersion", "unknown");
+    Setting<int> updateAvailable = Setting<int>("updateAvailable", 0, 0, 1);
+    Setting<String> releaseNotes = Setting<String>("releaseNotes", "unknown");
+    Setting<String> releaseUrl = Setting<String>("releaseUrl", "unknown");
+    Setting<String> firmwareUrl = Setting<String>("firmwareUrl");
+    Setting<String> spiffsUrl = Setting<String>("spiffsUrl");
+    Setting<int> updateInProgress = Setting<int>("updateInProgress", 0, 0, 1);
+    Setting<int> updatePercentage = Setting<int>("updatePercentage", 0, 0, 100);
+    Setting<String> updateStatus = Setting<String>("updateStatus", "idle");
+#endif // INCLUDE_UPDATES
 };
 
 class Config : public ControllerConfig {
@@ -86,9 +99,6 @@ public:
     void setCallback(void (*callback)(const char*, T)) {
         Setting<T>::setCallback(callback);
     }
-private:
-    bool readConfigFile();          // Read configuration from file
-    void writeConfigFile();         // Write configuration to file
 
 };
 

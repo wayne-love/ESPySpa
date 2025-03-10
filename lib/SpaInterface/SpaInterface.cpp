@@ -152,9 +152,18 @@ bool SpaInterface::setHELE(int mode){
 /// @return 
 bool SpaInterface::setSTMP(int temp){
     debugD("setSTMP - %i", temp);
+
+    // check the temperate is within the valid range
+    if (temp < 50 || temp > 410) {
+        return false;
+    }
+    if (temp % 2 != 0) {
+        temp++;
+    }
+
     String stemp = String(temp);
 
-    if (sendCommandCheckResult("W40:" + stemp,stemp)) {
+    if (sendCommandCheckResult("W40:" + stemp, stemp)) {
         update_STMP(stemp);
         return true;
     }
@@ -305,6 +314,18 @@ bool SpaInterface::setCurrClr(int mode){
     return false;
 }
 
+bool SpaInterface::setSpaDayOfWeek(int d){
+    debugD("setSpaDayOfWeek - %i", d);
+
+    String sd = String(d);
+
+    if (sendCommandCheckResult("S06:"+sd,sd)) {
+        update_SpaDayOfWeek(sd);
+        return true;
+    }
+    return false;
+}
+
 bool SpaInterface::setSpaTime(time_t t){
     debugD("setSpaTime");
 
@@ -313,21 +334,29 @@ bool SpaInterface::setSpaTime(time_t t){
 
     tmp = String(year(t));
     outcome = sendCommandCheckResult("S01:"+tmp, tmp);
+    delay(100);
 
     tmp = String(month(t));
     outcome = outcome && sendCommandCheckResult("S02:"+tmp,tmp);
+    delay(100);
 
     tmp = String(day(t));
     outcome = outcome && sendCommandCheckResult("S03:"+tmp,tmp);
+    delay(100);
     
     tmp = String(hour(t));
     outcome = outcome && sendCommandCheckResult("S04:"+tmp,tmp);
+    delay(100);
     
     tmp = String(minute(t));
     outcome = outcome && sendCommandCheckResult("S05:"+tmp,tmp);
+    delay(100);
     
-    tmp = String(second(t));
-    outcome = outcome && sendCommandCheckResult("S06:"+tmp,tmp);
+    int weekDay = weekday(t); // day of the week (1-7), Sunday is day 1 (Arduino Time Library)
+    // Convert to the format required by Spa: day of the week (0-6), Monday is day 0
+    if (weekDay == 1) weekDay = 6;
+    else weekDay -= 2;
+    outcome = outcome && setSpaDayOfWeek(weekDay);
     
     return outcome;
 
@@ -396,26 +425,47 @@ bool SpaInterface::readStatus() {
     int registerError = 0;
     validStatusResponse = false;
     String statusResponseTmp = "";
+    int majorFirmwarwVersion = 0;
+
+    if (_initialised) {
+        uint spaceIndex = getSVER().indexOf(' ', 4);
+        if (spaceIndex != -1) {
+            majorFirmwarwVersion = getSVER().substring(4, spaceIndex).toInt(); // Skip the 'V' character
+        }
+        debugV("Firmware: %s, majorFirmwareVersion: %i", getSVER().c_str(), majorFirmwarwVersion);
+    }
 
     while (field < statusResponseMaxFields)
     {
         statusResponseRaw[field] = port.readStringUntil(',');
         debugV("(%i,%s)",field,statusResponseRaw[field].c_str());
 
-        statusResponseTmp = statusResponseTmp + statusResponseRaw[field]+",";
-
         if (statusResponseRaw[field].isEmpty()) { // If we get a empty field then we've had a bad read.
             debugE("Throwing exception - null string");
+            debugV("registerCounter: %i, majorFirmwarwVersion: %i", registerCounter, majorFirmwarwVersion);
             return false;
         }
         if (field == 0 && !statusResponseRaw[field].startsWith("RF:")) { // If the first field is not "RF:" stop we don't have the start of the register
             debugE("Throwing exception - field: %i, value: %s", field, statusResponseRaw[field].c_str());
             return false;
         }
-        // if we have reached a colon we are at the end of the current register
-        // OR
-        // if we are in register 11 (the last register) and have reached the minimum size we should stop
-        if (statusResponseRaw[field][0] == ':' || (registerCounter == 11 && currentRegisterSize >= registerMinSize[registerCounter])) {
+        // if we have reached an end of line, we are at the end of the current register
+        // we cut the reading of the last register short, otherwise we hit a 250ms delay on the last field
+        if ((field > 0 && statusResponseRaw[field][statusResponseRaw[field].length() - 1] == '\n')
+            || (registerCounter == 11 && currentRegisterSize >= registerMinSize[registerCounter])
+            || (majorFirmwarwVersion < 3 && registerCounter == 10 && currentRegisterSize >= registerMinSize[registerCounter])) {
+            // V2 have the colon as part of the last field. To standardise the response we will split the field
+            if (majorFirmwarwVersion < 3 && statusResponseRaw[field][0] != ':') {
+                int colonPos = statusResponseRaw[field].indexOf(':');
+                statusResponseRaw[field+1] = statusResponseRaw[field].substring(colonPos);
+                debugV("Splitting field: %i, value: %s", field+1, statusResponseRaw[field+1].c_str());
+                statusResponseRaw[field] = statusResponseRaw[field].substring(0, colonPos);
+                debugV("Splitting field: %i, value: %s", field, statusResponseRaw[field].c_str());
+                statusResponseTmp = statusResponseTmp + statusResponseRaw[field]+","; // Add the first part of the split field to the response,
+                // the second part will be added below this if block
+                field++;
+                currentRegisterSize++;
+            }
             debugV("Completed reading register: %s, number: %i, total fields counted: %i, minimum fields: %i", statusResponseRaw[field-currentRegisterSize+1], registerCounter, currentRegisterSize, registerMinSize[registerCounter]);
             if (registerMinSize[registerCounter] > currentRegisterSize) {
                 debugE("Throwing exception - not enough fields in register: %s number: %i, total fields counted: %i, minimum fields: %i", statusResponseRaw[field-currentRegisterSize+1], registerCounter, currentRegisterSize, registerMinSize[registerCounter]);
@@ -424,8 +474,11 @@ bool SpaInterface::readStatus() {
             registerCounter++;
             currentRegisterSize = 0;
         }
+
+        statusResponseTmp = statusResponseTmp + statusResponseRaw[field]+",";
+
         // If we reach the last register we have finished reading...
-        if (registerCounter >= 12) break;
+        if (registerCounter >= 12 || (majorFirmwarwVersion < 3 && registerCounter >= 11)) break;
 
         if (!_initialised) { // We only have to set these on the first read, they never change after that.
             if (statusResponseRaw[field] == "R2") R2 = field;
@@ -440,6 +493,14 @@ bool SpaInterface::readStatus() {
             else if (statusResponseRaw[field] == "RC") RC = field;
             else if (statusResponseRaw[field] == "RE") RE = field;
             else if (statusResponseRaw[field] == "RG") RG = field;
+
+            if (registerCounter == 2 && R3 > 0 && currentRegisterSize == 7) {
+                uint spaceIndex = getSVER().indexOf(' ', 4);
+                if (spaceIndex != -1) {
+                    majorFirmwarwVersion = getSVER().substring(4, spaceIndex).toInt(); // Skip the 'V' character
+                }
+                debugV("Firmware: %s, majorFirmwarwVersion: %i", statusResponseRaw[R3+6].c_str(), majorFirmwarwVersion);
+            }
         }
 
 
@@ -452,7 +513,7 @@ bool SpaInterface::readStatus() {
 
     statusResponse.update_Value(statusResponseTmp);
 
-    if (registerCounter < 12) {
+    if ((majorFirmwarwVersion > 2 && registerCounter < 12) || (majorFirmwarwVersion < 3 && registerCounter < 11)) {
         debugE("Throwing exception - not enough registers, we only read: %i", registerCounter);
         return false;
     }
@@ -462,7 +523,7 @@ bool SpaInterface::readStatus() {
         return false;
     }
 
-    if (field < statusResponseMinFields) {
+    if ((majorFirmwarwVersion > 2 && field < statusResponseMinFields) || (majorFirmwarwVersion < 3 && field < statusResponseV2MinFields)) {
         debugE("Throwing exception - %i fields read expecting at least %i",field, statusResponseMinFields);
         return false;
     }
@@ -487,13 +548,26 @@ void SpaInterface::updateStatus() {
     debugD("Update status called");
     sendCommand("RF");
 
-    _nextUpdateDue = millis() + FAILEDREADFREQUENCY;    
-    if (readStatus()) {
-        debugD("readStatus returned true");
-        _nextUpdateDue = millis() + (_updateFrequency * 1000);
-        _initialised = true;
-        if (updateCallback != nullptr) { updateCallback(); }
+    // have two tries at reading the status, then back off...
+    for (size_t i = 0; i < 2; i++) {
+       if (readStatus()) {
+            debugD("readStatus returned true");
+            _initialised = true;
+            if (updateCallback != nullptr) { updateCallback(); }
+            break;
+       } else {
+            debugD("readStatus returned false");
+            delay(FAILEDREADFREQUENCY);
+       }
     }
+
+    if (_resultRegistersDirty) {
+        flushSerialReadBuffer();
+        _resultRegistersDirty = false;
+    }
+
+    _nextUpdateDue = millis() + (_updateFrequency * 1000);
+
 }
 
 
@@ -529,9 +603,13 @@ void SpaInterface::updateMeasures() {
     update_MainsCurrent(statusResponseRaw[R2+1]);
     update_MainsVoltage(statusResponseRaw[R2+2]);
     update_CaseTemperature(statusResponseRaw[R2+3]);
+/*
     update_PortCurrent(statusResponseRaw[R2+4]);
+*/
+    update_SpaDayOfWeek(statusResponseRaw[R2+5]);
     update_SpaTime(statusResponseRaw[R2+11], statusResponseRaw[R2+10], statusResponseRaw[R2+9], statusResponseRaw[R2+6], statusResponseRaw[R2+7], statusResponseRaw[R2+8]);
     update_HeaterTemperature(statusResponseRaw[R2+12]);
+/*
     update_PoolTemperature(statusResponseRaw[R2+13]);
     update_WaterPresent(statusResponseRaw[R2+14]);
     update_AwakeMinutesRemaining(statusResponseRaw[R2+16]);
@@ -548,17 +626,21 @@ void SpaInterface::updateMeasures() {
     update_Relay7(statusResponseRaw[R2+27]);
     update_Relay8(statusResponseRaw[R2+28]);
     update_Relay9(statusResponseRaw[R2+29]); 
+*/
     #pragma endregion
     #pragma region R3
+/*
     update_CLMT(statusResponseRaw[R3+1]);
     update_PHSE(statusResponseRaw[R3+2]);
     update_LLM1(statusResponseRaw[R3+3]);
     update_LLM2(statusResponseRaw[R3+4]);
     update_LLM3(statusResponseRaw[R3+5]);
+*/
     update_SVER(statusResponseRaw[R3+6]);
     update_Model(statusResponseRaw[R3+7]); 
     update_SerialNo1(statusResponseRaw[R3+8]);
     update_SerialNo2(statusResponseRaw[R3+9]); 
+/*
     update_D1(statusResponseRaw[R3+10]);
     update_D2(statusResponseRaw[R3+11]);
     update_D3(statusResponseRaw[R3+12]);
@@ -569,15 +651,19 @@ void SpaInterface::updateMeasures() {
     update_LS(statusResponseRaw[R3+17]);
     update_HV(statusResponseRaw[R3+18]);
     update_SnpMR(statusResponseRaw[R3+19]);
+*/
     update_Status(statusResponseRaw[R3+20]);
+/*
     update_PrimeCount(statusResponseRaw[R3+21]);
     update_EC(statusResponseRaw[R3+22]);
     update_HAMB(statusResponseRaw[R3+23]);
     update_HCON(statusResponseRaw[R3+24]);
     // update_HV_2(statusResponseRaw[R3+25]);
+*/
     #pragma endregion
     #pragma region R4
     update_Mode(statusResponseRaw[R4+1]);
+/*
     update_Ser1_Timer(statusResponseRaw[R4+2]);
     update_Ser2_Timer(statusResponseRaw[R4+3]);
     update_Ser3_Timer(statusResponseRaw[R4+4]);
@@ -586,10 +672,12 @@ void SpaInterface::updateMeasures() {
     update_PumpRunTimer(statusResponseRaw[R4+7]);
     update_AdtPoolHys(statusResponseRaw[R4+8]);
     update_AdtHeaterHys(statusResponseRaw[R4+9]);
+*/
     update_Power(statusResponseRaw[R4+10]);
     update_Power_kWh(statusResponseRaw[R4+11]);
     update_Power_Today(statusResponseRaw[R4+12]);
     update_Power_Yesterday(statusResponseRaw[R4+13]);
+/*
     update_ThermalCutOut(statusResponseRaw[R4+14]);
     update_Test_D1(statusResponseRaw[R4+15]);
     update_Test_D2(statusResponseRaw[R4+16]);
@@ -602,19 +690,26 @@ void SpaInterface::updateMeasures() {
     update_Vari_Speed(statusResponseRaw[R4+24]);
     update_Vari_Percent(statusResponseRaw[R4+25]);
     update_Vari_Mode(statusResponseRaw[R4+23]);
+*/
     #pragma endregion
     #pragma region R5
     //R5
     // Unknown encoding - TouchPad2.updateValue();
     // Unknown encoding - TouchPad1.updateValue();
     //RB_TP_Blower.updateValue(statusResponseRaw[R5 + 5]);
+/*
     update_RB_TP_Sleep(statusResponseRaw[R5 + 10]);
+*/
     update_RB_TP_Ozone(statusResponseRaw[R5 + 11]);
     update_RB_TP_Heater(statusResponseRaw[R5 + 12]);
+/*
     update_RB_TP_Auto(statusResponseRaw[R5 + 13]);
+*/
     update_RB_TP_Light(statusResponseRaw[R5 + 14]);
     update_WTMP(statusResponseRaw[R5 + 15]);
+/*
     update_CleanCycle(statusResponseRaw[R5 + 16]);
+*/
     update_RB_TP_Pump1(statusResponseRaw[R5 + 18]);
     update_RB_TP_Pump2(statusResponseRaw[R5 + 19]);
     update_RB_TP_Pump3(statusResponseRaw[R5 + 20]);
@@ -627,30 +722,38 @@ void SpaInterface::updateMeasures() {
     update_CurrClr(statusResponseRaw[R6 + 3]);
     update_ColorMode(statusResponseRaw[R6 + 4]);
     update_LSPDValue(statusResponseRaw[R6 + 5]);
+/*
     update_FiltSetHrs(statusResponseRaw[R6 + 6]);
     update_FiltBlockHrs(statusResponseRaw[R6 + 7]);
+*/
     update_STMP(statusResponseRaw[R6 + 8]);
+/*
     update_L_24HOURS(statusResponseRaw[R6 + 9]);
     update_PSAV_LVL(statusResponseRaw[R6 + 10]);
     update_PSAV_BGN(statusResponseRaw[R6 + 11]);
     update_PSAV_END(statusResponseRaw[R6 + 12]);
+*/
     update_L_1SNZ_DAY(statusResponseRaw[R6 + 13]);
     update_L_2SNZ_DAY(statusResponseRaw[R6 + 14]);
     update_L_1SNZ_BGN(statusResponseRaw[R6 + 15]);
     update_L_2SNZ_BGN(statusResponseRaw[R6 + 16]);
     update_L_1SNZ_END(statusResponseRaw[R6 + 17]);
     update_L_2SNZ_END(statusResponseRaw[R6 + 18]);
+/*
     update_DefaultScrn(statusResponseRaw[R6 + 19]);
     update_TOUT(statusResponseRaw[R6 + 20]);
     update_VPMP(statusResponseRaw[R6 + 21]);
     update_HIFI(statusResponseRaw[R6 + 22]);
     update_BRND(statusResponseRaw[R6 + 23]);
+    // Note: We only have 23 registers in V2 firmware
     update_PRME(statusResponseRaw[R6 + 24]);
     update_ELMT(statusResponseRaw[R6 + 25]);
     update_TYPE(statusResponseRaw[R6 + 26]);
     update_GAS(statusResponseRaw[R6 + 27]);
+*/
     #pragma endregion
     #pragma region R7
+/*
     update_WCLNTime(statusResponseRaw[R7 + 1]);
     // The following 2 may be reversed
     update_TemperatureUnits(statusResponseRaw[R7 + 3]);
@@ -677,14 +780,18 @@ void SpaInterface::updateMeasures() {
     update_VMAX(statusResponseRaw[R7 + 22]);
     update_AHYS(statusResponseRaw[R7 + 23]);
     update_HUSE(statusResponseRaw[R7 + 24]);
+*/
     update_HELE(statusResponseRaw[R7 + 25]);
     update_HPMP(statusResponseRaw[R7 + 26]);
+/*
     update_PMIN(statusResponseRaw[R7 + 27]);
     update_PFLT(statusResponseRaw[R7 + 28]);
     update_PHTR(statusResponseRaw[R7 + 29]);
     update_PMAX(statusResponseRaw[R7 + 30]);
+*/
     #pragma endregion
     #pragma region R9
+/*
     update_F1_HR(statusResponseRaw[R9 + 2]);
     update_F1_Time(statusResponseRaw[R9 + 3]);
     update_F1_ER(statusResponseRaw[R9 + 4]);
@@ -696,8 +803,10 @@ void SpaInterface::updateMeasures() {
     update_F1_PU(statusResponseRaw[R9 + 10]);
     update_F1_VE(statusResponseRaw[R9 + 11]);
     update_F1_ST(statusResponseRaw[R9 + 12]);
+*/
     #pragma endregion
     #pragma region RA
+/*
     update_F2_HR(statusResponseRaw[RA + 2]);
     update_F2_Time(statusResponseRaw[RA + 3]);
     update_F2_ER(statusResponseRaw[RA + 4]);
@@ -709,8 +818,10 @@ void SpaInterface::updateMeasures() {
     update_F2_PU(statusResponseRaw[RA + 10]);
     update_F2_VE(statusResponseRaw[RA + 11]);
     update_F2_ST(statusResponseRaw[RA + 12]);
+*/
     #pragma endregion
     #pragma region RB
+/*
     update_F3_HR(statusResponseRaw[RB + 2]);
     update_F3_Time(statusResponseRaw[RB + 3]);
     update_F3_ER(statusResponseRaw[RB + 4]);
@@ -722,8 +833,10 @@ void SpaInterface::updateMeasures() {
     update_F3_PU(statusResponseRaw[RB + 10]);
     update_F3_VE(statusResponseRaw[RB + 11]);
     update_F3_ST(statusResponseRaw[RB + 12]);
+*/
     #pragma endregion
     #pragma region RC
+/*
     //Outlet_Heater.updateValue(statusResponseRaw[]);
     //Outlet_Circ.updateValue(statusResponseRaw[]);
     //Outlet_Sanitise.updateValue(statusResponseRaw[]);
@@ -731,6 +844,7 @@ void SpaInterface::updateMeasures() {
     //Outlet_Pump2.updateValue(statusResponseRaw[]);
     //Outlet_Pump4.updateValue(statusResponseRaw[]);
     //Outlet_Pump5.updateValue(statusResponseRaw[]);
+*/
     update_Outlet_Blower(statusResponseRaw[RC + 10]);
     #pragma endregion
     #pragma region RE
@@ -745,6 +859,7 @@ void SpaInterface::updateMeasures() {
     //HP_D3.updateValue(statusResponseRaw[]);
     update_HP_Ambient(statusResponseRaw[RE + 10]);
     update_HP_Condensor(statusResponseRaw[RE + 11]);
+/*
     update_HP_Compressor_State(statusResponseRaw[RE + 12]);
     update_HP_Fan_State(statusResponseRaw[RE + 13]);
     update_HP_4W_Valve(statusResponseRaw[RE + 14]);
@@ -768,19 +883,26 @@ void SpaInterface::updateMeasures() {
     //HP_Compressor.updateValue(statusResponseRaw[]);
     //HP_Pump_State.updateValue(statusResponseRaw[]);
     //HP_Status.updateValue(statusResponseRaw[]);
+*/
     #pragma endregion
+
+    // There is no RG register in V2 firmware
+    if (RG < 0) return;
+
     #pragma region RG
     update_Pump1InstallState(statusResponseRaw[RG + 7]);
     update_Pump2InstallState(statusResponseRaw[RG + 8]);
     update_Pump3InstallState(statusResponseRaw[RG + 9]);
     update_Pump4InstallState(statusResponseRaw[RG + 10]);
     update_Pump5InstallState(statusResponseRaw[RG + 11]);
+/*
     update_Pump1OkToRun(statusResponseRaw[RG + 1]);
     update_Pump2OkToRun(statusResponseRaw[RG + 2]);
     update_Pump3OkToRun(statusResponseRaw[RG + 3]);
     update_Pump4OkToRun(statusResponseRaw[RG + 4]);
     update_Pump5OkToRun(statusResponseRaw[RG + 5]);
     update_LockMode(statusResponseRaw[RG + 12]);
+*/
     #pragma endregion
 
 };
