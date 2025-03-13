@@ -17,6 +17,8 @@ void WebUI::begin() {
         request->send(200, "text/plain", "Rebooting ESP...");
         debugD("Rebooting...");
         delay(200);
+        request->client()->setNoDelay(true);
+        request->client()->stop();
         ESP.restart();
     });
 
