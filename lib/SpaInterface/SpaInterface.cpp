@@ -409,6 +409,18 @@ bool SpaInterface::setMode(String mode){
     return false;
 }
 
+int SpaInterface::timedRead() {
+    int c;
+    uint _startMillis = millis();
+    uint _timeout = port.getTimeout();
+    do {
+        c = port.read();
+        if(c >= 0) {
+            return c;
+        }
+    } while(millis() - _startMillis < _timeout);
+    return -1;     // -1 indicates timeout
+}
 
 bool SpaInterface::readStatus() {
 
@@ -435,50 +447,76 @@ bool SpaInterface::readStatus() {
         debugV("Firmware: %s, majorFirmwareVersion: %i", getSVER().c_str(), majorFirmwarwVersion);
     }
 
+    // read the first field and validate the response
+    statusResponseRaw[field] = port.readStringUntil(',');
+    debugV("(%i,%s)",field,statusResponseRaw[field].c_str());
+    field++;
+    if (field == 0 && !statusResponseRaw[field].startsWith("RF:")) { // If the first field is not "RF:" stop we don't have the start of the register
+        debugE("Throwing exception - field: %i, value: %s", field, statusResponseRaw[field].c_str());
+        return false;
+    }
+
+    bool lastByteWasColon = false;
     while (field < statusResponseMaxFields)
     {
-        statusResponseRaw[field] = port.readStringUntil(',');
+        String registerData = "";
+        bool isEndOfLine = false;
+        bool isEndOfData = false;
+
+        // This block is based on port.readStringUntil(',') but adds handling for ':' and '\n' characters
+        int byte = timedRead();
+        while(byte >= 0 && byte != ',') {
+            if (lastByteWasColon) {
+                registerData += ':'; // Add the colon to the buffer'
+            }
+            if (byte == ':' && registerData.length() > 0) {
+                debugV("Read \":\", at end of field: %s, register number: %i, number: %i, total fields counted: %i, minimum fields: %i", statusResponseRaw[field-currentRegisterSize], field, registerCounter, currentRegisterSize, registerMinSize[registerCounter]);
+                lastByteWasColon = true;
+                break; // If we reach a colon and we have data in the buffer, we have reached the end of the current field
+            } else {
+                lastByteWasColon = false;
+            }
+            registerData += (char)byte; // Append to buffer
+            if (byte == '\n') {
+                isEndOfLine = true;
+                if (registerCounter >= 11 || (majorFirmwarwVersion < 3 && registerCounter >= 10)) {
+                    debugV("Read \"\\n\", at end of final register: %s, register number: %i, number: %i, total fields counted: %i, minimum fields: %i", statusResponseRaw[field-currentRegisterSize], field, registerCounter, currentRegisterSize, registerMinSize[registerCounter]);
+                    isEndOfData = true;
+                    break; // If we reach the last register we have finished reading...
+                }
+            }
+            byte = timedRead();
+        }
+
+        statusResponseRaw[field] = registerData;
         debugV("(%i,%s)",field,statusResponseRaw[field].c_str());
 
-        if (statusResponseRaw[field].isEmpty()) { // If we get a empty field then we've had a bad read.
-            debugE("Throwing exception - null string");
-            debugV("registerCounter: %i, majorFirmwarwVersion: %i", registerCounter, majorFirmwarwVersion);
-            return false;
-        }
-        if (field == 0 && !statusResponseRaw[field].startsWith("RF:")) { // If the first field is not "RF:" stop we don't have the start of the register
-            debugE("Throwing exception - field: %i, value: %s", field, statusResponseRaw[field].c_str());
-            return false;
-        }
         // if we have reached an end of line, we are at the end of the current register
-        // we cut the reading of the last register short, otherwise we hit a 250ms delay on the last field
-        if ((field > 0 && statusResponseRaw[field][statusResponseRaw[field].length() - 1] == '\n')
-            || (registerCounter == 11 && currentRegisterSize >= registerMinSize[registerCounter])
-            || (majorFirmwarwVersion < 3 && registerCounter == 10 && currentRegisterSize >= registerMinSize[registerCounter])) {
-            // V2 have the colon as part of the last field. To standardise the response we will split the field
-            if (majorFirmwarwVersion < 3 && statusResponseRaw[field][0] != ':') {
-                int colonPos = statusResponseRaw[field].indexOf(':');
-                statusResponseRaw[field+1] = statusResponseRaw[field].substring(colonPos);
-                debugV("Splitting field: %i, value: %s", field+1, statusResponseRaw[field+1].c_str());
-                statusResponseRaw[field] = statusResponseRaw[field].substring(0, colonPos);
-                debugV("Splitting field: %i, value: %s", field, statusResponseRaw[field].c_str());
-                statusResponseTmp = statusResponseTmp + statusResponseRaw[field]+","; // Add the first part of the split field to the response,
-                // the second part will be added below this if block
-                field++;
-                currentRegisterSize++;
-            }
-            debugV("Completed reading register: %s, number: %i, total fields counted: %i, minimum fields: %i", statusResponseRaw[field-currentRegisterSize+1], registerCounter, currentRegisterSize, registerMinSize[registerCounter]);
+        if (isEndOfLine) {
+            debugV("Completed reading register: %s, number: %i, total fields counted: %i, minimum fields: %i", statusResponseRaw[field-currentRegisterSize], registerCounter, currentRegisterSize, registerMinSize[registerCounter]);
             if (registerMinSize[registerCounter] > currentRegisterSize) {
-                debugE("Throwing exception - not enough fields in register: %s number: %i, total fields counted: %i, minimum fields: %i", statusResponseRaw[field-currentRegisterSize+1], registerCounter, currentRegisterSize, registerMinSize[registerCounter]);
+                debugE("Throwing exception - not enough fields in register: %s number: %i, total fields counted: %i, minimum fields: %i", statusResponseRaw[field-currentRegisterSize], registerCounter, currentRegisterSize, registerMinSize[registerCounter]);
                 registerError++; // Instead of returning false, I want to read the complete response so it is available in the webinterface for debugging
             }
             registerCounter++;
             currentRegisterSize = 0;
+        } else {
+            currentRegisterSize++;
+        }
+
+        if (isEndOfData) {
+            debugD("Reached end of data");
+            statusResponseTmp += statusResponseRaw[field];
+            break;
+        }
+
+        if (byte == -1) {
+            debugD("Reached end of stream");
+            statusResponseTmp += statusResponseRaw[field];
+            break;
         }
 
         statusResponseTmp = statusResponseTmp + statusResponseRaw[field]+",";
-
-        // If we reach the last register we have finished reading...
-        if (registerCounter >= 12 || (majorFirmwarwVersion < 3 && registerCounter >= 11)) break;
 
         if (!_initialised) { // We only have to set these on the first read, they never change after that.
             if (statusResponseRaw[field] == "R2") R2 = field;
@@ -494,18 +532,16 @@ bool SpaInterface::readStatus() {
             else if (statusResponseRaw[field] == "RE") RE = field;
             else if (statusResponseRaw[field] == "RG") RG = field;
 
-            if (registerCounter == 2 && R3 > 0 && currentRegisterSize == 7) {
-                uint spaceIndex = getSVER().indexOf(' ', 4);
+            if (registerCounter == 1 && R3 > 0 && currentRegisterSize == 7) {
+                uint spaceIndex = statusResponseRaw[R3+6].indexOf(' ', 4);
                 if (spaceIndex != -1) {
-                    majorFirmwarwVersion = getSVER().substring(4, spaceIndex).toInt(); // Skip the 'V' character
+                    majorFirmwarwVersion = statusResponseRaw[R3+6].substring(4, spaceIndex).toInt(); // Skip the 'V' character
                 }
                 debugV("Firmware: %s, majorFirmwarwVersion: %i", statusResponseRaw[R3+6].c_str(), majorFirmwarwVersion);
             }
         }
 
-
         field++;
-        currentRegisterSize++;
     }
 
     //Flush the remaining data from the buffer as the last field is meaningless
