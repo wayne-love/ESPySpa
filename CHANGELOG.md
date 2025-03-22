@@ -1,6 +1,13 @@
-**New Web UI**
+**v1.0.12 Alpha**
 
-***Breaking change*** *You should deploy v1.0.9 if migrating from an ealier version, this will ensure your settings (mqtt server, spa name, etc) are migrated.*
+* Fixed check for update in Web UI.
+* Firmware updates via HA for eSpa board only
+* eSpa can set spa controller day of week
+* Added support for V2 controllers
+* When spa controller read fails, try again (once), then back off
 
-* Changed settings to be stored in Preferences
-* New Web UI
+Code tweaks
+* Move code out of WebUI class
+* Remark out unused variables to minimise complied size
+* Add validation for spa set temperature
+* Optomize readStatus function by copying and modifying port.readUntil()
