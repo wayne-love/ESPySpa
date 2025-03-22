@@ -60,8 +60,6 @@ class SpaInterface : public SpaProperties {
         /// @brief Serial stream to interface to SpanNet hardware.
         Stream &port;
 
-        int timedRead();
-
         /// @brief Read from serial interface, expect it to contain return from RF command
         /// @return true if successful read, false if there was a corrupted read
         bool readStatus();

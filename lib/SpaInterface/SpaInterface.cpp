@@ -409,19 +409,6 @@ bool SpaInterface::setMode(String mode){
     return false;
 }
 
-int SpaInterface::timedRead() {
-    int c;
-    uint _startMillis = millis();
-    uint _timeout = port.getTimeout();
-    do {
-        c = port.read();
-        if(c >= 0) {
-            return c;
-        }
-    } while(millis() - _startMillis < _timeout);
-    return -1;     // -1 indicates timeout
-}
-
 bool SpaInterface::readStatus() {
 
     // We could just do a port.readString but this will always impose a
@@ -450,11 +437,12 @@ bool SpaInterface::readStatus() {
     // read the first field and validate the response
     statusResponseRaw[field] = port.readStringUntil(',');
     debugV("(%i,%s)",field,statusResponseRaw[field].c_str());
-    field++;
     if (field == 0 && !statusResponseRaw[field].startsWith("RF:")) { // If the first field is not "RF:" stop we don't have the start of the register
         debugE("Throwing exception - field: %i, value: %s", field, statusResponseRaw[field].c_str());
         return false;
     }
+    statusResponseTmp = statusResponseRaw[field]+",";
+    field++;
 
     bool lastByteWasColon = false;
     while (field < statusResponseMaxFields)
@@ -464,20 +452,23 @@ bool SpaInterface::readStatus() {
         bool isEndOfData = false;
 
         // This block is based on port.readStringUntil(',') but adds handling for ':' and '\n' characters
-        int byte = timedRead();
-        while(byte >= 0 && byte != ',') {
+        char bytes[1];
+        if (port.readBytes(bytes, 1) != 1) {
+            bytes[0] = -1;
+        }
+        while(bytes[0] >= 0 && bytes[0] != ',') {
             if (lastByteWasColon) {
                 registerData += ':'; // Add the colon to the buffer'
             }
-            if (byte == ':' && registerData.length() > 0) {
+            if (bytes[0] == ':' && registerData.length() > 0) {
                 debugV("Read \":\", at end of field: %s, register number: %i, number: %i, total fields counted: %i, minimum fields: %i", statusResponseRaw[field-currentRegisterSize], field, registerCounter, currentRegisterSize, registerMinSize[registerCounter]);
                 lastByteWasColon = true;
                 break; // If we reach a colon and we have data in the buffer, we have reached the end of the current field
             } else {
                 lastByteWasColon = false;
             }
-            registerData += (char)byte; // Append to buffer
-            if (byte == '\n') {
+            registerData += bytes[0]; // Append to buffer
+            if (bytes[0] == '\n') {
                 isEndOfLine = true;
                 if (registerCounter >= 11 || (majorFirmwarwVersion < 3 && registerCounter >= 10)) {
                     debugV("Read \"\\n\", at end of final register: %s, register number: %i, number: %i, total fields counted: %i, minimum fields: %i", statusResponseRaw[field-currentRegisterSize], field, registerCounter, currentRegisterSize, registerMinSize[registerCounter]);
@@ -485,7 +476,9 @@ bool SpaInterface::readStatus() {
                     break; // If we reach the last register we have finished reading...
                 }
             }
-            byte = timedRead();
+            if (port.readBytes(bytes, 1) != 1) {
+                bytes[0] = -1;
+            }
         }
 
         statusResponseRaw[field] = registerData;
@@ -510,7 +503,7 @@ bool SpaInterface::readStatus() {
             break;
         }
 
-        if (byte == -1) {
+        if (bytes[0] == -1) {
             debugD("Reached end of stream");
             statusResponseTmp += statusResponseRaw[field];
             break;
