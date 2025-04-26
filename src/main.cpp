@@ -572,11 +572,17 @@ void setup() {
 
   WiFi.mode(WIFI_STA);
   WiFi.begin();
-  while (WiFi.status() != WL_CONNECTED) {
+  int totalTry = 10;
+  while (WiFi.status() != WL_CONNECTED && totalTry > 0) {
     delay(500);
     debugA(".");
+    totalTry--;
   }
-  debugA("Connected to Wi-Fi");
+  if (WiFi.status() != WL_CONNECTED) {
+    debugE("Failed to connected to Wi-Fi");
+  } else {
+    debugA("Connected to Wi-Fi");
+  }
 
   blinker.setState(STATE_NONE); // start with all LEDs off
 
@@ -584,7 +590,7 @@ void setup() {
   Debug.setResetCmdEnabled(true);
   Debug.showProfiler(true);
 
-  int totalTry = 5;
+  totalTry = 5;
   while (!MDNS.begin(WiFi.getHostname()) && totalTry > 0) {
     debugW(".");
     delay(1000);
