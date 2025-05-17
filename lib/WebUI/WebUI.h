@@ -17,9 +17,16 @@ class WebUI {
     public:
         WebUI(SpaInterface *spa, Config *config, MQTTClientWrapper *mqttClient);
 
+        /// @brief Set the function to be called to start Wi-Fi Manager.
+        /// @param f
+        void setWifiManagerCallback(void (*f)()) {
+          _wifiManagerCallback = f;
+        }
         /// @brief Set the function to be called when properties have been updated.
         /// @param f
-        void setWifiManagerCallback(void (*f)());
+        void setSpaCallback(void (*f)(const String, const String)) {
+          _setSpaCallback = f;
+        }
         void begin();
         bool initialised = false;
 
@@ -29,6 +36,7 @@ class WebUI {
         Config *_config;
         MQTTClientWrapper *_mqttClient;
         void (*_wifiManagerCallback)() = nullptr;
+        void (*_setSpaCallback)(const String, const String) = nullptr;
 
         const char* getError();
 
