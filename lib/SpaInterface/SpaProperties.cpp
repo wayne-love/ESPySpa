@@ -78,7 +78,7 @@ boolean SpaProperties::update_PoolTemperature(String s){
         return false;
     }
 
-    PoolTemperature.update_Value(s.toFloat() / 10);
+    PoolTemperature.update_Value(s.toInt());
     return true;
 }
 
