@@ -51,7 +51,7 @@ bool getPumpModesJson(SpaInterface &si, int pumpNumber, JsonObject pumps) {
   }
 
   // Retrieve the pump install state dynamically
-  String pumpInstallState = (si.*(pumpInstallStateFunctions[pumpNumber - 1]))();
+  String pumpInstallState = si.pump(pumpNumber - 1).installState;
 
   char pumpKey[6] = "pump";  // Start with "pump"
   pumpKey[4] = '0' + pumpNumber;  // Append the pump number as a character
@@ -78,7 +78,7 @@ bool getPumpModesJson(SpaInterface &si, int pumpNumber, JsonObject pumps) {
     }
   }
 
-  int pumpState = (si.*(pumpStateFunctions[pumpNumber - 1]))();
+  int pumpState = si.pump(pumpNumber - 1).currentState;
   if (pumpInstallState.endsWith("4") && possibleStates.length() > 1) {
     if (pumpState == 4) pumps[pumpKey]["mode"] = "Auto";
     else pumps[pumpKey]["mode"] = "Manual";
@@ -129,35 +129,41 @@ int getPumpSpeedMin(String pumpInstallState) {
 bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String &output, bool prettyJson) {
   JsonDocument json;
 
-  json["temperatures"]["setPoint"] = si.getSTMP() / 10.0;
-  json["temperatures"]["water"] = si.getWTMP() / 10.0;
-  json["temperatures"]["heater"] = si.getHeaterTemperature() / 10.0;
-  json["temperatures"]["case"] = si.getCaseTemperature(); 
-  json["temperatures"]["heatpumpAmbient"] = si.getHP_Ambient();
-  json["temperatures"]["heatpumpCondensor"] = si.getHP_Condensor();
+  json["temperatures"]["setPoint"] = int(si.STMP) / 10.0;
+  json["temperatures"]["water"] = int(si.WTMP) / 10.0;
+  json["temperatures"]["heater"] = int(si.HeaterTemperature) / 10.0;
+  json["temperatures"]["case"] = int(si.CaseTemperature); 
+  json["temperatures"]["heatpumpAmbient"] = int(si.HP_Ambient);
+  json["temperatures"]["heatpumpCondensor"] = int(si.HP_Condensor);
 
-  json["power"]["voltage"] = si.getMainsVoltage();
-  json["power"]["current"]= si.getMainsCurrent() / 10.0; // convert value to A
-  json["power"]["power"] = si.getPower() / 10.0; // convert value to W
-  json["power"]["totalenergy"]= si.getPower_kWh() / 100.0; // convert value to kWh.
+  json["power"]["voltage"] = int(si.MainsVoltage);
+  json["power"]["current"] = int(si.MainsCurrent) / 10.0;
+  json["power"]["power"] = int(si.Power) / 10.0;
+  json["power"]["totalenergy"] = int(si.Power_kWh) / 100.0;
 
-  json["status"]["heatingActive"] = si.getRB_TP_Heater()? "ON": "OFF";
-  json["status"]["ozoneActive"] = si.getRB_TP_Ozone()? "ON": "OFF";
-  json["status"]["state"] = si.getStatus();
-  json["status"]["spaMode"] = si.getMode();
-  json["status"]["controller"] = si.getModel();
-  String firmware = si.getSVER().substring(3);
+  json["status"]["heatingActive"] = bool(si.RB_TP_Heater) ? "ON" : "OFF";
+  json["status"]["ozoneActive"] = bool(si.RB_TP_Ozone) ? "ON" : "OFF";
+  json["status"]["state"] = String(si.Status);
+  json["status"]["spaMode"] = String(si.Mode);
+  json["status"]["controller"] = String(si.Model);
+
+  String firmware = si.SVER;
+  firmware = firmware.substring(3);
   firmware.replace(' ', '.');
   json["status"]["firmware"] = firmware;
-  json["status"]["serial"] = si.getSerialNo1() + "-" + si.getSerialNo2();
+
+  String serialNo1 = si.SerialNo1;
+  String serialNo2 = si.SerialNo2;
+
+  json["status"]["serial"] = serialNo1 + "-" + serialNo2;
   json["status"]["siInitialised"] = si.isInitialised()?"true":"false";
   json["status"]["mqtt"] = mqttClient.connected()?"connected":"disconnected";
 
   json["eSpa"]["model"] = xstr(PIOENV);
   json["eSpa"]["update"]["installed_version"] = xstr(BUILD_INFO);
 
-  json["heatpump"]["mode"] = si.HPMPStrings[si.getHPMP()];
-  json["heatpump"]["auxheat"] = si.getHELE()==0? "OFF" : "ON";
+  json["heatpump"]["mode"] = si.HPMPStrings[si.HPMP];
+  json["heatpump"]["auxheat"] = si.HELE==0? "OFF" : "ON";
 
   JsonObject pumps = json["pumps"].to<JsonObject>();
   // Add pump data by calling the function for each pump
@@ -167,54 +173,54 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
     }
   }
 
-  String y=String(year(si.getSpaTime()));
-  String m=String(month(si.getSpaTime()));
-  if (month(si.getSpaTime())<10) m = "0"+m;
-  String d=String(day(si.getSpaTime()));
-  if (day(si.getSpaTime())<10) d = "0"+d;
-  String h=String(hour(si.getSpaTime()));
-  if (hour(si.getSpaTime())<10) h = "0"+h;
-  String min=String(minute(si.getSpaTime()));
-  if (minute(si.getSpaTime())<10) min = "0"+min;
-  String s=String(second(si.getSpaTime()));
-  if (second(si.getSpaTime())<10) s = "0"+s;
+  String y=String(year(si.SpaTime));
+  String m=String(month(si.SpaTime));
+  if (month(si.SpaTime)<10) m = "0"+m;
+  String d=String(day(si.SpaTime));
+  if (day(si.SpaTime)<10) d = "0"+d;
+  String h=String(hour(si.SpaTime));
+  if (hour(si.SpaTime)<10) h = "0"+h;
+  String min=String(minute(si.SpaTime));
+  if (minute(si.SpaTime)<10) min = "0"+min;
+  String s=String(second(si.SpaTime));
+  if (second(si.SpaTime)<10) s = "0"+s;
 
   json["status"]["datetime"]=y+"-"+m+"-"+d+" "+h+":"+min+":"+s;
 
-  json["blower"]["state"] = si.getOutlet_Blower()==2? "OFF" : "ON";
-  json["blower"]["mode"] = si.getOutlet_Blower()==1? "Ramp" : "Variable";
-  json["blower"]["speed"] = si.getOutlet_Blower() ==2? "0" : String(si.getVARIValue());
+  json["blower"]["state"] = si.Outlet_Blower==2? "OFF" : "ON";
+  json["blower"]["mode"] = si.Outlet_Blower==1? "Ramp" : "Variable";
+  json["blower"]["speed"] = si.Outlet_Blower ==2? "0" : String(si.VARIValue);
 
   int member = 0;
   for (const auto& pair : si.sleepBitmap) {
-      if (pair == si.getL_1SNZ_DAY()) {
+      if (pair == si.L_1SNZ_DAY) {
         json["sleepTimers"]["timer1"]["state"]=si.sleepSelection[member];
         debugD("SleepTimer1: %s", si.sleepSelection[member].c_str());
       }
-      if (pair == si.getL_2SNZ_DAY()) {
+      if (pair == si.L_2SNZ_DAY) {
         json["sleepTimers"]["timer2"]["state"]=si.sleepSelection[member];
         debugD("SleepTimer2: %s", si.sleepSelection[member].c_str());
       }
       member++;
   }
-  json["sleepTimers"]["timer1"]["begin"]=convertToTime(si.getL_1SNZ_BGN());
-  json["sleepTimers"]["timer1"]["end"]=convertToTime(si.getL_1SNZ_END());
-  json["sleepTimers"]["timer2"]["begin"]=convertToTime(si.getL_2SNZ_BGN());
-  json["sleepTimers"]["timer2"]["end"]=convertToTime(si.getL_2SNZ_END());
+  json["sleepTimers"]["timer1"]["begin"]=convertToTime(si.L_1SNZ_BGN);
+  json["sleepTimers"]["timer1"]["end"]=convertToTime(si.L_1SNZ_END);
+  json["sleepTimers"]["timer2"]["begin"]=convertToTime(si.L_2SNZ_BGN);
+  json["sleepTimers"]["timer2"]["end"]=convertToTime(si.L_2SNZ_END);
 
-  json["lights"]["speed"] = si.getLSPDValue();
-  json["lights"]["state"] = si.getRB_TP_Light()? "ON": "OFF";
-  json["lights"]["effect"] = si.colorModeStrings[si.getColorMode()];
-  json["lights"]["brightness"] = si.getLBRTValue();
+  json["lights"]["speed"] = int(si.LSPDValue);
+  json["lights"]["state"] = int(si.RB_TP_Light)? "ON": "OFF";
+  json["lights"]["effect"] = si.colorModeStrings[si.ColorMode];
+  json["lights"]["brightness"] = int(si.LBRTValue);
 
   // 0 = white, if white, then set the hue and saturation to white so the light displays correctly in HA.
-  if (si.getColorMode() == 0) {
+  if (si.ColorMode == 0) {
     json["lights"]["color"]["h"] = 0;
     json["lights"]["color"]["s"] = 0;
   } else {
     int hue = 4;
     for (uint count = 0; count < sizeof(si.colorMap); count++){
-      if (si.colorMap[count] == si.getCurrClr()) {
+      if (si.colorMap[count] == si.CurrClr) {
         hue = count * 15;
       }
     }

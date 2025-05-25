@@ -267,7 +267,8 @@ void mqttHaAutoDiscovery() {
   const String* selectedPumpOptions = nullptr;
   size_t arrSize = 0;
   for (int pumpNumber = 1; pumpNumber <= 5; pumpNumber++) {
-    String pumpInstallState = (si.*(pumpInstallStateFunctions[pumpNumber - 1]))();
+    String pumpInstallState = si.pump(pumpNumber - 1).installState;
+    
     if (getPumpInstalledState(pumpInstallState) && getPumpPossibleStates(pumpInstallState).length() > 1) {
       ADConf.displayName = "Pump " + String(pumpNumber);
       ADConf.propertyId = "pump" + String(pumpNumber);
@@ -288,7 +289,7 @@ void mqttHaAutoDiscovery() {
     }
   }
 
-  if (si.getHP_Present()) {
+  if (si.HP_Present) {
     ADConf.displayName = "Heatpump Ambient Temperature";
     ADConf.valueTemplate = "{{ value_json.temperatures.heatpumpAmbient }}";
     ADConf.propertyId = "HPAmbTemp";
@@ -442,11 +443,13 @@ void setSpaProperty(String property, String p) {
   debugI("Received update for %s to %s",property.c_str(),p.c_str());
 
   if (property == "temperatures_setPoint") {
-    si.setSTMP(int(p.toFloat()*10));
-  } else if (property == "heatpump_mode") {
+    si.setSTMP(int(p.toFloat() * 10));
+  } 
+  else if (property == "heatpump_mode") {
     si.setHPMP(p);
+  } 
   // note single speed pumps should never trigger a mode or speed events
-  } else if (property.startsWith("pump") && property.endsWith("_speed")) {
+  else if (property.startsWith("pump") && property.endsWith("_speed")) {
     int pumpNum = property.charAt(4) - '0';
     // p = 1 = Off, p = 2 = Low, p = 3 = High
     // send values need to be changed to the appropriate values
@@ -454,49 +457,68 @@ void setSpaProperty(String property, String p) {
     else if (p == "2") p = "3";
     else if (p == "3") p = "2";
     (si.*(setPumpFunctions[pumpNum-1]))(p.toInt());
-  } else if (property.startsWith("pump") && property.endsWith("_mode")) {
+  }
+  else if (property.startsWith("pump") && property.endsWith("_mode")) {
     int pumpNum = property.charAt(4) - '0';
-    if (p == "Auto") (si.*(setPumpFunctions[pumpNum-1]))(4);
-    else (si.*(setPumpFunctions[pumpNum-1]))(3); // When we change mode to manual set speed to low, as this matches the auto display speed
-  } else if (property.startsWith("pump") && property.endsWith("_state")) {
+    if (p == "Auto")
+      (si.*(setPumpFunctions[pumpNum-1]))(4);
+    else
+      (si.*(setPumpFunctions[pumpNum-1]))(3); // When we change mode to manual set speed to low, as this matches the auto display speed
+  }
+  else if (property.startsWith("pump") && property.endsWith("_state")) {
     int pumpNum = property.charAt(4) - '0';
-    String pumpState = (si.*(pumpInstallStateFunctions[pumpNum-1]))();
-    if (getPumpSpeedType(pumpState) == "2") (si.*(setPumpFunctions[pumpNum-1]))(p=="OFF"?0:2); // When we turn on the pump use speed high
-    else (si.*(setPumpFunctions[pumpNum-1]))(p=="OFF"?0:1);
-  } else if (property == "heatpump_auxheat") {
-    si.setHELE(p=="OFF"?0:1);
-  } else if (property == "status_datetime") {
+    String pumpState = si.pump(pumpNum-1).installState;
+    if (getPumpSpeedType(pumpState) == "2")
+      (si.*(setPumpFunctions[pumpNum-1]))(p=="OFF" ? 0 : 2); // When we turn on the pump use speed high
+    else
+      (si.*(setPumpFunctions[pumpNum-1]))(p=="OFF" ? 0 : 1);
+  }
+  else if (property == "heatpump_auxheat") {
+    si.setHELE(p=="OFF" ? 0 : 1);
+  }
+  else if (property == "status_datetime") {
     tmElements_t tm;
-    tm.Year=CalendarYrToTm(p.substring(0,4).toInt());
-    tm.Month=p.substring(5,7).toInt();
-    tm.Day=p.substring(8,10).toInt();
-    tm.Hour=p.substring(11,13).toInt();
-    tm.Minute=p.substring(14,16).toInt();
-    tm.Second=p.substring(17).toInt();
+    tm.Year = CalendarYrToTm(p.substring(0,4).toInt());
+    tm.Month = p.substring(5,7).toInt();
+    tm.Day = p.substring(8,10).toInt();
+    tm.Hour = p.substring(11,13).toInt();
+    tm.Minute = p.substring(14,16).toInt();
+    tm.Second = p.substring(17).toInt();
     si.setSpaTime(makeTime(tm));
-  } else if (property == "lights_state") {
-    si.setRB_TP_Light(p=="ON"?1:0);
-  } else if (property == "lights_effect") {
+  }
+  else if (property == "lights_state") {
+    si.setRB_TP_Light(p=="ON" ? 1 : 0);
+  }
+  else if (property == "lights_effect") {
     si.setColorMode(p);
-  } else if (property == "lights_brightness") {
+  }
+  else if (property == "lights_brightness") {
     si.setLBRTValue(p.toInt());
-  } else if (property == "lights_color") {
+  }
+  else if (property == "lights_color") {
     int pos = p.indexOf(',');
-    if ( pos > 0) {
+    if (pos > 0) {
       int value = p.substring(0, pos).toInt();
       si.setCurrClr(si.colorMap[value/15]);
     }
-  } else if (property == "lights_speed") {
+  }
+  else if (property == "lights_speed") {
     si.setLSPDValue(p);
-  } else if (property == "blower_state") {
-    si.setOutlet_Blower(p=="OFF"?2:0);
-  } else if (property == "blower_speed") {
-    if (p=="0") si.setOutlet_Blower(2);
-    else si.setVARIValue(p.toInt());
-  } else if (property == "blower_mode") {
-    si.setOutlet_Blower(p=="Variable"?0:1);
-  } else if (property == "sleepTimers_1_state" || property == "sleepTimers_2_state") {
-    int member=0;
+  }
+  else if (property == "blower_state") {
+    si.setOutlet_Blower(p=="OFF" ? 2 : 0);
+  }
+  else if (property == "blower_speed") {
+    if (p=="0")
+      si.setOutlet_Blower(2);
+    else
+      si.setVARIValue(p.toInt());
+  }
+  else if (property == "blower_mode") {
+    si.setOutlet_Blower(p=="Variable" ? 0 : 1);
+  }
+  else if (property == "sleepTimers_1_state" || property == "sleepTimers_2_state") {
+    int member = 0;
     for (const auto& i : si.sleepSelection) {
       if (i == p) {
         if (property == "sleepTimers_1_state")
@@ -507,18 +529,24 @@ void setSpaProperty(String property, String p) {
       }
       member++;
     }
-  } else if (property == "sleepTimers_1_begin") {
+  }
+  else if (property == "sleepTimers_1_begin") {
     si.setL_1SNZ_BGN(convertToInteger(p));
-  } else if (property == "sleepTimers_1_end") {
+  }
+  else if (property == "sleepTimers_1_end") {
     si.setL_1SNZ_END(convertToInteger(p));
-  } else if (property == "sleepTimers_2_begin") {
+  }
+  else if (property == "sleepTimers_2_begin") {
     si.setL_2SNZ_BGN(convertToInteger(p));
-  } else if (property == "sleepTimers_2_end") {
+  }
+  else if (property == "sleepTimers_2_end") {
     si.setL_2SNZ_END(convertToInteger(p));
-  } else if (property == "status_spaMode") {
+  }
+  else if (property == "status_spaMode") {
     si.setMode(p);
-  } else {
-    debugE("Unhandled property - %s",property.c_str());
+  }
+  else {
+    debugE("Unhandled property - %s", property.c_str());
   }
 }
 
@@ -674,8 +702,12 @@ void loop() {
       } else {
         if ( spaSerialNumber=="" ) {
           debugI("Initialising...");
+
+          String serialNo1 = si.SerialNo1;
+          String serialNo2 = si.SerialNo2;
       
-          spaSerialNumber = si.getSerialNo1()+"-"+si.getSerialNo2();
+          spaSerialNumber = serialNo1 + "-" + serialNo2;
+
           debugI("Spa serial number is %s",spaSerialNumber.c_str());
 
           mqttBase = String("sn_esp32/") + spaSerialNumber + String("/");

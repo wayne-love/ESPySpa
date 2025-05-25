@@ -112,6 +112,18 @@ class SpaInterface : public SpaProperties {
 
         ~SpaInterface();
 
+        const std::array <int, 25> colorMap = {0, 4, 4, 19, 13, 25, 25, 16, 10, 7, 2, 8, 5, 3, 6, 6, 21, 21, 21, 18, 18, 9, 9, 1, 1};
+        const std::array <String, 5> colorModeStrings = {"White","Color","Fade","Step","Party"};
+        const std::array <String, 5> lightSpeedMap = {"1","2","3","4","5"};
+        const std::array <String, 5> pumpModeStrings = {"Off","On","Auto","Auto2","Auto3"};
+        const std::array <String, 4> spaModeStrings = {"NORM","ECON","AWAY","WEEK"};
+        const std::array <String, 4> HPMPStrings = {"Auto","Heat","Cool","Off"};
+        const std::array<String, 2> autoPumpOptions = {"Manual", "Auto"};
+        const std::array <String, 2> blowerStrings = {"Variable", "Ramp"};
+        const std::array <String, 11> sleepSelection = {"Off", "Everyday", "Weekends", "Weekdays", "Monday", "Tuesday", "Wednesday", "Thuesday", "Friday", "Saturday", "Sunday"};
+        const std::array <byte, 11> sleepBitmap = {128, 127, 96, 31, 16, 8, 4, 2, 1, 64, 32}; 
+
+
         /// @brief configure how often the spa is polled in seconds.
         /// @param updateFrequency
         void setUpdateFrequency(int updateFrequency);
@@ -240,11 +252,29 @@ class SpaInterface : public SpaProperties {
         /// @return Returns True if succesful
         bool setMode(int mode);
         bool setMode(String mode);
+
+};
+        
+// Define the function pointer type for getPumpState functions
+typedef bool (SpaInterface::*SetPumpFunction)(int);
+
+// Declare the array of function pointers for each pump's state as static
+static SetPumpFunction setPumpFunctions[] = {
+  &SpaInterface::setRB_TP_Pump1,
+  &SpaInterface::setRB_TP_Pump2,
+  &SpaInterface::setRB_TP_Pump3,
+  &SpaInterface::setRB_TP_Pump4,
+  &SpaInterface::setRB_TP_Pump5
 };
 
 
+
+
+/*
 // Define the function pointer type for getPumpInstallState functions
 typedef String (SpaInterface::*GetPumpStateInstallFunction)();
+
+
 
 // Declare the array of function pointers for each pump's install state as static
 static GetPumpStateInstallFunction pumpInstallStateFunctions[] = {
@@ -267,16 +297,7 @@ static GetPumpStateFunction pumpStateFunctions[] = {
   &SpaInterface::getRB_TP_Pump5
 };
 
-// Define the function pointer type for getPumpState functions
-typedef bool (SpaInterface::*SetPumpFunction)(int);
 
-// Declare the array of function pointers for each pump's state as static
-static SetPumpFunction setPumpFunctions[] = {
-  &SpaInterface::setRB_TP_Pump1,
-  &SpaInterface::setRB_TP_Pump2,
-  &SpaInterface::setRB_TP_Pump3,
-  &SpaInterface::setRB_TP_Pump4,
-  &SpaInterface::setRB_TP_Pump5
-};
 
+*/
 #endif
