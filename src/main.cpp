@@ -53,6 +53,9 @@ String mqttAvailability = "";
 
 String spaSerialNumber = "";
 
+
+/// @brief Flag to indicate that the mqtt configuration has changed and therefore the MQTT
+/// client needs to be restarted.
 bool updateMqtt = false;
 bool setSpaCallbackReady = false;
 String spaCallbackProperty;
@@ -63,9 +66,8 @@ void WMsaveConfigCallback(){
 }
 
 void startWiFiManager(){
-  // if (ui.initialised) {
-  //   ui.server_old->stop();
-  // }
+
+  debugD("Starting Wi-Fi Manager...");
 
   WiFiManager wm;
   WiFiManagerParameter custom_spa_name("spa_name", "Spa Name", config.SpaName.getValue().c_str(), 40);
@@ -95,6 +97,8 @@ void startWiFiManager(){
 
     config.writeConfig();
   }
+
+  ESP.restart(); // Restart the ESP to apply the new settings
 }
 
 // We check the EN_PIN every loop, to allow people to configure the system
@@ -106,8 +110,6 @@ void checkButton(){
     if(digitalRead(EN_PIN) == LOW) {
       debugI("Button press detected. Starting Portal");
       startWiFiManager();
-
-      ESP.restart();  // restart, dirty but easier than trying to restart services one by one
     }
   }
 #endif
@@ -590,42 +592,21 @@ void setup() {
 
   debugA("Starting ESP...");
 
-
   if (!config.readConfig()) {
-    debugW("Failed to open config.json, starting Wi-Fi Manager");
+    debugA("Failed to open config.json, starting Wi-Fi Manager");
     startWiFiManager();
   }
 
   blinker.setState(STATE_WIFI_NOT_CONNECTED);
   WiFi.setHostname(sanitizeHostname(config.SpaName.getValue()).c_str());
 
-  WiFi.mode(WIFI_STA);
+  WiFi.mode(WIFI_AP_STA);
   WiFi.begin();
-  int totalTry = 10;
-  while (WiFi.status() != WL_CONNECTED && totalTry > 0) {
-    delay(500);
-    debugA(".");
-    totalTry--;
-  }
-  if (WiFi.status() != WL_CONNECTED) {
-    debugE("Failed to connected to Wi-Fi");
-  } else {
-    debugA("Connected to Wi-Fi");
-  }
+  WiFi.softAP(WiFi.getHostname(), "eSPA-Password"); // Start the AP with the hostname and a default password
 
-  blinker.setState(STATE_NONE); // start with all LEDs off
-
-  Debug.begin(WiFi.getHostname());
-  Debug.setResetCmdEnabled(true);
-  Debug.showProfiler(true);
-
-  totalTry = 5;
-  while (!MDNS.begin(WiFi.getHostname()) && totalTry > 0) {
-    debugW(".");
-    delay(1000);
-    totalTry--;
-  }
-  debugA("mDNS responder started");
+  Debug.begin(WiFi.getHostname());  // Hostname seems to be for display purposes only, no functional impact.
+  Debug.setResetCmdEnabled(true);  // This seems to be not needed to be in Setup.
+  Debug.showProfiler(true); // This seems to be not needed to be in Setup.
 
   mqttClient.setServer(config.MqttServer.getValue(), config.MqttPort.getValue());
   mqttClient.setCallback(mqttCallback);
@@ -634,6 +615,7 @@ void setup() {
   bootStartMillis = millis();  // Record the current boot time in milliseconds
 
   ui.begin();
+
   ui.setWifiManagerCallback(startWifiManagerCallback);
   ui.setSpaCallback(setSpaCallback);
   si.setUpdateFrequency(config.UpdateFrequency.getValue());
@@ -643,24 +625,11 @@ void setup() {
 
 }
 
-
-
 void loop() {  
-  checkButton();
-  
-  mqttClient.loop();
+
+  checkButton(); // Check if the button is pressed to start Wi-Fi Manager
+
   Debug.handle();
-
-  // if (ui.initialised) { 
-  //   ui.server_old->handleClient(); 
-  // }
-
-  if (updateMqtt) {
-    debugD("Changing MQTT settings...");
-    mqttClient.disconnect();
-    mqttClient.setServer(config.MqttServer.getValue(), config.MqttPort.getValue());
-    updateMqtt = false;
-  }
 
   if (setSpaCallbackReady) {
     debugD("Setting Spa Properties...");
@@ -669,13 +638,22 @@ void loop() {
   }
 
   if (WiFi.status() != WL_CONNECTED) {
-    //wifi not connected
     blinker.setState(STATE_WIFI_NOT_CONNECTED);
 
-    if (millis()-wifiLastConnect > 10000) {
+    if (millis()-wifiLastConnect > 1000) { // Reconnect every second if not connected
       debugI("Wifi reconnecting...");
       wifiLastConnect = millis();
-      WiFi.reconnect();
+      if (WiFi.reconnect()) {
+        debugI("Wifi reconnected");
+        MDNS.end(); // Stop mDNS responder (if it was running)
+        if (!MDNS.begin(WiFi.getHostname())) {
+          debugE("Failed to start mDNS responder");
+        } else {
+          debugI("mDNS responder restarted");
+        }
+      } else {
+        debugW("Wifi reconnect failed");
+      };
     }
   } else {
     if (delayedStart) {
@@ -739,4 +717,13 @@ void loop() {
       }
     }
   }
+
+  if (updateMqtt) {
+    debugD("Changing MQTT settings...");
+    mqttClient.disconnect();
+    mqttClient.setServer(config.MqttServer.getValue(), config.MqttPort.getValue());
+    updateMqtt = false;
+  }
+
+  mqttClient.loop();
 }
