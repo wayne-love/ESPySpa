@@ -152,9 +152,18 @@ bool SpaInterface::setHELE(int mode){
 /// @return 
 bool SpaInterface::setSTMP(int temp){
     debugD("setSTMP - %i", temp);
+
+    // check the temperate is within the valid range
+    if (temp < 50 || temp > 410) {
+        return false;
+    }
+    if (temp % 2 != 0) {
+        temp++;
+    }
+
     String stemp = String(temp);
 
-    if (sendCommandCheckResult("W40:" + stemp,stemp)) {
+    if (sendCommandCheckResult("W40:" + stemp, stemp)) {
         update_STMP(stemp);
         return true;
     }
@@ -305,6 +314,18 @@ bool SpaInterface::setCurrClr(int mode){
     return false;
 }
 
+bool SpaInterface::setSpaDayOfWeek(int d){
+    debugD("setSpaDayOfWeek - %i", d);
+
+    String sd = String(d);
+
+    if (sendCommandCheckResult("S06:"+sd,sd)) {
+        update_SpaDayOfWeek(sd);
+        return true;
+    }
+    return false;
+}
+
 bool SpaInterface::setSpaTime(time_t t){
     debugD("setSpaTime");
 
@@ -313,21 +334,29 @@ bool SpaInterface::setSpaTime(time_t t){
 
     tmp = String(year(t));
     outcome = sendCommandCheckResult("S01:"+tmp, tmp);
+    delay(100);
 
     tmp = String(month(t));
     outcome = outcome && sendCommandCheckResult("S02:"+tmp,tmp);
+    delay(100);
 
     tmp = String(day(t));
     outcome = outcome && sendCommandCheckResult("S03:"+tmp,tmp);
+    delay(100);
     
     tmp = String(hour(t));
     outcome = outcome && sendCommandCheckResult("S04:"+tmp,tmp);
+    delay(100);
     
     tmp = String(minute(t));
     outcome = outcome && sendCommandCheckResult("S05:"+tmp,tmp);
+    delay(100);
     
-    tmp = String(second(t));
-    outcome = outcome && sendCommandCheckResult("S06:"+tmp,tmp);
+    int weekDay = weekday(t); // day of the week (1-7), Sunday is day 1 (Arduino Time Library)
+    // Convert to the format required by Spa: day of the week (0-6), Monday is day 0
+    if (weekDay == 1) weekDay = 6;
+    else weekDay -= 2;
+    outcome = outcome && setSpaDayOfWeek(weekDay);
     
     return outcome;
 
@@ -530,6 +559,8 @@ void SpaInterface::updateMeasures() {
     update_MainsVoltage(statusResponseRaw[R2+2]);
     update_CaseTemperature(statusResponseRaw[R2+3]);
     update_PortCurrent(statusResponseRaw[R2+4]);
+
+    update_SpaDayOfWeek(statusResponseRaw[R2+5]);
     update_SpaTime(statusResponseRaw[R2+11], statusResponseRaw[R2+10], statusResponseRaw[R2+9], statusResponseRaw[R2+6], statusResponseRaw[R2+7], statusResponseRaw[R2+8]);
     update_HeaterTemperature(statusResponseRaw[R2+12]);
     update_PoolTemperature(statusResponseRaw[R2+13]);

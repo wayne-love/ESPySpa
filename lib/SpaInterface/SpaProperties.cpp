@@ -22,6 +22,15 @@ boolean SpaProperties::update_MainsCurrent(String s){
     return true;
 }
 
+boolean SpaProperties::update_SpaDayOfWeek(String s){
+    if (!isNumber(s)) {
+        return false;
+    }
+
+    SpaDayOfWeek.update_Value(s.toInt());
+    return true;
+}
+
 boolean SpaProperties::update_SpaTime(String year, String month, String day, String hour, String minute, String second){
 
     tmElements_t tm;
@@ -78,7 +87,7 @@ boolean SpaProperties::update_PoolTemperature(String s){
         return false;
     }
 
-    PoolTemperature.update_Value(s.toFloat() / 10);
+    PoolTemperature.update_Value(s.toInt());
     return true;
 }
 

@@ -5,6 +5,7 @@
 #include <RemoteDebug.h>
 #include <WiFiManager.h>
 #include <ESPmDNS.h>
+#include <SPIFFS.h>
 
 #include "MultiBlinker.h"
 
@@ -15,9 +16,6 @@
 #include "HAAutoDiscovery.h"
 #include "MQTTClientWrapper.h"
 
-//define stringify function
-#define xstr(a) str(a)
-#define str(a) #a
 
 unsigned long bootStartMillis;  // To track when the device started
 RemoteDebug Debug;
@@ -59,6 +57,9 @@ String spaSerialNumber = "";
 /// @brief Flag to indicate that the mqtt configuration has changed and therefore the MQTT
 /// client needs to be restarted.
 bool updateMqtt = false;
+bool setSpaCallbackReady = false;
+String spaCallbackProperty;
+String spaCallbackValue;
 
 void WMsaveConfigCallback(){
   WMsaveConfig = true;
@@ -67,10 +68,6 @@ void WMsaveConfigCallback(){
 void startWiFiManager(){
 
   debugD("Starting Wi-Fi Manager...");
-
-  if (ui.initialised) {
-    ui.server->stop();
-  }
 
   WiFiManager wm;
   WiFiManagerParameter custom_spa_name("spa_name", "Spa Name", config.SpaName.getValue().c_str(), 40);
@@ -118,9 +115,21 @@ void checkButton(){
 #endif
 }
 
+void startWifiManagerCallback() {
+  debugD("Starting Wi-Fi Manager...");
+  startWiFiManager();
+  ESP.restart(); //do we need to reboot here??
+}
+
+void setSpaCallback(String property, String value) {
+  debugD("setSpaCallback: %s: %s", property.c_str(), value.c_str());
+  spaCallbackProperty = property;
+  spaCallbackValue = value;
+  setSpaCallbackReady = true;
+}
 
 void configChangeCallbackString(const char* name, String value) {
-  debugD("%s: %s", name, value);
+  debugD("%s: %s", name, value.c_str());
   if (strcmp(name, "MqttServer") == 0) updateMqtt = true;
   else if (strcmp(name, "MqttPort") == 0) updateMqtt = true;
   else if (strcmp(name, "MqttUsername") == 0) updateMqtt = true;
@@ -361,6 +370,14 @@ void mqttHaAutoDiscovery() {
   generateTextAdJSON(output, ADConf, spa, discoveryTopic, "[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}");
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
+  ADConf.displayName = "Day of Week";
+  ADConf.valueTemplate = "{{ value_json.status.dayOfWeek }}";
+  ADConf.propertyId = "status_dayOfWeek";
+  ADConf.deviceClass = "";
+  ADConf.entityCategory = "config";
+  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.spaDayOfWeekStrings);
+  mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
+
   ADConf.displayName = "Sleep Timer 1 Begin";
   ADConf.valueTemplate = "{{ value_json.sleepTimers.timer1.begin }}";
   ADConf.propertyId = "sleepTimers_1_begin";
@@ -430,19 +447,7 @@ void mqttPublishStatus() {
   }
 }
 
-
-void mqttCallback(char* topic, byte* payload, unsigned int length) {
-  String t = String(topic);
-
-  String p = "";
-  for (uint x = 0; x < length; x++) {
-    p += char(*payload);
-    payload++;
-  }
-
-  debugD("MQTT subscribe received '%s' with payload '%s'",topic,p.c_str());
-
-  String property = t.substring(t.lastIndexOf("/")+1);
+void setSpaProperty(String property, String p) {
 
   debugI("Received update for %s to %s",property.c_str(),p.c_str());
 
@@ -479,6 +484,13 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     tm.Minute=p.substring(14,16).toInt();
     tm.Second=p.substring(17).toInt();
     si.setSpaTime(makeTime(tm));
+  } else if (property == "status_dayOfWeek") {
+    for (int i = 0; i < si.spaDayOfWeekStrings.size(); i++) {
+      if (si.spaDayOfWeekStrings[i] == p) {
+      si.setSpaDayOfWeek(i);
+      break;
+      }
+    }
   } else if (property == "lights_state") {
     si.setRB_TP_Light(p=="ON"?1:0);
   } else if (property == "lights_effect") {
@@ -527,6 +539,21 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   }
 }
 
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
+  String t = String(topic);
+
+  String p = "";
+  for (uint x = 0; x < length; x++) {
+    p += char(*payload);
+    payload++;
+  }
+
+  debugD("MQTT subscribe received '%s' with payload '%s'",topic,p.c_str());
+
+  String property = t.substring(t.lastIndexOf("/")+1);
+  setSpaProperty(property, p);
+}
+
 String sanitizeHostname(const String& input) {
   String sanitized = "";
 
@@ -557,6 +584,12 @@ void setup() {
   blinker.setState(STATE_NONE); // start with all LEDs off
   blinker.start();
 
+  if (SPIFFS.begin()) {
+    debugD("Mounted SPIFFS");
+  } else {
+    debugE("Error mounting SPIFFS");
+  }
+
   debugA("Starting ESP...");
 
   if (!config.readConfig()) {
@@ -582,7 +615,9 @@ void setup() {
   bootStartMillis = millis();  // Record the current boot time in milliseconds
 
   ui.begin();
-  ui.setWifiManagerCallback(startWiFiManager);
+
+  ui.setWifiManagerCallback(startWifiManagerCallback);
+  ui.setSpaCallback(setSpaCallback);
   si.setUpdateFrequency(config.UpdateFrequency.getValue());
 
   config.setCallback(configChangeCallbackString);
@@ -591,9 +626,16 @@ void setup() {
 }
 
 void loop() {  
+
   checkButton(); // Check if the button is pressed to start Wi-Fi Manager
 
   Debug.handle();
+
+  if (setSpaCallbackReady) {
+    debugD("Setting Spa Properties...");
+    setSpaCallbackReady = false;
+    setSpaProperty(spaCallbackProperty, spaCallbackValue);
+  }
 
   if (WiFi.status() != WL_CONNECTED) {
     blinker.setState(STATE_WIFI_NOT_CONNECTED);
@@ -617,10 +659,12 @@ void loop() {
     if (delayedStart) {
       delayedStart = !(bootTime + 10000 < millis());
     } else {
-
       si.loop();
 
-      if (si.isInitialised()) {
+      if (!si.isInitialised()) {
+        // set status lights to indicate we are waiting for spa connection before we proceed
+        blinker.setState(STATE_WAITING_FOR_SPA);
+      } else {
         if ( spaSerialNumber=="" ) {
           debugI("Initialising...");
       
@@ -665,7 +709,6 @@ void loop() {
             mqttPublishStatus();
 
             si.statusResponse.setCallback(mqttPublishStatusString);
-
           }
           
           // all systems are go! Start the knight rider animation loop
@@ -673,10 +716,6 @@ void loop() {
         }
       }
     }
-  }
-
-  if (ui.initialised) { 
-    ui.server->handleClient(); 
   }
 
   if (updateMqtt) {

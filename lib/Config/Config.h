@@ -5,7 +5,6 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <RemoteDebug.h>
-#include <LittleFS.h>
 
 extern RemoteDebug Debug;
 
@@ -86,9 +85,6 @@ public:
     void setCallback(void (*callback)(const char*, T)) {
         Setting<T>::setCallback(callback);
     }
-private:
-    bool readConfigFile();          // Read configuration from file
-    void writeConfigFile();         // Write configuration to file
 
 };
 

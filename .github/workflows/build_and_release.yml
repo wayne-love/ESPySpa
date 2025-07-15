@@ -60,6 +60,6 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
-          artifacts: "firmware/firmware*.bin"
+          artifacts: "firmware/*.bin"
           bodyFile: "CHANGELOG.md"
           removeArtifacts: true
