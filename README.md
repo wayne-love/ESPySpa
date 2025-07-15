@@ -1,7 +1,30 @@
-# eSpa
+# SpaNet MQTT ESP32 bridge
 
-## Introduction
+SpaNet serial to mqtt bridge, including HomeAssitant autodiscovery.
 
-The [eSpa project](https://espa.diy) is an open source community for spa home automation, built around [firmware](https://espa.diy/firmware.html) (found in this GitHub repo) and a simple [hardware design](https://espa.diy/hardware.html) that you can build yourself, or [purchase pre-assembled](https://store.espa.diy/).
+Developed for the ESP32 Dev board but should work on any ESP32 platform. By default uses UART2 for communications with the SpaNet controller.
 
-Learn more at the [eSpa website](https://espa.diy), and [join us on Discord](https://discord.gg/faK8Ag4wHn).
+Discussion on this (and other) SpaNet projects can be found here https://discord.com/channels/967940763595980900/967940763595980903
+
+## Configuration
+On first boot or whenever the enable key is press the board will enter hotspot mode.  Connect to the hotspot to configure wifi & mqtt settings.  
+
+## Web-UI
+
+Web interface is available on the devices ip address for configuration and troubleshoooting.
+
+## Logging
+
+Debug / log functionality is available by telneting to the device's ip address
+
+
+## Circuit
+To keep things as simple as possible, off the shelf modules have been used.  
+NOTE: The resistors on the RX/TX pins are recommended but optional.  
+
+<img src="circuit/circuit.png" alt="Circuit" title="Circuit"/>  
+
+<img src="images/board.png" alt="Assembly" title="Assembly" width="33%"/>
+<img src="images/disassembled.png" alt="Components" title="Components" width="33%"/>
+<img src="images/wiring.png" alt="Wiring" title="Wiring" width="33%"/>
+
