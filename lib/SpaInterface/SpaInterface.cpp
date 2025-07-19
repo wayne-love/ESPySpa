@@ -409,7 +409,6 @@ bool SpaInterface::setMode(String mode){
     return false;
 }
 
-
 bool SpaInterface::readStatus() {
 
     // We could just do a port.readString but this will always impose a
@@ -425,36 +424,92 @@ bool SpaInterface::readStatus() {
     int registerError = 0;
     validStatusResponse = false;
     String statusResponseTmp = "";
+    int majorFirmwarwVersion = 0;
 
+    if (_initialised) {
+        uint spaceIndex = getSVER().indexOf(' ', 4);
+        if (spaceIndex != -1) {
+            majorFirmwarwVersion = getSVER().substring(4, spaceIndex).toInt(); // Skip the 'V' character
+        }
+        debugV("Firmware: %s, majorFirmwareVersion: %i", getSVER().c_str(), majorFirmwarwVersion);
+    }
+
+    // read the first field and validate the response
+    statusResponseRaw[field] = port.readStringUntil(',');
+    debugV("(%i,%s)",field,statusResponseRaw[field].c_str());
+    if (field == 0 && !statusResponseRaw[field].startsWith("RF:")) { // If the first field is not "RF:" stop we don't have the start of the register
+        debugE("Throwing exception - field: %i, value: %s", field, statusResponseRaw[field].c_str());
+        return false;
+    }
+    statusResponseTmp = statusResponseRaw[field]+",";
+    field++;
+
+    bool lastByteWasColon = false;
     while (field < statusResponseMaxFields)
     {
-        statusResponseRaw[field] = port.readStringUntil(',');
+        String registerData = "";
+        bool isEndOfLine = false;
+        bool isEndOfData = false;
+
+        // This block is based on port.readStringUntil(',') but adds handling for ':' and '\n' characters
+        char bytes[1];
+        if (port.readBytes(bytes, 1) != 1) {
+            bytes[0] = -1;
+        }
+        while(bytes[0] >= 0 && bytes[0] != ',') {
+            if (lastByteWasColon) {
+                registerData += ':'; // Add the colon to the buffer'
+            }
+            if (bytes[0] == ':' && registerData.length() > 0) {
+                debugV("Read \":\", at end of field: %s, register number: %i, number: %i, total fields counted: %i, minimum fields: %i", statusResponseRaw[field-currentRegisterSize], field, registerCounter, currentRegisterSize, registerMinSize[registerCounter]);
+                lastByteWasColon = true;
+                break; // If we reach a colon and we have data in the buffer, we have reached the end of the current field
+            } else {
+                lastByteWasColon = false;
+            }
+            registerData += bytes[0]; // Append to buffer
+            if (bytes[0] == '\n') {
+                isEndOfLine = true;
+                if (registerCounter >= 11 || (majorFirmwarwVersion < 3 && registerCounter >= 10)) {
+                    debugV("Read \"\\n\", at end of final register: %s, register number: %i, number: %i, total fields counted: %i, minimum fields: %i", statusResponseRaw[field-currentRegisterSize], field, registerCounter, currentRegisterSize, registerMinSize[registerCounter]);
+                    isEndOfData = true;
+                    break; // If we reach the last register we have finished reading...
+                }
+            }
+            if (port.readBytes(bytes, 1) != 1) {
+                bytes[0] = -1;
+            }
+        }
+
+        statusResponseRaw[field] = registerData;
         debugV("(%i,%s)",field,statusResponseRaw[field].c_str());
 
-        statusResponseTmp = statusResponseTmp + statusResponseRaw[field]+",";
-
-        if (statusResponseRaw[field].isEmpty()) { // If we get a empty field then we've had a bad read.
-            debugE("Throwing exception - null string");
-            return false;
-        }
-        if (field == 0 && !statusResponseRaw[field].startsWith("RF:")) { // If the first field is not "RF:" stop we don't have the start of the register
-            debugE("Throwing exception - field: %i, value: %s", field, statusResponseRaw[field].c_str());
-            return false;
-        }
-        // if we have reached a colon we are at the end of the current register
-        // OR
-        // if we are in register 11 (the last register) and have reached the minimum size we should stop
-        if (statusResponseRaw[field][0] == ':' || (registerCounter == 11 && currentRegisterSize >= registerMinSize[registerCounter])) {
-            debugV("Completed reading register: %s, number: %i, total fields counted: %i, minimum fields: %i", statusResponseRaw[field-currentRegisterSize+1], registerCounter, currentRegisterSize, registerMinSize[registerCounter]);
+        // if we have reached an end of line, we are at the end of the current register
+        if (isEndOfLine) {
+            debugV("Completed reading register: %s, number: %i, total fields counted: %i, minimum fields: %i", statusResponseRaw[field-currentRegisterSize], registerCounter, currentRegisterSize, registerMinSize[registerCounter]);
             if (registerMinSize[registerCounter] > currentRegisterSize) {
-                debugE("Throwing exception - not enough fields in register: %s number: %i, total fields counted: %i, minimum fields: %i", statusResponseRaw[field-currentRegisterSize+1], registerCounter, currentRegisterSize, registerMinSize[registerCounter]);
+                debugE("Throwing exception - not enough fields in register: %s number: %i, total fields counted: %i, minimum fields: %i", statusResponseRaw[field-currentRegisterSize], registerCounter, currentRegisterSize, registerMinSize[registerCounter]);
                 registerError++; // Instead of returning false, I want to read the complete response so it is available in the webinterface for debugging
             }
             registerCounter++;
             currentRegisterSize = 0;
+        } else {
+            currentRegisterSize++;
         }
-        // If we reach the last register we have finished reading...
-        if (registerCounter >= 12) break;
+
+        if (isEndOfData) {
+            debugD("Reached end of data");
+            statusResponseTmp += statusResponseRaw[field];
+            break;
+        }
+
+        if (bytes[0] == -1) {
+            debugD("Reached end of stream");
+            statusResponseTmp += statusResponseRaw[field];
+            break;
+        }
+
+        statusResponseTmp = statusResponseTmp + statusResponseRaw[field]+",";
 
         if (!_initialised) { // We only have to set these on the first read, they never change after that.
             if (statusResponseRaw[field] == "R2") R2 = field;
@@ -469,11 +524,17 @@ bool SpaInterface::readStatus() {
             else if (statusResponseRaw[field] == "RC") RC = field;
             else if (statusResponseRaw[field] == "RE") RE = field;
             else if (statusResponseRaw[field] == "RG") RG = field;
+
+            if (registerCounter == 1 && R3 > 0 && currentRegisterSize == 7) {
+                uint spaceIndex = statusResponseRaw[R3+6].indexOf(' ', 4);
+                if (spaceIndex != -1) {
+                    majorFirmwarwVersion = statusResponseRaw[R3+6].substring(4, spaceIndex).toInt(); // Skip the 'V' character
+                }
+                debugV("Firmware: %s, majorFirmwarwVersion: %i", statusResponseRaw[R3+6].c_str(), majorFirmwarwVersion);
+            }
         }
 
-
         field++;
-        currentRegisterSize++;
     }
 
     //Flush the remaining data from the buffer as the last field is meaningless
@@ -481,7 +542,7 @@ bool SpaInterface::readStatus() {
 
     statusResponse.update_Value(statusResponseTmp);
 
-    if (registerCounter < 12) {
+    if ((majorFirmwarwVersion > 2 && registerCounter < 12) || (majorFirmwarwVersion < 3 && registerCounter < 11)) {
         debugE("Throwing exception - not enough registers, we only read: %i", registerCounter);
         return false;
     }
@@ -491,7 +552,7 @@ bool SpaInterface::readStatus() {
         return false;
     }
 
-    if (field < statusResponseMinFields) {
+    if ((majorFirmwarwVersion > 2 && field < statusResponseMinFields) || (majorFirmwarwVersion < 3 && field < statusResponseV2MinFields)) {
         debugE("Throwing exception - %i fields read expecting at least %i",field, statusResponseMinFields);
         return false;
     }
@@ -559,7 +620,6 @@ void SpaInterface::updateMeasures() {
     update_MainsVoltage(statusResponseRaw[R2+2]);
     update_CaseTemperature(statusResponseRaw[R2+3]);
     update_PortCurrent(statusResponseRaw[R2+4]);
-
     update_SpaDayOfWeek(statusResponseRaw[R2+5]);
     update_SpaTime(statusResponseRaw[R2+11], statusResponseRaw[R2+10], statusResponseRaw[R2+9], statusResponseRaw[R2+6], statusResponseRaw[R2+7], statusResponseRaw[R2+8]);
     update_HeaterTemperature(statusResponseRaw[R2+12]);
@@ -676,10 +736,13 @@ void SpaInterface::updateMeasures() {
     update_VPMP(statusResponseRaw[R6 + 21]);
     update_HIFI(statusResponseRaw[R6 + 22]);
     update_BRND(statusResponseRaw[R6 + 23]);
-    update_PRME(statusResponseRaw[R6 + 24]);
-    update_ELMT(statusResponseRaw[R6 + 25]);
-    update_TYPE(statusResponseRaw[R6 + 26]);
-    update_GAS(statusResponseRaw[R6 + 27]);
+    // Note: We only have 23 registers in V2 firmware
+    if (R6 > 23) {
+        update_PRME(statusResponseRaw[R6 + 24]);
+        update_ELMT(statusResponseRaw[R6 + 25]);
+        update_TYPE(statusResponseRaw[R6 + 26]);
+        update_GAS(statusResponseRaw[R6 + 27]);
+    }
     #pragma endregion
     #pragma region R7
     update_WCLNTime(statusResponseRaw[R7 + 1]);
@@ -800,6 +863,10 @@ void SpaInterface::updateMeasures() {
     //HP_Pump_State.updateValue(statusResponseRaw[]);
     //HP_Status.updateValue(statusResponseRaw[]);
     #pragma endregion
+
+    // There is no RG register in V2 firmware
+    if (RG < 0) return;
+
     #pragma region RG
     update_Pump1InstallState(statusResponseRaw[RG + 7]);
     update_Pump2InstallState(statusResponseRaw[RG + 8]);
