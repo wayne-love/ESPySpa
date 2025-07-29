@@ -22,7 +22,9 @@ bool Config::readConfig() {
     MqttUsername.setValue(preferences.getString("MqttUsername", ""));
     MqttPassword.setValue(preferences.getString("MqttPassword", ""));
     SpaName.setValue(preferences.getString("SpaName", "eSpa"));
-    UpdateFrequency.setValue(preferences.getInt("spaPollFreq", 60));
+    SpaPollFrequency.setValue(preferences.getInt("spaPollFreq", 60));
+    SoftAPAlwaysOn.setValue(preferences.getBool("SoftAPAlwaysOn", true));
+    SoftAPPassword.setValue(preferences.getString("SoftAPPassword", "eSPA-Password"));
 
     preferences.end();
     return true;
@@ -41,7 +43,9 @@ void Config::writeConfig() {
     preferences.putString("MqttUsername", MqttUsername.getValue());
     preferences.putString("MqttPassword", MqttPassword.getValue());
     preferences.putString("SpaName", SpaName.getValue());
-    preferences.putInt("spaPollFreq", UpdateFrequency.getValue());
+    preferences.putInt("spaPollFreq", SpaPollFrequency.getValue());
+    preferences.putBool("SoftAPAlwaysOn", SoftAPAlwaysOn.getValue());
+    preferences.putString("SoftAPPassword", SoftAPPassword.getValue());
     preferences.end();
   } else {
     debugE("Failed to open Preferences for writing");

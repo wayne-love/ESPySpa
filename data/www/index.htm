@@ -194,8 +194,16 @@
           </div>
           <form id="config_form" action='#' method='POST'>
             <div class="mb-3">
-              <label for="spaName">Spa Name</label>
+              <label for="spaName">Spa Name (also used for AP SSID)</label>
               <input type='text' class="form-control" name='spaName' id='spaName'>
+            </div>
+            <div class="mb-3">
+              <label for="softAPPassword">Soft AP Password</label>
+              <input type='text' class="form-control" name='softAPPassword' id='softAPPassword'>
+            </div>
+            <div class="mb-3">
+              <label for="softAPAlwaysOn">AP Always On</label>
+              <input type='checkbox' class="form-check-input" name='softAPAlwaysOn' id='softAPAlwaysOn'>
             </div>
             <div class="mb-3">
               <label for="mqttServer">MQTT Server</label>
@@ -214,8 +222,8 @@
               <input type='text' class="form-control" name='mqttPassword' id='mqttPassword'>
             </div>
             <div class="mb-3">
-              <label for="updateFrequency">Poll Frequency (seconds)</label>
-              <input type='number' class="form-control" name='updateFrequency' id='updateFrequency' step="1" min="10" max="300">
+              <label for="spaPollFrequency">Spa Poll Frequency (seconds)</label>
+              <input type='number' class="form-control" name='spaPollFrequency' id='spaPollFrequency' step="1" min="10" max="300">
             </div>
           </form>
         </div>
