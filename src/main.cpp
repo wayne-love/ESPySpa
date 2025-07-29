@@ -45,7 +45,8 @@ ulong bootTime = millis();
 ulong statusLastPublish = millis();
 bool delayedStart = true; // Delay spa connection for 10sec after boot to allow for external debugging if required.
 bool autoDiscoveryPublished = false;
-bool softAPAlwaysOn = true; // If true, the AP will always be on, even if Wi-Fi is connected.
+bool softAPAlwaysOn = false; // If true, the AP will always be on, even if Wi-Fi is connected.
+bool wifiRestoredFlag = true; // Flag to indicate if Wi-Fi has been restored after a disconnect.
 String softAPPassword = "eSPA-Password"; // Password for the soft AP.
 
 String mqttBase = "";
@@ -572,6 +573,23 @@ String sanitizeHostname(const String& input) {
   return sanitized;
 }
 
+void wifiRestored() {
+  debugI("Wi-Fi connection restored");
+  wifiRestoredFlag = true;
+
+  if (!softAPAlwaysOn) {
+    WiFi.softAPdisconnect(true); // Disable AP mode if reconnected
+    WiFi.mode(WIFI_STA);
+  }
+  MDNS.end(); // Stop mDNS responder (if it was running)
+  if (!MDNS.begin(WiFi.getHostname())) {
+    debugE("Failed to start mDNS responder");
+  } else {
+    debugI("mDNS responder restarted");
+  }
+
+}
+
 #pragma endregion
 
 void setup() {
@@ -663,6 +681,7 @@ void loop() {
 
   if (WiFi.status() != WL_CONNECTED) {
     blinker.setState(STATE_WIFI_NOT_CONNECTED);
+    wifiRestoredFlag = false;
 
     if (millis() - wifiLastConnect > 10000) { // Reconnect every 10 seconds if not connected
       debugI("Wifi reconnecting...");
@@ -672,16 +691,7 @@ void loop() {
       WiFi.begin();
       if (WiFi.waitForConnectResult() == WL_CONNECTED) {
         debugI("Wifi reconnected");
-        if (!softAPAlwaysOn) {
-          WiFi.softAPdisconnect(true); // Disable AP mode if reconnected
-          WiFi.mode(WIFI_STA);
-        }
-        MDNS.end(); // Stop mDNS responder (if it was running)
-        if (!MDNS.begin(WiFi.getHostname())) {
-          debugE("Failed to start mDNS responder");
-        } else {
-          debugI("mDNS responder restarted");
-        }
+        wifiRestored();
       } else {
         debugW("Wifi reconnect failed");
         if (WiFi.getMode() == WIFI_STA && !softAPAlwaysOn) {
@@ -694,6 +704,9 @@ void loop() {
       };
     }
   } else {
+    if (!wifiRestoredFlag) {
+      wifiRestored();
+    }
     if (delayedStart) {
       delayedStart = !(bootTime + 10000 < millis());
     } else {
