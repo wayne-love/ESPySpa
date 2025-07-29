@@ -613,6 +613,13 @@ void setup() {
   WiFi.begin();
   if (WiFi.waitForConnectResult() == WL_CONNECTED) {
     debugI("Connected to Wi-Fi as %s", WiFi.getHostname());
+    int totalTry = 5;
+    while (!MDNS.begin(WiFi.getHostname()) && totalTry > 0) {
+      debugW(".");
+      delay(1000);
+      totalTry--;
+    }
+    debugA("mDNS responder started");
   } else {
     debugW("Failed to connect to Wi-Fi, starting AP mode");
     if (!softAPAlwaysOn) {
