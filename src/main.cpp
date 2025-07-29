@@ -45,6 +45,8 @@ ulong bootTime = millis();
 ulong statusLastPublish = millis();
 bool delayedStart = true; // Delay spa connection for 10sec after boot to allow for external debugging if required.
 bool autoDiscoveryPublished = false;
+bool softAPAlwaysOn = true; // If true, the AP will always be on, even if Wi-Fi is connected.
+String softAPPassword = "eSPA-Password"; // Password for the soft AP.
 
 String mqttBase = "";
 String mqttStatusTopic = "";
@@ -600,9 +602,24 @@ void setup() {
   blinker.setState(STATE_WIFI_NOT_CONNECTED);
   WiFi.setHostname(sanitizeHostname(config.SpaName.getValue()).c_str());
 
-  WiFi.mode(WIFI_AP_STA);
+  if (softAPAlwaysOn) {
+    WiFi.mode(WIFI_AP_STA);
+    WiFi.softAP(WiFi.getHostname(), softAPPassword.c_str());
+  } else {
+    WiFi.mode(WIFI_STA);
+  }
+
+  //WiFi.begin(config.WiFiSSID.getValue().c_str(), config.WiFiPassword.getValue().c_str());
   WiFi.begin();
-  WiFi.softAP(WiFi.getHostname(), "eSPA-Password"); // Start the AP with the hostname and a default password
+  if (WiFi.waitForConnectResult() == WL_CONNECTED) {
+    debugI("Connected to Wi-Fi as %s", WiFi.getHostname());
+  } else {
+    debugW("Failed to connect to Wi-Fi, starting AP mode");
+    if (!softAPAlwaysOn) {
+      WiFi.mode(WIFI_AP_STA);
+      WiFi.softAP(WiFi.getHostname(), softAPPassword.c_str());
+    }
+  }
 
   Debug.begin(WiFi.getHostname());  // Hostname seems to be for display purposes only, no functional impact.
   Debug.setResetCmdEnabled(true);  // This seems to be not needed to be in Setup.
@@ -640,11 +657,18 @@ void loop() {
   if (WiFi.status() != WL_CONNECTED) {
     blinker.setState(STATE_WIFI_NOT_CONNECTED);
 
-    if (millis()-wifiLastConnect > 1000) { // Reconnect every second if not connected
+    if (millis() - wifiLastConnect > 10000) { // Reconnect every 10 seconds if not connected
       debugI("Wifi reconnecting...");
       wifiLastConnect = millis();
-      if (WiFi.reconnect()) {
+      WiFi.disconnect();
+      delay(100); // Short delay to ensure disconnect
+      WiFi.begin();
+      if (WiFi.waitForConnectResult() == WL_CONNECTED) {
         debugI("Wifi reconnected");
+        if (!softAPAlwaysOn) {
+          WiFi.softAPdisconnect(true); // Disable AP mode if reconnected
+          WiFi.mode(WIFI_STA);
+        }
         MDNS.end(); // Stop mDNS responder (if it was running)
         if (!MDNS.begin(WiFi.getHostname())) {
           debugE("Failed to start mDNS responder");
@@ -653,6 +677,13 @@ void loop() {
         }
       } else {
         debugW("Wifi reconnect failed");
+        if (WiFi.getMode() == WIFI_STA && !softAPAlwaysOn) {
+          debugW("Failed to connect to Wi-Fi, starting AP mode");
+          WiFi.mode(WIFI_AP_STA);
+          WiFi.softAP(WiFi.getHostname(), softAPPassword.c_str()); // Start the AP with the hostname and password
+        } else {
+          debugE("Failed to connect to Wi-Fi, but already in AP mode");
+        }
       };
     }
   } else {
