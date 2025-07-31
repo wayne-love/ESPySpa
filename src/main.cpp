@@ -45,6 +45,7 @@ ulong bootTime = millis();
 ulong statusLastPublish = millis();
 bool delayedStart = true; // Delay spa connection for 10sec after boot to allow for external debugging if required.
 bool autoDiscoveryPublished = false;
+bool wifiRestoredFlag = true; // Flag to indicate if Wi-Fi has been restored after a disconnect.
 
 String mqttBase = "";
 String mqttStatusTopic = "";
@@ -57,6 +58,8 @@ String spaSerialNumber = "";
 /// @brief Flag to indicate that the mqtt configuration has changed and therefore the MQTT
 /// client needs to be restarted.
 bool updateMqtt = false;
+/// @brief Flag to indicate that the Wi-Fi configuration has changed and therefore the Wi-Fi
+bool updateSoftAP = false;
 bool setSpaCallbackReady = false;
 String spaCallbackProperty;
 String spaCallbackValue;
@@ -136,11 +139,17 @@ void configChangeCallbackString(const char* name, String value) {
   else if (strcmp(name, "MqttPassword") == 0) updateMqtt = true;
   else if (strcmp(name, "SpaName") == 0) { } //TODO - Changing the SpaName currently requires the user to:
                                   // delete the entities in MQTT then reboot the ESP
+  else if (strcmp(name, "SoftAPPassword") == 0) updateSoftAP = true;
 }
 
 void configChangeCallbackInt(const char* name, int value) {
   debugD("%s: %i", name, value);
-  if (strcmp(name, "UpdateFrequency") == 0) si.setUpdateFrequency(value);
+  if (strcmp(name, "SpaPollFrequency") == 0) si.setSpaPollFrequency(value);
+}
+
+void configChangeCallbackBool(const char* name, bool value) {
+  debugD("%s: %s", name, value ? "true" : "false");
+  if (strcmp(name, "SoftAPAlwaysOn") == 0) updateSoftAP = true;
 }
 
 void mqttHaAutoDiscovery() {
@@ -570,6 +579,23 @@ String sanitizeHostname(const String& input) {
   return sanitized;
 }
 
+void wifiRestored() {
+  debugI("Wi-Fi connection restored");
+  wifiRestoredFlag = true;
+
+  if (!config.SoftAPAlwaysOn.getValue()) {
+    WiFi.softAPdisconnect(true); // Disable AP mode if reconnected
+    WiFi.mode(WIFI_STA);
+  }
+  MDNS.end(); // Stop mDNS responder (if it was running)
+  if (!MDNS.begin(WiFi.getHostname())) {
+    debugE("Failed to start mDNS responder");
+  } else {
+    debugI("mDNS responder restarted");
+  }
+
+}
+
 #pragma endregion
 
 void setup() {
@@ -600,9 +626,31 @@ void setup() {
   blinker.setState(STATE_WIFI_NOT_CONNECTED);
   WiFi.setHostname(sanitizeHostname(config.SpaName.getValue()).c_str());
 
-  WiFi.mode(WIFI_AP_STA);
+  if (config.SoftAPAlwaysOn.getValue()) {
+    WiFi.mode(WIFI_AP_STA);
+    WiFi.softAP(WiFi.getHostname(), config.SoftAPPassword.getValue().c_str());
+  } else {
+    WiFi.mode(WIFI_STA);
+  }
+
+  //WiFi.begin(config.WiFiSSID.getValue().c_str(), config.WiFiPassword.getValue().c_str());
   WiFi.begin();
-  WiFi.softAP(WiFi.getHostname(), "eSPA-Password"); // Start the AP with the hostname and a default password
+  if (WiFi.waitForConnectResult() == WL_CONNECTED) {
+    debugI("Connected to Wi-Fi as %s", WiFi.getHostname());
+    int totalTry = 5;
+    while (!MDNS.begin(WiFi.getHostname()) && totalTry > 0) {
+      debugW(".");
+      delay(1000);
+      totalTry--;
+    }
+    debugA("mDNS responder started");
+  } else {
+    debugW("Failed to connect to Wi-Fi, starting AP mode");
+    if (!config.SoftAPAlwaysOn.getValue()) {
+      WiFi.mode(WIFI_AP_STA);
+      WiFi.softAP(WiFi.getHostname(), config.SoftAPPassword.getValue().c_str());
+    }
+  }
 
   Debug.begin(WiFi.getHostname());  // Hostname seems to be for display purposes only, no functional impact.
   Debug.setResetCmdEnabled(true);  // This seems to be not needed to be in Setup.
@@ -618,10 +666,11 @@ void setup() {
 
   ui.setWifiManagerCallback(startWifiManagerCallback);
   ui.setSpaCallback(setSpaCallback);
-  si.setUpdateFrequency(config.UpdateFrequency.getValue());
+  si.setSpaPollFrequency(config.SpaPollFrequency.getValue());
 
   config.setCallback(configChangeCallbackString);
   config.setCallback(configChangeCallbackInt);
+  config.setCallback(configChangeCallbackBool);
 
 }
 
@@ -639,23 +688,32 @@ void loop() {
 
   if (WiFi.status() != WL_CONNECTED) {
     blinker.setState(STATE_WIFI_NOT_CONNECTED);
+    wifiRestoredFlag = false;
 
-    if (millis()-wifiLastConnect > 1000) { // Reconnect every second if not connected
+    if (millis() - wifiLastConnect > 10000) { // Reconnect every 10 seconds if not connected
       debugI("Wifi reconnecting...");
       wifiLastConnect = millis();
-      if (WiFi.reconnect()) {
+      WiFi.disconnect();
+      delay(100); // Short delay to ensure disconnect
+      WiFi.begin();
+      if (WiFi.waitForConnectResult() == WL_CONNECTED) {
         debugI("Wifi reconnected");
-        MDNS.end(); // Stop mDNS responder (if it was running)
-        if (!MDNS.begin(WiFi.getHostname())) {
-          debugE("Failed to start mDNS responder");
-        } else {
-          debugI("mDNS responder restarted");
-        }
+        wifiRestored();
       } else {
         debugW("Wifi reconnect failed");
+        if (WiFi.getMode() == WIFI_STA && !config.SoftAPAlwaysOn.getValue()) {
+          debugW("Failed to connect to Wi-Fi, starting AP mode");
+          WiFi.mode(WIFI_AP_STA);
+          WiFi.softAP(WiFi.getHostname(), config.SoftAPPassword.getValue().c_str()); // Start the AP with the hostname and password
+        } else {
+          debugE("Failed to connect to Wi-Fi, but already in AP mode");
+        }
       };
     }
   } else {
+    if (!wifiRestoredFlag) {
+      wifiRestored();
+    }
     if (delayedStart) {
       delayedStart = !(bootTime + 10000 < millis());
     } else {
@@ -723,6 +781,21 @@ void loop() {
     mqttClient.disconnect();
     mqttClient.setServer(config.MqttServer.getValue(), config.MqttPort.getValue());
     updateMqtt = false;
+  }
+
+  if (updateSoftAP) {
+    debugD("Changing SoftAP settings...");
+
+    if (config.SoftAPAlwaysOn.getValue()) {
+      WiFi.mode(WIFI_AP_STA);
+      WiFi.softAP(config.SpaName.getValue().c_str(), config.SoftAPPassword.getValue().c_str());
+      debugI("Soft AP enabled");
+    } else {
+      WiFi.softAPdisconnect(true);
+      WiFi.mode(WIFI_STA);
+      debugI("Soft AP disabled");
+    }
+    updateSoftAP = false;
   }
 
   mqttClient.loop();

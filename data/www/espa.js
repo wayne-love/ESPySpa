@@ -190,11 +190,13 @@ function loadConfig() {
         .then(response => response.json())
         .then(data => {
             document.getElementById('spaName').value = data.spaName;
+            document.getElementById('softAPPassword').value = data.softAPPassword;
+            document.getElementById('softAPAlwaysOn').checked = data.softAPAlwaysOn
             document.getElementById('mqttServer').value = data.mqttServer;
             document.getElementById('mqttPort').value = data.mqttPort;
             document.getElementById('mqttUsername').value = data.mqttUsername;
             document.getElementById('mqttPassword').value = data.mqttPassword;
-            document.getElementById('updateFrequency').value = data.updateFrequency;
+            document.getElementById('spaPollFrequency').value = data.spaPollFrequency;
 
             // Enable form fields and save button
             $('#config_form input').prop('disabled', false);

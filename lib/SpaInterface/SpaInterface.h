@@ -115,8 +115,8 @@ class SpaInterface : public SpaProperties {
         ~SpaInterface();
 
         /// @brief configure how often the spa is polled in seconds.
-        /// @param updateFrequency
-        void setUpdateFrequency(int updateFrequency);
+        /// @param SpaPollFrequency
+        void setSpaPollFrequency(int updateFrequency);
 
         /// @brief Complete RF command response in a single string
         Property<String> statusResponse;

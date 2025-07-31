@@ -84,11 +84,14 @@ void WebUI::begin() {
     server.on("/config", HTTP_POST, [this](AsyncWebServerRequest *request) {
         debugD("uri: %s", request->url().c_str());
         if (request->hasParam("spaName", true)) _config->SpaName.setValue(request->getParam("spaName", true)->value());
+        if (request->hasParam("softAPAlwaysOn", true)) _config->SoftAPAlwaysOn.setValue(true);
+        else _config->SoftAPAlwaysOn.setValue(false); // Default to false if not provided
+        if (request->hasParam("softAPPassword", true)) _config->SoftAPPassword.setValue(request->getParam("softAPPassword", true)->value());
         if (request->hasParam("mqttServer", true)) _config->MqttServer.setValue(request->getParam("mqttServer", true)->value());
         if (request->hasParam("mqttPort", true)) _config->MqttPort.setValue(request->getParam("mqttPort", true)->value().toInt());
         if (request->hasParam("mqttUsername", true)) _config->MqttUsername.setValue(request->getParam("mqttUsername", true)->value());
         if (request->hasParam("mqttPassword", true)) _config->MqttPassword.setValue(request->getParam("mqttPassword", true)->value());
-        if (request->hasParam("updateFrequency", true)) _config->UpdateFrequency.setValue(request->getParam("updateFrequency", true)->value().toInt());
+        if (request->hasParam("spaPollFrequency", true)) _config->SpaPollFrequency.setValue(request->getParam("spaPollFrequency", true)->value().toInt());
         _config->writeConfig();
         AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "Updated");
         response->addHeader("Connection", "close");
@@ -99,11 +102,13 @@ void WebUI::begin() {
         debugD("uri: %s", request->url().c_str());
         String configJson = "{";
         configJson += "\"spaName\":\"" + _config->SpaName.getValue() + "\",";
+        configJson += "\"softAPAlwaysOn\":" + String(_config->SoftAPAlwaysOn.getValue() ? "true" : "false") + ",";
+        configJson += "\"softAPPassword\":\"" + _config->SoftAPPassword.getValue() + "\",";
         configJson += "\"mqttServer\":\"" + _config->MqttServer.getValue() + "\",";
         configJson += "\"mqttPort\":\"" + String(_config->MqttPort.getValue()) + "\",";
         configJson += "\"mqttUsername\":\"" + _config->MqttUsername.getValue() + "\",";
         configJson += "\"mqttPassword\":\"" + _config->MqttPassword.getValue() + "\",";
-        configJson += "\"updateFrequency\":" + String(_config->UpdateFrequency.getValue());
+        configJson += "\"spaPollFrequency\":" + String(_config->SpaPollFrequency.getValue());
         configJson += "}";
         AsyncWebServerResponse *response = request->beginResponse(200, "application/json", configJson);
         response->addHeader("Connection", "close");
