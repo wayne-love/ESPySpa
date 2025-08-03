@@ -681,6 +681,20 @@ void loop() {
 
   Debug.handle();
 
+  si.loop();
+  if (si.isInitialised() && spaSerialNumber=="") {
+    debugI("Initialising...");
+
+    spaSerialNumber = si.getSerialNo1()+"-"+si.getSerialNo2();
+    debugI("Spa serial number is %s",spaSerialNumber.c_str());
+
+    mqttBase = String("sn_esp32/") + spaSerialNumber + String("/");
+    mqttStatusTopic = mqttBase + "status";
+    mqttSet = mqttBase + "set";
+    mqttAvailability = mqttBase+"available";
+    debugI("MQTT base topic is %s",mqttBase.c_str());
+  }
+
   if (setSpaCallbackReady) {
     debugD("Setting Spa Properties...");
     setSpaCallbackReady = false;
@@ -721,24 +735,12 @@ void loop() {
     if (delayedStart) {
       delayedStart = !(bootTime + 10000 < millis());
     } else {
-      si.loop();
 
       if (!si.isInitialised()) {
         // set status lights to indicate we are waiting for spa connection before we proceed
         blinker.setState(STATE_WAITING_FOR_SPA);
       } else {
-        if ( spaSerialNumber=="" ) {
-          debugI("Initialising...");
-      
-          spaSerialNumber = si.getSerialNo1()+"-"+si.getSerialNo2();
-          debugI("Spa serial number is %s",spaSerialNumber.c_str());
 
-          mqttBase = String("sn_esp32/") + spaSerialNumber + String("/");
-          mqttStatusTopic = mqttBase + "status";
-          mqttSet = mqttBase + "set";
-          mqttAvailability = mqttBase+"available";
-          debugI("MQTT base topic is %s",mqttBase.c_str());
-        }
         if (!mqttClient.connected()) {  // MQTT broker reconnect if not connected
           long now=millis();
           if (now - mqttLastConnect > 1000) {
