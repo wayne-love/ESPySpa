@@ -252,6 +252,131 @@ $(document).ready(function () {
     });
 });
 
+// Wi-Fi modal
+$(document).ready(function () {
+    // configuration settings modal
+    $('#wifiLink').click(function (event) {
+        event.preventDefault();
+        loadWifiModal();
+        $('#wifiModal').modal('show');
+    });
+
+    function loadWifiModal() {
+        const select = document.getElementById('wifiNetworks');
+        select.innerHTML = `<option selected disabled>Scanning...</option>`;
+        select.disabled = true; // Disable the select element while scanning
+        document.getElementById('wifiPassword').value = '';
+        document.getElementById('wifiErrorAlert').style.display = 'none';
+        document.getElementById('wifiPassword').disabled = true;
+        document.getElementById('connectToWifi').disabled = true;
+
+        startWifiScan();
+    }
+
+    function startWifiScan() {
+        fetch('/scan')
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'scan_started' || data.status === 'scan_in_progress') {
+                    setTimeout(startWifiScan, 500); // poll again
+                } else if (Array.isArray(data)) {
+                    populateScanResults(data);
+                } else {
+                    document.getElementById('wifiErrorAlert').innerText = data.status || 'Unknown error during Wi-Fi scan';
+                    document.getElementById('wifiErrorAlert').style.display = 'block';
+                }
+            })
+            .catch(err => {
+                console.error('Scan error', err);
+            });
+    }
+
+    function populateScanResults(data) {
+        const select = document.getElementById('wifiNetworks');
+        select.innerHTML = ''; // Clear existing options
+        if (data.length === 0) {
+            select.innerHTML = `<option selected disabled>No Wi-Fi networks found</option>`;
+        } else {
+            // Enable the select element
+            select.disabled = false;
+            data.forEach(network => {
+                const option = document.createElement('option');
+                option.value = network.ssid;
+                option.text = `${network.ssid} (${network.rssi} dBm)` + (network.secure ? ' [SECURE]' : '');
+                option.dataset.secure = network.secure;
+                select.appendChild(option);
+            });
+            select.selectedIndex = 0; // Select the first option by default
+            // Trigger change event to update password field and connect button state
+            select.dispatchEvent(new Event('change'));
+        }
+
+        // Hide the error alert
+        document.getElementById('wifiErrorAlert').style.display = 'none';
+    }
+
+    $('#wifiNetworks').on('change', async function () {
+        const select = document.getElementById('wifiNetworks');
+        const passwordField = document.getElementById('wifiPassword');
+        const connectToWifi = document.getElementById('connectToWifi');
+
+        const selectedOption = select.options[select.selectedIndex];
+        const requiresPassword = selectedOption?.dataset.secure === "true";
+
+        if (selectedOption && selectedOption.value) {
+            passwordField.disabled = !requiresPassword;
+            connectToWifi.disabled = false;
+        } else {
+            passwordField.disabled = true;
+            connectToWifi.disabled = true;
+        }
+        passwordField.value = '';
+    });
+
+    // Toggle password visibility
+    $('#togglePassword').click(function () {
+        const passwordInput = document.getElementById('wifiPassword');
+        const icon = document.getElementById('togglePasswordIcon');
+
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('bi-eye');
+            icon.classList.add('bi-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('bi-eye-slash');
+            icon.classList.add('bi-eye');
+        }
+    });
+
+    // Handle local connect button click
+    $('#connectToWifi').click(async function () {
+        const ssid = document.getElementById('wifiNetworks').value;
+        const password = document.getElementById('wifiPassword').value;
+
+        fetch('/connect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `ssid=${encodeURIComponent(ssid)}&password=${encodeURIComponent(password)}`
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) {
+                document.getElementById('wifiErrorAlert').style.display = 'none';
+                alert("Connected to SSID: " + (ssid || 'unknown'));
+                $('#wifiModal').modal('hide');
+            } else {
+                document.getElementById('wifiErrorAlert').innerText = result.reason || 'Connection failed';
+                document.getElementById('wifiErrorAlert').style.display = 'block';
+            }
+        })
+        .catch(err => {
+            document.getElementById('wifiErrorAlert').innerText = "Error: " + err;
+            document.getElementById('wifiErrorAlert').style.display = 'block';
+        });
+    });
+});
+
 
 /************************************************************************************************
  * 

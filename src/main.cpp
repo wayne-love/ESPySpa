@@ -43,6 +43,7 @@ ulong mqttLastConnect = 0;
 ulong wifiLastConnect = millis();
 ulong bootTime = millis();
 ulong statusLastPublish = millis();
+ulong wifiLastScan = millis();
 bool delayedStart = true; // Delay spa connection for 10sec after boot to allow for external debugging if required.
 bool autoDiscoveryPublished = false;
 bool wifiRestoredFlag = true; // Flag to indicate if Wi-Fi has been restored after a disconnect.
@@ -686,7 +687,10 @@ void loop() {
     setSpaProperty(spaCallbackProperty, spaCallbackValue);
   }
 
-  if (WiFi.status() != WL_CONNECTED) {
+  if (ui.isWiFiScanInProgress() && millis() - wifiLastScan > 1000) {
+    debugD("WiFi scan in progress, waiting for completion...");
+    wifiLastScan = millis(); // Reset the last scan time to prevent immediate re-scanning
+  } else if (WiFi.status() != WL_CONNECTED) {
     blinker.setState(STATE_WIFI_NOT_CONNECTED);
     wifiRestoredFlag = false;
 
