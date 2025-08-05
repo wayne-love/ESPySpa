@@ -43,6 +43,7 @@ ulong mqttLastConnect = 0;
 ulong wifiLastConnect = millis();
 ulong bootTime = millis();
 ulong statusLastPublish = millis();
+ulong wifiLastScan = millis();
 bool delayedStart = true; // Delay spa connection for 10sec after boot to allow for external debugging if required.
 bool autoDiscoveryPublished = false;
 bool wifiRestoredFlag = true; // Flag to indicate if Wi-Fi has been restored after a disconnect.
@@ -680,13 +681,30 @@ void loop() {
 
   Debug.handle();
 
+  si.loop();
+  if (si.isInitialised() && spaSerialNumber=="") {
+    debugI("Initialising...");
+
+    spaSerialNumber = si.getSerialNo1()+"-"+si.getSerialNo2();
+    debugI("Spa serial number is %s",spaSerialNumber.c_str());
+
+    mqttBase = String("sn_esp32/") + spaSerialNumber + String("/");
+    mqttStatusTopic = mqttBase + "status";
+    mqttSet = mqttBase + "set";
+    mqttAvailability = mqttBase+"available";
+    debugI("MQTT base topic is %s",mqttBase.c_str());
+  }
+
   if (setSpaCallbackReady) {
     debugD("Setting Spa Properties...");
     setSpaCallbackReady = false;
     setSpaProperty(spaCallbackProperty, spaCallbackValue);
   }
 
-  if (WiFi.status() != WL_CONNECTED) {
+  if (ui.isWiFiScanInProgress() && millis() - wifiLastScan > 1000) {
+    debugD("WiFi scan in progress, waiting for completion...");
+    wifiLastScan = millis(); // Reset the last scan time to prevent immediate re-scanning
+  } else if (WiFi.status() != WL_CONNECTED) {
     blinker.setState(STATE_WIFI_NOT_CONNECTED);
     wifiRestoredFlag = false;
 
@@ -717,24 +735,12 @@ void loop() {
     if (delayedStart) {
       delayedStart = !(bootTime + 10000 < millis());
     } else {
-      si.loop();
 
       if (!si.isInitialised()) {
         // set status lights to indicate we are waiting for spa connection before we proceed
         blinker.setState(STATE_WAITING_FOR_SPA);
       } else {
-        if ( spaSerialNumber=="" ) {
-          debugI("Initialising...");
-      
-          spaSerialNumber = si.getSerialNo1()+"-"+si.getSerialNo2();
-          debugI("Spa serial number is %s",spaSerialNumber.c_str());
 
-          mqttBase = String("sn_esp32/") + spaSerialNumber + String("/");
-          mqttStatusTopic = mqttBase + "status";
-          mqttSet = mqttBase + "set";
-          mqttAvailability = mqttBase+"available";
-          debugI("MQTT base topic is %s",mqttBase.c_str());
-        }
         if (!mqttClient.connected()) {  // MQTT broker reconnect if not connected
           long now=millis();
           if (now - mqttLastConnect > 1000) {

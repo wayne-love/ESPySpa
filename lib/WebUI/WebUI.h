@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <SPIFFS.h>
 #include <Update.h>
+#include <WiFi.h>
 
 #include "SpaInterface.h"
 #include "SpaUtils.h"
@@ -27,14 +28,28 @@ class WebUI {
         void setSpaCallback(void (*f)(const String, const String)) {
           _setSpaCallback = f;
         }
+        /// @brief Check if a Wi-Fi scan is currently in progress.
+        /// @return True if a Wi-Fi scan is in progress, false otherwise.
+        bool isWiFiScanInProgress() {
+            return wifiScanInProgress && (millis() - wifiScanStartTime < 30000) || wifiConnect;
+        }
         void begin();
         bool initialised = false;
 
     private:
+        struct NetworkInfo {
+            String ssid;
+            int32_t rssi;
+            wifi_auth_mode_t encryptionType;
+        };
+        void RemoveDuplicateWiFiNetworks(std::vector<NetworkInfo>& networkMap);
         AsyncWebServer server{80};
         SpaInterface *_spa;
         Config *_config;
         MQTTClientWrapper *_mqttClient;
+        bool wifiScanInProgress = false;
+        unsigned long wifiScanStartTime = 0;
+        bool wifiConnect = false;
         void (*_wifiManagerCallback)() = nullptr;
         void (*_setSpaCallback)(const String, const String) = nullptr;
 
