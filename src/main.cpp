@@ -681,9 +681,15 @@ void loop() {
   Debug.handle();
 
   if (setSpaCallbackReady) {
-    debugD("Setting Spa Properties...");
-    setSpaCallbackReady = false;
-    setSpaProperty(spaCallbackProperty, spaCallbackValue);
+    if (spaCallbackProperty == "reboot") {
+      debugI("Rebooting ESP after %d ms", spaCallbackValue.toInt());
+      delay(spaCallbackValue.toInt()); // Wait for the specified time before rebooting
+      ESP.restart();
+    } else {
+      debugD("Setting Spa Properties...");
+      setSpaCallbackReady = false;
+      setSpaProperty(spaCallbackProperty, spaCallbackValue);
+    }
   }
 
   if (WiFi.status() != WL_CONNECTED) {

@@ -285,6 +285,7 @@ $(document).ready(function () {
 
     // Handle local install button click
     $('#localInstallButton').click(async function () {
+        $('#localInstallButton').prop('disabled', true);
         const appFile = $('#appFile')[0].files[0];
         const fsFile = $('#fsFile')[0].files[0];
         let appSuccess = false, fsSuccess = false;
