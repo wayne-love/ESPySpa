@@ -1,14 +1,13 @@
 #include <WiFi.h>
 #include <WebServer.h>
 
-#include <WiFiClient.h>
 #include <RemoteDebug.h>
 #include <WiFiManager.h>
 #include <ESPmDNS.h>
 #include <SPIFFS.h>
 
 #include "MultiBlinker.h"
-
+#include "WiFiTools.h"
 #include "WebUI.h"
 #include "Config.h"
 #include "SpaInterface.h"
@@ -31,19 +30,16 @@ Config config;
   MultiBlinker blinker(-1);
 #endif
 
-WiFiClient wifi;
-MQTTClientWrapper mqttClient(wifi);
-
-WebUI ui(&si, &config, &mqttClient);
-
+MQTTClientWrapper mqttClient;
+WiFiTools wifiTools(&config);
+WebUI ui(&si, &config, &mqttClient, &wifiTools);
 
 
 bool WMsaveConfig = false;
 ulong mqttLastConnect = 0;
-ulong wifiLastConnect = millis();
 ulong bootTime = millis();
 ulong statusLastPublish = millis();
-ulong wifiLastScan = millis();
+ulong lastMsg = 0; // Last message time
 bool delayedStart = true; // Delay spa connection for 10sec after boot to allow for external debugging if required.
 bool autoDiscoveryPublished = false;
 bool wifiRestoredFlag = true; // Flag to indicate if Wi-Fi has been restored after a disconnect.
@@ -138,8 +134,11 @@ void configChangeCallbackString(const char* name, String value) {
   else if (strcmp(name, "MqttPort") == 0) updateMqtt = true;
   else if (strcmp(name, "MqttUsername") == 0) updateMqtt = true;
   else if (strcmp(name, "MqttPassword") == 0) updateMqtt = true;
-  else if (strcmp(name, "SpaName") == 0) { } //TODO - Changing the SpaName currently requires the user to:
-                                  // delete the entities in MQTT then reboot the ESP
+  else if (strcmp(name, "SpaName") == 0) updateSoftAP = true;
+    // We need to update the SoftAP with the new SpaName
+    // TODO - we need to update the MQTT client with the new topics
+    // TODO - Changing the SpaName currently requires the user to:
+    //        delete the entities in MQTT then reboot the ESP
   else if (strcmp(name, "SoftAPPassword") == 0) updateSoftAP = true;
 }
 
@@ -167,7 +166,7 @@ void mqttHaAutoDiscovery() {
   spa.manufacturer = "sn_esp32";
   spa.model = xstr(PIOENV);
   spa.sw_version = xstr(BUILD_INFO);
-  spa.configuration_url = "http://" + wifi.localIP().toString();
+  spa.configuration_url = "http://" + WiFi.localIP().toString();
 
   //sensorADPublish("Water Temperature","","temperature",mqttStatusTopic,"°C","{{ value_json.temperatures.water }}","measurement","WaterTemperature", spaName, spaSerialNumber);
   //sensorADPublish("Heater Temperature","diagnostic","temperature",mqttStatusTopic,"°C","{{ value_json.temperatures.heater }}","measurement","HeaterTemperature", spaName, spaSerialNumber);
@@ -564,39 +563,6 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   setSpaProperty(property, p);
 }
 
-String sanitizeHostname(const String& input) {
-  String sanitized = "";
-
-  // Process each character in the input string
-  for (size_t i = 0; i < input.length() && i < 32; i++) {
-    char c = input[i];
-
-    // Keep only alphanumeric characters and hyphens
-    if (isalnum(c) || c == '-') {
-      sanitized += c;
-    }
-  }
-
-  return sanitized;
-}
-
-void wifiRestored() {
-  debugI("Wi-Fi connection restored");
-  wifiRestoredFlag = true;
-
-  if (!config.SoftAPAlwaysOn.getValue()) {
-    WiFi.softAPdisconnect(true); // Disable AP mode if reconnected
-    WiFi.mode(WIFI_STA);
-  }
-  MDNS.end(); // Stop mDNS responder (if it was running)
-  if (!MDNS.begin(WiFi.getHostname())) {
-    debugE("Failed to start mDNS responder");
-  } else {
-    debugI("mDNS responder restarted");
-  }
-
-}
-
 #pragma endregion
 
 void setup() {
@@ -625,35 +591,8 @@ void setup() {
   }
 
   blinker.setState(STATE_WIFI_NOT_CONNECTED);
-  WiFi.setHostname(sanitizeHostname(config.SpaName.getValue()).c_str());
+  wifiTools.setup();
 
-  if (config.SoftAPAlwaysOn.getValue()) {
-    WiFi.mode(WIFI_AP_STA);
-    WiFi.softAP(WiFi.getHostname(), config.SoftAPPassword.getValue().c_str());
-  } else {
-    WiFi.mode(WIFI_STA);
-  }
-
-  //WiFi.begin(config.WiFiSSID.getValue().c_str(), config.WiFiPassword.getValue().c_str());
-  WiFi.begin();
-  if (WiFi.waitForConnectResult() == WL_CONNECTED) {
-    debugI("Connected to Wi-Fi as %s", WiFi.getHostname());
-    int totalTry = 5;
-    while (!MDNS.begin(WiFi.getHostname()) && totalTry > 0) {
-      debugW(".");
-      delay(1000);
-      totalTry--;
-    }
-    debugA("mDNS responder started");
-  } else {
-    debugW("Failed to connect to Wi-Fi, starting AP mode");
-    if (!config.SoftAPAlwaysOn.getValue()) {
-      WiFi.mode(WIFI_AP_STA);
-      WiFi.softAP(WiFi.getHostname(), config.SoftAPPassword.getValue().c_str());
-    }
-  }
-
-  Debug.begin(WiFi.getHostname());  // Hostname seems to be for display purposes only, no functional impact.
   Debug.setResetCmdEnabled(true);  // This seems to be not needed to be in Setup.
   Debug.showProfiler(true); // This seems to be not needed to be in Setup.
 
@@ -673,6 +612,8 @@ void setup() {
   config.setCallback(configChangeCallbackInt);
   config.setCallback(configChangeCallbackBool);
 
+  wifiTools.start();
+
 }
 
 void loop() {  
@@ -681,18 +622,31 @@ void loop() {
 
   Debug.handle();
 
+  if (delayedStart) {
+    delayedStart = !(bootTime + 10000 < millis()); // After 10 seconds, we stop delaying the spa connection
+    if (millis() - lastMsg >= 1000) {
+      debugI("Delayed start finished, proceeding with spa connection");
+      lastMsg = millis();
+    }
+    return;
+  }
+
   si.loop();
-  if (si.isInitialised() && spaSerialNumber=="") {
-    debugI("Initialising...");
+  if (!si.isInitialised()) {
+    blinker.setState(STATE_WAITING_FOR_SPA);
+  } else {
+    if (spaSerialNumber=="") {
+      debugI("Initialising...");
 
-    spaSerialNumber = si.getSerialNo1()+"-"+si.getSerialNo2();
-    debugI("Spa serial number is %s",spaSerialNumber.c_str());
+      spaSerialNumber = si.getSerialNo1()+"-"+si.getSerialNo2();
+      debugI("Spa serial number is %s",spaSerialNumber.c_str());
 
-    mqttBase = String("sn_esp32/") + spaSerialNumber + String("/");
-    mqttStatusTopic = mqttBase + "status";
-    mqttSet = mqttBase + "set";
-    mqttAvailability = mqttBase+"available";
-    debugI("MQTT base topic is %s",mqttBase.c_str());
+      mqttBase = String("sn_esp32/") + spaSerialNumber + String("/");
+      mqttStatusTopic = mqttBase + "status";
+      mqttSet = mqttBase + "set";
+      mqttAvailability = mqttBase + "available";
+      debugI("MQTT base topic is %s",mqttBase.c_str());
+    }
   }
 
   if (setSpaCallbackReady) {
@@ -701,45 +655,9 @@ void loop() {
     setSpaProperty(spaCallbackProperty, spaCallbackValue);
   }
 
-  if (ui.isWiFiScanInProgress() && millis() - wifiLastScan > 1000) {
-    debugD("WiFi scan in progress, waiting for completion...");
-    wifiLastScan = millis(); // Reset the last scan time to prevent immediate re-scanning
-  } else if (WiFi.status() != WL_CONNECTED) {
+  if (WiFi.status() != WL_CONNECTED) {
     blinker.setState(STATE_WIFI_NOT_CONNECTED);
-    wifiRestoredFlag = false;
-
-    if (millis() - wifiLastConnect > 10000) { // Reconnect every 10 seconds if not connected
-      debugI("Wifi reconnecting...");
-      wifiLastConnect = millis();
-      WiFi.disconnect();
-      delay(100); // Short delay to ensure disconnect
-      WiFi.begin();
-      if (WiFi.waitForConnectResult() == WL_CONNECTED) {
-        debugI("Wifi reconnected");
-        wifiRestored();
-      } else {
-        debugW("Wifi reconnect failed");
-        if (WiFi.getMode() == WIFI_STA && !config.SoftAPAlwaysOn.getValue()) {
-          debugW("Failed to connect to Wi-Fi, starting AP mode");
-          WiFi.mode(WIFI_AP_STA);
-          WiFi.softAP(WiFi.getHostname(), config.SoftAPPassword.getValue().c_str()); // Start the AP with the hostname and password
-        } else {
-          debugE("Failed to connect to Wi-Fi, but already in AP mode");
-        }
-      };
-    }
-  } else {
-    if (!wifiRestoredFlag) {
-      wifiRestored();
-    }
-    if (delayedStart) {
-      delayedStart = !(bootTime + 10000 < millis());
-    } else {
-
-      if (!si.isInitialised()) {
-        // set status lights to indicate we are waiting for spa connection before we proceed
-        blinker.setState(STATE_WAITING_FOR_SPA);
-      } else {
+  } else if (si.isInitialised() && spaSerialNumber.length() > 0) {
 
         if (!mqttClient.connected()) {  // MQTT broker reconnect if not connected
           long now=millis();
@@ -778,8 +696,6 @@ void loop() {
           // all systems are go! Start the knight rider animation loop
           blinker.setState(KNIGHT_RIDER);
         }
-      }
-    }
   }
 
   if (updateMqtt) {
@@ -790,17 +706,7 @@ void loop() {
   }
 
   if (updateSoftAP) {
-    debugD("Changing SoftAP settings...");
-
-    if (config.SoftAPAlwaysOn.getValue()) {
-      WiFi.mode(WIFI_AP_STA);
-      WiFi.softAP(config.SpaName.getValue().c_str(), config.SoftAPPassword.getValue().c_str());
-      debugI("Soft AP enabled");
-    } else {
-      WiFi.softAPdisconnect(true);
-      WiFi.mode(WIFI_STA);
-      debugI("Soft AP disabled");
-    }
+    wifiTools.updateSoftAP();
     updateSoftAP = false;
   }
 
