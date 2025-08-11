@@ -8,7 +8,10 @@
 class MQTTClientWrapper : public PubSubClient
 {
     public:
-        MQTTClientWrapper(WiFiClient &wifi) : PubSubClient(wifi)
+        MQTTClientWrapper() : PubSubClient(_wifiClient)
+        {}
+
+        MQTTClientWrapper(WiFiClient &wifi) : _wifiClient(wifi), PubSubClient(wifi)
         {}
 
         PubSubClient& setServer(String serverAddress, int port)
@@ -61,6 +64,7 @@ class MQTTClientWrapper : public PubSubClient
         String _pass;
         String _willTopic;
         String _willMessage;
+        WiFiClient _wifiClient;
 
 };
 

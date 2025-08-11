@@ -1,11 +1,5 @@
 #include "WebUI.h"
 
-WebUI::WebUI(SpaInterface *spa, Config *config, MQTTClientWrapper *mqttClient) {
-    _spa = spa;
-    _config = config;
-    _mqttClient = mqttClient;
-}
-
 const char * WebUI::getError() {
     return Update.errorString();
 }
@@ -164,50 +158,21 @@ void WebUI::begin() {
 
     server.on("/scan", HTTP_GET, [this](AsyncWebServerRequest *request) {
         debugD("uri: %s", request->url().c_str());
-        if (!wifiScanInProgress) {
-            if (WiFi.status() != WL_CONNECTED) {
-                debugD("WiFi not connected, disable STA to start scan");
-                WiFi.disconnect(); // Ensure WiFi is disconnected before scanning
-            }
-            WiFi.scanNetworks(true, false); // async = true, show hidden = false
-            wifiScanInProgress = true;
-            wifiScanStartTime = millis();
-            debugD("Starting WiFi scan...");
-            request->send(202, "application/json", "{\"status\":\"scan_started\"}");
+
+        int scanComplete = _wifiTools->scanWiFiNetworks();
+        if (scanComplete == WIFI_SCAN_RUNNING) {
+            debugD("WiFi scan already in progress");
+            request->send(202, "application/json", "{\"status\":\"scan_in_progress\"}");
+        } else if (scanComplete >= 0) {
+            String json = _wifiTools->getWiFiNetworksJSON();
+            debugD("WiFi scan completed successfully");
+            request->send(200, "application/json", json);
+        } else if (scanComplete == WIFI_SCAN_FAILED) {
+            debugD("WiFi scan failed");
+            request->send(202, "application/json", "{\"status\":\"scan_failed\"}");
         } else {
-            int scanComplete = WiFi.scanComplete();
-            if (scanComplete == WIFI_SCAN_RUNNING) {
-                debugD("WiFi scan already in progress");
-                request->send(202, "application/json", "{\"status\":\"scan_in_progress\"}");
-            } else if (scanComplete >= 0) {
-                std::vector<NetworkInfo>& networkMap = *(new std::vector<NetworkInfo>());
-                RemoveDuplicateWiFiNetworks(networkMap);
-                bool first = true;
-                String json = "[";
-                for (const auto& entry : networkMap) {
-                    if (!first) json += ",";
-                    else first = false;
-                    json += "{";
-                    json += "\"ssid\":\"" + entry.ssid + "\",";
-                    json += "\"rssi\":" + String(entry.rssi) + ",";
-                    json += "\"secure\":" + String(entry.encryptionType != WIFI_AUTH_OPEN ? "true" : "false");
-                    json += "}";
-                }
-                json += "]";
-                WiFi.scanDelete(); // clear results for next scan
-                wifiScanInProgress = false;
-                debugD("WiFi scan completed successfully");
-                request->send(200, "application/json", json);
-            } else if (millis() - wifiScanStartTime > 30000) {
-                // If scan is still running after 30 seconds, assume it failed
-                wifiScanInProgress = false;
-                WiFi.scanDelete(); // Clear previous scan results
-                debugD("WiFi scan timed out or failed");
-                request->send(500, "application/json", "{\"error\":\"scan timeout\"}");
-            } else {
-                debugD("WiFi scan already in progress");
-                request->send(202, "application/json", "{\"status\":\"scan_in_progress\"}");
-            }
+            debugD("WiFi scan timed out or failed");
+            request->send(500, "application/json", "{\"error\":\"scan_timeout\"}");
         }
     });
 
@@ -215,11 +180,6 @@ void WebUI::begin() {
         debugD("uri: %s", request->url().c_str());
         String ssid, password;
 
-        if (wifiConnect) {
-            debugD("WiFi connection already in progress, ignoring new request");
-            request->send(429, "application/json", "{\"error\":\"Connection already in progress\"}");
-            return;
-        }
         if (request->hasParam("ssid", true)) {
             ssid = request->getParam("ssid", true)->value();
             ssid.trim(); // Remove leading/trailing whitespace
@@ -237,25 +197,7 @@ void WebUI::begin() {
             return;
         }
 
-        wifiConnect = true;
-        debugD("Cleaning up previous WiFi connections...");
-        WiFi.disconnect(false, true); // Clear previous connections
-        debugD("Connecting to WiFi SSID: %s with password: %s", ssid.c_str(), password.c_str());
-        if (password.length() == 0) {
-            WiFi.begin(ssid.c_str());
-        } else {
-            WiFi.begin(ssid.c_str(), password.c_str());
-        }
-
-        // Optional: wait for connection (blocking, or use task/timer for async)
-        unsigned long startAttemptTime = millis();
-        while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 10000) {
-            delay(250);
-            debugD("Waiting for WiFi connection...");
-        }
-
-        wifiConnect = false; // Reset connection flag
-        if (WiFi.status() == WL_CONNECTED) {
+        if (_wifiTools->connectToWiFi(&ssid, &password)) {
             debugD("Connected to WiFi SSID: %s", ssid.c_str());
             request->send(200, "application/json", "{\"success\":true}");
         } else {
@@ -271,35 +213,4 @@ void WebUI::begin() {
     server.begin();
 
     initialised = true;
-}
-
-void WebUI::RemoveDuplicateWiFiNetworks(std::vector<NetworkInfo>& networkList) {
-    int n = WiFi.scanComplete();
-
-    for (int i = 0; i < n; ++i) {
-        String ssid = WiFi.SSID(i);
-        int32_t rssi = WiFi.RSSI(i);
-        wifi_auth_mode_t enc = WiFi.encryptionType(i);
-
-        if (ssid.length() == 0) continue; // Skip hidden or empty SSIDs
-
-        // Search for existing entry with the same SSID
-        auto it = std::find_if(networkList.begin(), networkList.end(),
-            [&](const NetworkInfo& net) { return net.ssid == ssid; });
-
-        if (it == networkList.end()) {
-            networkList.push_back(NetworkInfo{ ssid, rssi, enc });
-        } else {
-            // Keep the entry with the stronger signal
-            if (it->rssi < rssi) {
-                it->rssi = rssi;
-                it->encryptionType = enc;
-            }
-        }
-    }
-
-    // Sort by rssi descending (strongest signal first)
-    std::sort(networkList.begin(), networkList.end(), [](const NetworkInfo& a, const NetworkInfo& b) {
-        return a.rssi > b.rssi;
-    });
 }
