@@ -2,7 +2,6 @@
 #include <WebServer.h>
 
 #include <RemoteDebug.h>
-#include <WiFiManager.h>
 #include <ESPmDNS.h>
 #include <SPIFFS.h>
 
@@ -35,14 +34,12 @@ WiFiTools wifiTools(&config);
 WebUI ui(&si, &config, &mqttClient, &wifiTools);
 
 
-bool WMsaveConfig = false;
 ulong mqttLastConnect = 0;
 ulong bootTime = millis();
 ulong statusLastPublish = millis();
 ulong lastMsg = 0; // Last message time
 bool delayedStart = true; // Delay spa connection for 10sec after boot to allow for external debugging if required.
 bool autoDiscoveryPublished = false;
-bool wifiRestoredFlag = true; // Flag to indicate if Wi-Fi has been restored after a disconnect.
 
 String mqttBase = "";
 String mqttStatusTopic = "";
@@ -60,66 +57,6 @@ bool updateSoftAP = false;
 bool setSpaCallbackReady = false;
 String spaCallbackProperty;
 String spaCallbackValue;
-
-void WMsaveConfigCallback(){
-  WMsaveConfig = true;
-}
-
-void startWiFiManager(){
-
-  debugD("Starting Wi-Fi Manager...");
-
-  WiFiManager wm;
-  WiFiManagerParameter custom_spa_name("spa_name", "Spa Name", config.SpaName.getValue().c_str(), 40);
-  WiFiManagerParameter custom_mqtt_server("server", "MQTT server", config.MqttServer.getValue().c_str(), 40);
-  WiFiManagerParameter custom_mqtt_port("port", "MQTT port", String(config.MqttPort.getValue()).c_str(), 6);
-  WiFiManagerParameter custom_mqtt_username("username", "MQTT Username", config.MqttUsername.getValue().c_str(), 20 );
-  WiFiManagerParameter custom_mqtt_password("password", "MQTT Password", config.MqttPassword.getValue().c_str(), 40 );
-  wm.addParameter(&custom_spa_name);
-  wm.addParameter(&custom_mqtt_server);
-  wm.addParameter(&custom_mqtt_port);
-  wm.addParameter(&custom_mqtt_username);
-  wm.addParameter(&custom_mqtt_password);
-  wm.setBreakAfterConfig(true);
-  wm.setSaveConfigCallback(WMsaveConfigCallback);
-  wm.setConnectTimeout(300); //close the WiFiManager after 300 seconds of inactivity
-
-  blinker.setState(STATE_STARTED_WIFI_AP);
-  wm.startConfigPortal("eSpa-wifi-AP", NULL);
-  debugI("Exiting Portal");
-
-  if (WMsaveConfig) {
-    config.SpaName.setValue(String(custom_spa_name.getValue()));
-    config.MqttServer.setValue(String(custom_mqtt_server.getValue()));
-    config.MqttPort.setValue(String(custom_mqtt_port.getValue()).toInt());
-    config.MqttUsername.setValue(String(custom_mqtt_username.getValue()));
-    config.MqttPassword.setValue(String(custom_mqtt_password.getValue()));
-
-    config.writeConfig();
-  }
-
-  ESP.restart(); // Restart the ESP to apply the new settings
-}
-
-// We check the EN_PIN every loop, to allow people to configure the system
-void checkButton(){
-#if defined(EN_PIN)
-  if(digitalRead(EN_PIN) == LOW) {
-    debugI("Initial button press detected");
-    delay(100); // wait and then test again to ensure that it is a held button not a press
-    if(digitalRead(EN_PIN) == LOW) {
-      debugI("Button press detected. Starting Portal");
-      startWiFiManager();
-    }
-  }
-#endif
-}
-
-void startWifiManagerCallback() {
-  debugD("Starting Wi-Fi Manager...");
-  startWiFiManager();
-  ESP.restart(); //do we need to reboot here??
-}
 
 void setSpaCallback(String property, String value) {
   debugD("setSpaCallback: %s: %s", property.c_str(), value.c_str());
@@ -603,7 +540,6 @@ void setup() {
 
   ui.begin();
 
-  ui.setWifiManagerCallback(startWifiManagerCallback);
   ui.setSpaCallback(setSpaCallback);
   si.setSpaPollFrequency(config.SpaPollFrequency.getValue());
 
@@ -615,10 +551,7 @@ void setup() {
 
 }
 
-void loop() {  
-
-  checkButton(); // Check if the button is pressed to start Wi-Fi Manager
-
+void loop() {
   Debug.handle();
 
   if (delayedStart) {
