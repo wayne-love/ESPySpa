@@ -586,8 +586,7 @@ void setup() {
   debugA("Starting ESP...");
 
   if (!config.readConfig()) {
-    debugA("Failed to open config.json, starting Wi-Fi Manager");
-    startWiFiManager();
+    debugA("Failed to open config.json...");
   }
 
   blinker.setState(STATE_WIFI_NOT_CONNECTED);
