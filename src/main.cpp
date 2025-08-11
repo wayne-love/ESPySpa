@@ -749,8 +749,10 @@ void loop() {
             debugW("MQTT not connected, attempting connection to %s:%i", config.MqttServer.getValue(), config.MqttPort.getValue());
             mqttLastConnect = now;
 
+            String macAddress = WiFi.macAddress();
+            macAddress.replace(':', 'X'); // Replace colons with 'X' to avoid issues with MQTT topic names
 
-            if (mqttClient.connect("sn_esp32", config.MqttUsername.getValue(), config.MqttPassword.getValue(), mqttAvailability.c_str(),2,true,"offline")) {
+            if (mqttClient.connect(macAddress.c_str(), config.MqttUsername.getValue(), config.MqttPassword.getValue(), mqttAvailability.c_str(),2,true,"offline")) {
               debugI("MQTT connected");
     
               String subTopic = mqttBase+"set/#";
