@@ -170,6 +170,11 @@ void WebUI::begin() {
         request->send(response);
     });
 
+    // Disable caching
+    DefaultHeaders::Instance().addHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+    DefaultHeaders::Instance().addHeader("Pragma", "no-cache");
+    DefaultHeaders::Instance().addHeader("Expires", "0");
+
     // As a fallback we try to load from /www any requested URL
     server.serveStatic("/", SPIFFS, "/www/");
 
