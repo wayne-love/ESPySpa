@@ -20,11 +20,6 @@ void WebUI::begin() {
         request->send(200, "text/html", fotaPage);
     });
 
-    server.on("/config", HTTP_GET, [&](AsyncWebServerRequest *request) {
-        debugD("uri: %s", request->url().c_str());
-        request->send(SPIFFS, "/www/config.htm");
-    });
-
     server.on("/fota", HTTP_POST, [this](AsyncWebServerRequest *request) {
         debugD("uri: %s", request->url().c_str());
         if (Update.hasError()) {
@@ -208,7 +203,14 @@ void WebUI::begin() {
 
 
     // As a fallback we try to load from /www any requested URL
-    server.serveStatic("/", SPIFFS, "/www/");
+    // Serve root pages without caching
+    server.serveStatic("/", LittleFS, "/www/")
+        .setDefaultFile("index.htm")
+        .setCacheControl("no-cache");
+
+    // Serve assets (CSS, JS, images) with long cache lifetime
+    server.serveStatic("/assets", LittleFS, "/www/assets")
+        .setCacheControl("public, max-age=31536000");
 
     server.begin();
 

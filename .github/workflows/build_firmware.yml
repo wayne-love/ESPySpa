@@ -52,7 +52,7 @@ jobs:
           ls -la .pio/build/${{ inputs.platform }}/*.bin
           mv .pio/build/${{ inputs.platform }}/firmware.bin firmware_${{ inputs.platform }}_ota.bin
           mv .pio/build/${{ inputs.platform }}/firmware_factory.bin firmware_${{ inputs.platform }}_factory.bin
-          mv .pio/build/${{ inputs.platform }}/spiffs.bin spiffs_${{ inputs.platform }}.bin
+          mv .pio/build/${{ inputs.platform }}/littlefs.bin littlefs_${{ inputs.platform }}.bin
           ls -la *.bin
       - name: Archive Firmware
         uses: actions/upload-artifact@v4

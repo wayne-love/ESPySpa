@@ -3,7 +3,6 @@
 
 #include <RemoteDebug.h>
 #include <ESPmDNS.h>
-#include <SPIFFS.h>
 
 #include "MultiBlinker.h"
 #include "WiFiTools.h"
@@ -514,16 +513,10 @@ void setup() {
   blinker.setState(STATE_NONE); // start with all LEDs off
   blinker.start();
 
-  if (SPIFFS.begin()) {
-    debugD("Mounted SPIFFS");
-  } else {
-    debugE("Error mounting SPIFFS");
-  }
-
   debugA("Starting ESP...");
 
   if (!config.readConfig()) {
-    debugA("Failed to open config.json...");
+    debugA("No preferences found...");
   }
 
   blinker.setState(STATE_WIFI_NOT_CONNECTED);
@@ -560,6 +553,13 @@ void loop() {
       debugI("Delayed start finished, proceeding with spa connection");
       lastMsg = millis();
     }
+    return;
+  }
+
+  if (!si.isInitialised() && WiFi.status() != WL_CONNECTED) {
+    debugI("Waiting for Spa and WiFi");
+    blinker.setState(STATE_WAITING_FOR_SPA);
+    delay(1000);
     return;
   }
 

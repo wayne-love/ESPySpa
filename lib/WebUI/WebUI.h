@@ -2,7 +2,7 @@
 #define WEBUI_H
 
 #include <Arduino.h>
-#include <SPIFFS.h>
+#include <LittleFS.h>
 #include <Update.h>
 
 #include "SpaInterface.h"
@@ -18,7 +18,7 @@ class WebUI {
     public:
         WebUI(SpaInterface *spa, Config *config, MQTTClientWrapper *mqttClient, WiFiTools *wifiTools) :
             _spa(spa), _config(config), _mqttClient(mqttClient), _wifiTools(wifiTools) {
-            if (!SPIFFS.begin()) {
+            if (!LittleFS.begin()) {
                 debugE("Failed to mount file system");
             }
         }
@@ -47,8 +47,8 @@ class WebUI {
 
         const char* getError();
 
-        // hard-coded FOTA page in case file system gets wiped
-        static constexpr const char *fotaPage PROGMEM = R"(
+      // hard-coded FOTA page in case file system gets wiped
+      static constexpr const char *fotaPage PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -58,11 +58,10 @@ class WebUI {
 </head>
 <body>
 <h1>Firmware Update</h1>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 <form method="POST" action="" enctype="multipart/form-data" id="upload_form">
 <table>
 <tr>
-<td><label for="appFile">Application Update File:</label></td>
+<td><label for="appFile">Firmware Update File:</label></td>
 <td><input type="file" accept=".bin,.bin.gz" name="appFile" id="appFile"></td>
 </tr>
 <tr>
@@ -75,92 +74,96 @@ class WebUI {
 <div id="prg">progress: 0%</div>
 <div id="msg"></div>
 <script>
-$(function() {
-  $('form').submit(async function(e) {
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("upload_form");
+  const appFileInput = document.getElementById("appFile");
+  const fsFileInput = document.getElementById("fsFile");
+  const prg = document.getElementById("prg");
+  const msgDiv = document.getElementById("msg");
+
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const appFile = $('#appFile')[0].files[0];
-    const fsFile = $('#fsFile')[0].files[0];
+    const appFile = appFileInput.files[0];
+    const fsFile = fsFileInput.files[0];
     let appSuccess = false, fsSuccess = false;
 
     if (!appFile && !fsFile) {
-      msg('Error: Please select either an application or filesystem update file.', 'red');
-      console.error('No files selected for upload.');
+      msg("Error: Please select either an firmware or filesystem update file.", "red");
+      console.error("No files selected for upload.");
       return;
     }
 
-    // Upload application file if provided
+    // Upload firmware file if provided
     if (appFile) {
       const appData = new FormData();
-      appData.append('updateType', 'application');
-      appData.append('update', appFile);
-      appSuccess = await uploadFileAsync(appData, '/fota');
+      appData.append("updateType", "application");
+      appData.append("update", appFile);
+      appSuccess = await uploadFileAsync(appData, "/fota");
     }
 
     // Upload filesystem file if provided
     if (fsFile) {
       const fsData = new FormData();
-      fsData.append('updateType', 'filesystem');
-      fsData.append('update', fsFile);
-      fsSuccess = await uploadFileAsync(fsData, '/fota');
+      fsData.append("updateType", "filesystem");
+      fsData.append("update", fsFile);
+      fsSuccess = await uploadFileAsync(fsData, "/fota");
     }
 
     // Trigger reboot only if all provided uploads were successful
     if ((!appFile || appSuccess) && (!fsFile || fsSuccess)) {
       reboot();
     } else {
-      msg('One or more uploads failed. Reboot canceled.', 'red');
+      msg("One or more uploads failed. Reboot canceled.", "red");
     }
   });
 
-  async function uploadFileAsync(data, url) {
+  function uploadFileAsync(data, url) {
     return new Promise((resolve) => {
-      $.ajax({
-        url,
-        type: 'POST',
-        data,
-        contentType: false,
-        processData: false,
-        xhr: function() {
-          const xhr = new XMLHttpRequest();
-          xhr.upload.addEventListener('progress', function(e) {
-            if (e.lengthComputable) {
-              const progress = Math.round((e.loaded / e.total) * 100);
-              $('#prg').text('progress: ' + progress + '%');
-              msg(progress < 100 ? 'Uploading...' : 'Flashing...', 'blue');
-            }
-          });
-          return xhr;
-        },
-        success: () => {
-          msg('Update successful!', 'green');
-          resolve(true);
-        },
-        error: () => {
-          msg('Update failed! Please try again.', 'red');
-          resolve(false);
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", url, true);
+
+      xhr.upload.addEventListener("progress", (e) => {
+        if (e.lengthComputable) {
+          const progress = Math.round((e.loaded / e.total) * 100);
+          prg.textContent = "progress: " + progress + "%";
+          msg(progress < 100 ? "Uploading..." : "Flashing...", "blue");
         }
       });
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          msg("Update successful!", "green");
+          resolve(true);
+        } else {
+          msg("Update failed! Please try again.", "red");
+          resolve(false);
+        }
+      };
+
+      xhr.onerror = () => {
+        msg("Update failed! Please try again.", "red");
+        resolve(false);
+      };
+
+      xhr.send(data);
     });
   }
 
   function reboot() {
-    $.ajax({
-      url: '/reboot',
-      type: 'GET',
-      success: () => msg('Reboot initiated.', 'blue'),
-      error: () => msg('Failed to initiate reboot.', 'red'),
-      complete: () => setTimeout(() => location.href = '/', 2000)
-    });
+    fetch("/reboot")
+      .then(() => msg("Reboot initiated.", "blue"))
+      .catch(() => msg("Failed to initiate reboot.", "red"))
+      .finally(() => setTimeout(() => location.href = "/", 2000));
   }
 
   function msg(message, color) {
-    $('#msg').html(`<p style="color:${color};">${message}</p>`);
+    msgDiv.innerHTML = `<p style="color:${color};">${message}</p>`;
   }
 });
 </script>
 </body>
 </html>
-)";
+)rawliteral";
 };
 
 #endif // WEBUI_H
