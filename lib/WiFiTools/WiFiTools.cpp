@@ -13,7 +13,15 @@ void WiFiTools::setup() {
     }
 
     WiFi.begin();
-    if (WiFi.waitForConnectResult() == WL_CONNECTED) {
+    for (int i = 0; i < 10; i++) {
+        if (WiFi.status() == WL_CONNECTED) {
+            debugI("Connected to Wi-Fi as %s", WiFi.getHostname());
+            break;
+        }
+        debugD("Waiting for Wi-Fi connection...");
+        delay(500);
+    }
+    if (WiFi.status() == WL_CONNECTED) {
         debugI("Connected to Wi-Fi as %s", WiFi.getHostname());
         wifiRestored();
     } else {
