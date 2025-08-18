@@ -57,6 +57,23 @@ bool setSpaCallbackReady = false;
 String spaCallbackProperty;
 String spaCallbackValue;
 
+// We check the EN_PIN every loop, to allow people to configure the system
+void checkButton(){
+#if defined(EN_PIN)
+  if(digitalRead(EN_PIN) == LOW) {
+    debugI("Initial button press detected");
+    delay(100); // wait and then test again to ensure that it is a held button not a press
+    if(digitalRead(EN_PIN) == LOW) {
+      debugI("Button press detected. Starting Portal");
+      config.SoftAPAlwaysOn.setValue(true);
+      // Should we reset the password??
+      // config.SoftAPPassword.setValue("eSPA-Password");
+      wifiTools.updateSoftAP();
+    }
+  }
+#endif
+}
+
 void setSpaCallback(String property, String value) {
   debugD("setSpaCallback: %s: %s", property.c_str(), value.c_str());
   spaCallbackProperty = property;
@@ -545,6 +562,7 @@ void setup() {
 }
 
 void loop() {
+  checkButton(); // Check if the button is pressed to enable the softAP
   Debug.handle();
 
   if (delayedStart) {
