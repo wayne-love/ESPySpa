@@ -31,7 +31,7 @@ def merge_bin_action(source, target, env):
         with open(partition_csv, "r") as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                if row["# Name"] == fs_image_name:
+                if row["# Name"] == fs_image_name or row["# Name"] == "spiffs":
                     offset = row[" Offset"]
                     break
 

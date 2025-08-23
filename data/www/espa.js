@@ -415,7 +415,7 @@ $(document).ready(function () {
         let appSuccess = false, fsSuccess = false;
 
         if (!appFile && !fsFile) {
-          showAlert('Please select either an application or filesystem update file.', 'alert-danger', 'Error');
+          showAlert('Please select either an firmware or filesystem update file.', 'alert-danger', 'Error');
           console.error('No files selected for upload.');
           return;
         }
@@ -423,13 +423,13 @@ $(document).ready(function () {
         let totalFiles = 1;
         if (appFile && fsFile) totalFiles = 2;
         let fileNum = 0;
-        // Upload application file if provided
+        // Upload firmware file if provided
         if (appFile) {
             const appData = new FormData();
             appData.append('updateType', 'application');
             appData.append('update', appFile);
             fileNum++;
-            $('#msg').html(`<p style="color:blue;">Uploading file ${fileNum} of ${totalFiles} - Application update.</p>`);
+            $('#msg').html(`<p style="color:blue;">Uploading file ${fileNum} of ${totalFiles} - Firmware update.</p>`);
             appSuccess = await uploadFileAsync(appData, '/fota', fileNum, totalFiles);
         }
 
