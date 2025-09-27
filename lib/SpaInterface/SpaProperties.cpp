@@ -801,7 +801,7 @@ boolean SpaProperties::update_LSPDValue(String s){
     return true;
 }
 
-boolean SpaProperties::update_FiltSetHrs(String s){
+boolean SpaProperties::update_FiltHrs(String s){
     if (!isNumber(s)) {
         return false;
     }

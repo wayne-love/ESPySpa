@@ -159,6 +159,9 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
   json["heatpump"]["mode"] = si.HPMPStrings[si.getHPMP()];
   json["heatpump"]["auxheat"] = si.getHELE()==0? "OFF" : "ON";
 
+  json["filtration"]["blockDuration"] = si.getFiltBlockHrs();
+  json["filtration"]["hours"] = si.getFiltHrs();
+
   JsonObject pumps = json["pumps"].to<JsonObject>();
   // Add pump data by calling the function for each pump
   for (int i = 1; i <= 5; i++) {
@@ -190,11 +193,11 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
   for (const auto& pair : si.sleepBitmap) {
       if (pair == si.getL_1SNZ_DAY()) {
         json["sleepTimers"]["timer1"]["state"]=si.sleepSelection[member];
-        debugD("SleepTimer1: %s", si.sleepSelection[member].c_str());
+        debugV("SleepTimer1: %s", si.sleepSelection[member].c_str());
       }
       if (pair == si.getL_2SNZ_DAY()) {
         json["sleepTimers"]["timer2"]["state"]=si.sleepSelection[member];
-        debugD("SleepTimer2: %s", si.sleepSelection[member].c_str());
+        debugV("SleepTimer2: %s", si.sleepSelection[member].c_str());
       }
       member++;
   }

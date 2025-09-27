@@ -20,7 +20,7 @@ String SpaInterface::flushSerialReadBuffer(bool returnData) {
     int x = 0;
     String flushedData;
 
-    debugD("Flushing serial stream - %i bytes in the buffer", port.available());
+    debugV("Flushing serial stream - %i bytes in the buffer", port.available());
     while (port.available() > 0 && x++ < 5120) {
         int byte = port.read();
         if (returnData) {
@@ -32,7 +32,7 @@ String SpaInterface::flushSerialReadBuffer(bool returnData) {
     debugD("Flushed serial stream - %i bytes remaining in the buffer", port.available());
 
     if (returnData && !flushedData.isEmpty()) {
-        debugD("Flushed data (%i bytes): %s", flushedData.length(), flushedData.c_str());
+        debugV("Flushed data (%i bytes): %s", flushedData.length(), flushedData.c_str());
     }
 
     return flushedData;
@@ -43,7 +43,7 @@ void SpaInterface::sendCommand(String cmd) {
 
     flushSerialReadBuffer();
 
-    debugD("Sending - %s",cmd.c_str());
+    debugV("Sending - '%s'",cmd.c_str());
     port.print('\n');
     port.flush();
     delay(50); // **TODO** is this needed?
@@ -52,9 +52,9 @@ void SpaInterface::sendCommand(String cmd) {
 
     ulong timeout = millis() + 1000; // wait up to 1 sec for a response
 
-    debugD("Start waiting for a response");
+    debugV("Start waiting for a response");
     while (port.available()==0 and millis()<timeout) {}
-    debugD("Finish waiting");
+    debugV("Finish waiting");
 
     _resultRegistersDirty = true; // we're trying to write to the registers so we can assume that they will now be dirty
 }
@@ -63,14 +63,14 @@ String SpaInterface::sendCommandReturnResult(String cmd) {
     sendCommand(cmd);
     String result = port.readStringUntil('\r');
     port.read(); // get rid of the trailing LF char
-    debugV("Read - %s",result.c_str());
+    debugV("Read - '%s'",result.c_str());
     return result;
 }
 
 bool SpaInterface::sendCommandCheckResult(String cmd, String expected){
     String result = sendCommandReturnResult(cmd);
     bool outcome = result == expected;
-    if (!outcome) debugW("Sent comment %s, expected %s, got %s",cmd.c_str(),expected.c_str(),result.c_str());
+    debugD("Sent command '%s', expected '%s', got '%s'",cmd.c_str(),expected.c_str(),result.c_str());
     return outcome;
 }
 
@@ -409,6 +409,34 @@ bool SpaInterface::setMode(String mode){
     return false;
 }
 
+bool SpaInterface::setFiltBlockHrs(String duration){
+    debugD("setFiltBlockHrs - %s", duration);
+    for (int i = 0; i < FiltBlockHrsSelect.size(); i++) {
+        if (FiltBlockHrsSelect[i] == duration) {
+            if (sendCommandCheckResult("W90:"+FiltBlockHrsSelect[i],FiltBlockHrsSelect[i])) {
+                update_FiltBlockHrs(FiltBlockHrsSelect[i]);
+                return true;
+            }
+            return false;
+        }
+    }
+    return false;
+}
+
+bool SpaInterface::setFiltHrs(String duration){
+    debugD("setFiltHrs - %s", duration);
+    for (int i = 0; i < FiltHrsSelect.size(); i++) {
+        if (FiltHrsSelect[i] == duration) {
+            if (sendCommandCheckResult("W60:"+FiltHrsSelect[i],FiltHrsSelect[i])) {
+                update_FiltHrs(FiltHrsSelect[i]);
+                return true;
+            }
+            return false;
+        }
+    }
+    return false;
+}
+
 bool SpaInterface::readStatus() {
 
     // We could just do a port.readString but this will always impose a
@@ -589,7 +617,7 @@ void SpaInterface::updateStatus() {
 
 void SpaInterface::loop(){
     if ( _lastWaitMessage + 1000 < millis()) {
-        debugD("Waiting...");
+        debugV("Waiting...");
         _lastWaitMessage = millis();
     }
 
@@ -718,7 +746,7 @@ void SpaInterface::updateMeasures() {
     update_CurrClr(statusResponseRaw[R6 + 3]);
     update_ColorMode(statusResponseRaw[R6 + 4]);
     update_LSPDValue(statusResponseRaw[R6 + 5]);
-    update_FiltSetHrs(statusResponseRaw[R6 + 6]);
+    update_FiltHrs(statusResponseRaw[R6 + 6]);
     update_FiltBlockHrs(statusResponseRaw[R6 + 7]);
     update_STMP(statusResponseRaw[R6 + 8]);
     update_L_24HOURS(statusResponseRaw[R6 + 9]);
