@@ -76,6 +76,10 @@ bool SpaInterface::sendCommandCheckResult(String cmd, String expected){
 
 bool SpaInterface::setRB_TP_Pump1(int mode){
     debugD("setRB_TP_Pump1 - %i",mode);
+    if (mode == getRB_TP_Pump1()) {
+        debugD("No Pump1 change detected - current %i, new %i", getRB_TP_Pump1(), mode);
+        return true;
+    }
 
     if (sendCommandCheckResult("S22:"+String(mode),"S22-OK")) {
         update_RB_TP_Pump1(String(mode));
@@ -86,6 +90,10 @@ bool SpaInterface::setRB_TP_Pump1(int mode){
 
 bool SpaInterface::setRB_TP_Pump2(int mode){
     debugD("setRB_TP_Pump2 - %i",mode);
+    if (mode == getRB_TP_Pump2()) {
+        debugD("No Pump2 change detected - current %i, new %i", getRB_TP_Pump2(), mode);
+        return true;
+    }
 
     if (sendCommandCheckResult("S23:"+String(mode),"S23-OK")) {
         update_RB_TP_Pump2(String(mode));
@@ -96,6 +104,10 @@ bool SpaInterface::setRB_TP_Pump2(int mode){
 
 bool SpaInterface::setRB_TP_Pump3(int mode){
     debugD("setRB_TP_Pump3 - %i",mode);
+    if (mode == getRB_TP_Pump3()) {
+        debugD("No Pump3 change detected - current %i, new %i", getRB_TP_Pump3(), mode);
+        return true;
+    }
 
     if (sendCommandCheckResult("S24:"+String(mode),"S24-OK")) {
         update_RB_TP_Pump3(String(mode));
@@ -106,6 +118,10 @@ bool SpaInterface::setRB_TP_Pump3(int mode){
 
 bool SpaInterface::setRB_TP_Pump4(int mode){
     debugD("setRB_TP_Pump4 - %i",mode);
+    if (mode == getRB_TP_Pump4()) {
+        debugD("No Pump4 change detected - current %i, new %i", getRB_TP_Pump4(), mode);
+        return true;
+    }
 
     if (sendCommandCheckResult("S25:"+String(mode),"S25-OK")) {
         update_RB_TP_Pump4(String(mode));
@@ -116,6 +132,10 @@ bool SpaInterface::setRB_TP_Pump4(int mode){
 
 bool SpaInterface::setRB_TP_Pump5(int mode){
     debugD("setRB_TP_Pump5 - %i",mode);
+    if (mode == getRB_TP_Pump5()) {
+        debugD("No Pump5 change detected - current %i, new %i", getRB_TP_Pump5(), mode);
+        return true;
+    }
 
     if (sendCommandCheckResult("S26:"+String(mode),"S26-OK")) {
         update_RB_TP_Pump5(String(mode));
@@ -126,18 +146,24 @@ bool SpaInterface::setRB_TP_Pump5(int mode){
 
 bool SpaInterface::setRB_TP_Light(int mode){
     debugD("setRB_TP_Light - %i",mode);
-    if (mode != getRB_TP_Light()) {
-        if (sendCommandCheckResult("W14","W14")) {
-            update_RB_TP_Light(String(mode));
-            return true;
-        }
-        return false;
+    if (mode == getRB_TP_Light()) {
+        debugD("No RB_TP_Light change detected - current %i, new %i", getRB_TP_Light(), mode);
+        return true;
     }
-    return true;
+
+    if (sendCommandCheckResult("W14","W14")) {
+        update_RB_TP_Light(String(mode));
+        return true;
+    }
+    return false;
 }
 
 bool SpaInterface::setHELE(int mode){
     debugD("setHELE - %i", mode);
+    if (mode == getHELE()) {
+        debugD("No HELE change detected - current %i, new %i", getHELE(), mode);
+        return true;
+    }
 
     if (sendCommandCheckResult("W98:"+String(mode),String(mode))) {
         update_HELE(String(mode));
@@ -153,8 +179,14 @@ bool SpaInterface::setHELE(int mode){
 bool SpaInterface::setSTMP(int temp){
     debugD("setSTMP - %i", temp);
 
+    if (temp==getSTMP()) {
+        debugD("No STMP change detected - current %i, new %i", getSTMP(), temp);
+        return true; // No change needed
+    }
+
     // check the temperate is within the valid range
     if (temp < 50 || temp > 410) {
+        debugE("STMP out of range - %i", temp);
         return false;
     }
     if (temp % 2 != 0) {
@@ -172,6 +204,11 @@ bool SpaInterface::setSTMP(int temp){
 
 bool SpaInterface::setL_1SNZ_DAY(int mode){
     debugD("setL_1SNZ_DAY - %i",mode);
+    if (mode == getL_1SNZ_DAY()) {
+        debugD("No L_1SNZ_DAY change detected - current %i, new %i", getL_1SNZ_DAY(), mode);
+        return true;
+    }
+
     if (sendCommandCheckResult(String("W67:")+mode,String(mode))) {
         update_L_1SNZ_DAY(String(mode));
         return true;
@@ -181,6 +218,11 @@ bool SpaInterface::setL_1SNZ_DAY(int mode){
 
 bool SpaInterface::setL_1SNZ_BGN(int mode){
     debugD("setL_1SNZ_BGN - %i",mode);
+    if (mode == getL_1SNZ_BGN()) {
+        debugD("No L_1SNZ_BGN change detected - current %i, new %i", getL_1SNZ_BGN(), mode);
+        return true;
+    }
+
     if (sendCommandCheckResult(String("W68:")+mode,String(mode))) {
         update_L_1SNZ_BGN(String(mode));
         return true;
@@ -190,6 +232,11 @@ bool SpaInterface::setL_1SNZ_BGN(int mode){
 
 bool SpaInterface::setL_1SNZ_END(int mode){
     debugD("setL_1SNZ_END - %i",mode);
+    if (mode == getL_1SNZ_END()) {
+        debugD("No L_1SNZ_END change detected - current %i, new %i", getL_1SNZ_END(), mode);
+        return true;
+    }
+    
     if (sendCommandCheckResult(String("W69:")+mode,String(mode))) {
         update_L_1SNZ_END(String(mode));
         return true;
@@ -199,6 +246,11 @@ bool SpaInterface::setL_1SNZ_END(int mode){
 
 bool SpaInterface::setL_2SNZ_DAY(int mode){
     debugD("setL_2SNZ_DAY - %i",mode);
+    if (mode == getL_2SNZ_DAY()) {
+        debugD("No L_2SNZ_DAY change detected - current %i, new %i", getL_2SNZ_DAY(), mode);
+        return true;
+    }
+
     if (sendCommandCheckResult(String("W70:")+mode,String(mode))) {
         update_L_2SNZ_DAY(String(mode));
         return true;
@@ -207,18 +259,28 @@ bool SpaInterface::setL_2SNZ_DAY(int mode){
 }
 
 bool SpaInterface::setL_2SNZ_BGN(int mode){
-    debugD("setL_1SNZ_BGN - %i",mode);
+    debugD("setL_2SNZ_BGN - %i",mode);
+    if (mode == getL_2SNZ_BGN()) {
+        debugD("No L_2SNZ_BGN change detected - current %i, new %i", getL_2SNZ_BGN(), mode);
+        return true;
+    }
+
     if (sendCommandCheckResult(String("W71:")+mode,String(mode))) {
-        update_L_1SNZ_BGN(String(mode));
+        update_L_2SNZ_BGN(String(mode));
         return true;
     }
     return false;
 }
 
 bool SpaInterface::setL_2SNZ_END(int mode){
-    debugD("setL_1SNZ_END - %i",mode);
+    debugD("setL_2SNZ_END - %i",mode);
+    if (mode == getL_2SNZ_END()) {
+        debugD("No L_2SNZ_END change detected - current %i, new %i", getL_2SNZ_END(), mode);
+        return true;
+    }
+
     if (sendCommandCheckResult(String("W72:")+mode,String(mode))) {
-        update_L_1SNZ_END(String(mode));
+        update_L_2SNZ_END(String(mode));
         return true;
     }
     return false;
@@ -226,9 +288,12 @@ bool SpaInterface::setL_2SNZ_END(int mode){
 
 bool SpaInterface::setHPMP(int mode){
     debugD("setHPMP - %i", mode);
+    if (mode == getHPMP()) {
+        debugD("No HPMP change detected - current %i, new %i", getHPMP(), mode);
+        return true;
+    }
 
     String smode = String(mode);
-
     if (sendCommandCheckResult("W99:"+smode,smode)) {
         update_HPMP(smode);
         return true;
@@ -249,9 +314,12 @@ bool SpaInterface::setHPMP(String mode){
 
 bool SpaInterface::setColorMode(int mode){
     debugD("setColorMode - %i", mode);
+    if (mode == getColorMode()) {
+        debugD("No ColorMode change detected - current %i, new %i", getColorMode(), mode);
+        return true;
+    }
 
     String smode = String(mode);
-
     if (sendCommandCheckResult("S07:"+smode,smode)) {
         update_ColorMode(smode);
         return true;
@@ -271,9 +339,12 @@ bool SpaInterface::setColorMode(String mode){
 
 bool SpaInterface::setLBRTValue(int mode){
     debugD("setLBRTValue - %i", mode);
+    if (mode == getLBRTValue()) {
+        debugD("No LBRTValue change detected - current %i, new %i", getLBRTValue(), mode);
+        return true;
+    }
 
     String smode = String(mode);
-
     if (sendCommandCheckResult("S08:"+smode,smode)) {
         update_LBRTValue(smode);
         return true;
@@ -283,9 +354,12 @@ bool SpaInterface::setLBRTValue(int mode){
 
 bool SpaInterface::setLSPDValue(int mode){
     debugD("setLSPDValue - %i", mode);
+    if (mode == getLSPDValue()) {
+        debugD("No LSPDValue change detected - current %i, new %i", getLSPDValue(), mode);
+        return true;
+    }
 
     String smode = String(mode);
-
     if (sendCommandCheckResult("S09:"+smode,smode)) {
         update_LSPDValue(smode);
         return true;
@@ -304,9 +378,12 @@ bool SpaInterface::setLSPDValue(String mode){
 
 bool SpaInterface::setCurrClr(int mode){
     debugD("setCurrClr - %i", mode);
+    if (mode == getCurrClr()) {
+        debugD("No CurrClr change detected - current %i, new %i", getCurrClr(), mode);
+        return true;
+    }
 
     String smode = String(mode);
-
     if (sendCommandCheckResult("S10:"+smode,smode)) {
         update_CurrClr(smode);
         return true;
@@ -316,9 +393,12 @@ bool SpaInterface::setCurrClr(int mode){
 
 bool SpaInterface::setSpaDayOfWeek(int d){
     debugD("setSpaDayOfWeek - %i", d);
+    if (d == getSpaDayOfWeek()) {
+        debugD("No SpaDayOfWeek change detected - current %i, new %i", getSpaDayOfWeek(), d);
+        return true;
+    }
 
     String sd = String(d);
-
     if (sendCommandCheckResult("S06:"+sd,sd)) {
         update_SpaDayOfWeek(sd);
         return true;
@@ -364,9 +444,12 @@ bool SpaInterface::setSpaTime(time_t t){
 
 bool SpaInterface::setOutlet_Blower(int mode){
     debugD("setOuput-Blower - %i", mode);
+    if (mode == getOutlet_Blower()) {
+        debugD("No Outlet_Blower change detected - current %i, new %i", getOutlet_Blower(), mode);
+        return true;
+    }
 
     String smode = String(mode);
-
     if (sendCommandCheckResult("S28:"+smode,"S28-OK")) {
         update_Outlet_Blower(smode);
         return true;
@@ -376,9 +459,13 @@ bool SpaInterface::setOutlet_Blower(int mode){
 
 bool SpaInterface::setVARIValue(int mode){
     debugD("setVARIValue - %i", mode);
+    if (mode == getVARIValue()) {
+        debugD("No VARIValue change detected - current %i, new %i", getVARIValue(), mode);
+        return true;
+    }
+
     if (mode > 0 && mode < 6) {
         String smode = String(mode);
-
         if (sendCommandCheckResult("S13:"+smode,smode+"  S13")) {
             update_VARIValue(smode);
             return true;
@@ -389,9 +476,12 @@ bool SpaInterface::setVARIValue(int mode){
 
 bool SpaInterface::setMode(int mode){
     debugD("setMode - %i", mode);
-
+    if (mode == getMode().toInt()) {  //TODO - change getMode to return int??? why is it string???
+        debugD("No Mode change detected - current %i, new %i", getMode(), mode);
+        return true;
+    }
+    
     String smode = String(mode);
-
     if (sendCommandCheckResult("W66:"+smode,smode)) {
         update_Mode(spaModeStrings[mode]);
         return true;
