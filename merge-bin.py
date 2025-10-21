@@ -28,12 +28,23 @@ def merge_bin_action(source, target, env):
     print("fs_image_name: ", fs_image_name)
 
     if partition_csv and fs_image_name:
-        with open(partition_csv, "r") as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                if row["# Name"] == fs_image_name:
-                    offset = row[" Offset"]
-                    break
+        # Use skipinitialspace to tolerate fields with leading spaces.
+        # Be defensive about header names: some CSVs use '# Name' while
+        # others use 'Name' (and offsets may be 'Offset' or ' Offset').
+        try:
+            with open(partition_csv, "r") as csvfile:
+                reader = csv.DictReader(csvfile, skipinitialspace=True)
+                for row in reader:
+                    # Try several possible header names to avoid KeyError
+                    name = (row.get("# Name") or row.get("Name") or row.get("name"))
+                    if name == fs_image_name:
+                        offset = (row.get("Offset") or row.get(" Offset") or row.get("offset") or 0)
+                        if isinstance(offset, str):
+                            offset = offset.strip()
+                        break
+        except Exception as e:
+            print("Warning: failed to parse partition CSV:", e)
+            offset = 0
 
     if offset:
         flash_images.append(offset)
