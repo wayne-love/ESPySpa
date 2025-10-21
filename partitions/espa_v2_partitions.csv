@@ -1,0 +1,83 @@
+# ===================================================================
+# ESP32-C6-MINI-1 Partition Table Explanation (4 MB flash)
+# ===================================================================
+# 
+# Partition Layout Overview:
+# --------------------------
+# The flash is organized into several partitions. Each partition has:
+# - Name: logical name used by the system or your application
+# - Type: 'app' or 'data'
+# - SubType: specifies role (e.g., ota_0, ota_1, spiffs, nvs)
+# - Offset: starting flash address (must be 0x10000-aligned for app partitions)
+# - Size: size of the partition in bytes (hex)
+# - Flags: optional, can usually be left blank
+#
+# Partition Definitions:
+# ----------------------
+# 1. nvs
+#    Type: data
+#    SubType: nvs
+#    Offset: 0x9000
+#    Size: 0x7000 (28 KB)
+#    Purpose: Non-volatile key-value storage used for:
+#       - Wi-Fi credentials
+#       - Preferences API data
+#       - PHY calibration and system parameters
+#
+# 2. otadata
+#    Type: data
+#    SubType: ota
+#    Offset: 0x10000
+#    Size: 0x2000 (8 KB)
+#    Purpose: OTA metadata used by the bootloader to track which app partition
+#             should be booted. Must be present if OTA updates are used.
+#
+# 3. app0
+#    Type: app
+#    SubType: ota_0
+#    Offset: 0x20000
+#    Size: 0x180000 (1.5 MB)
+#    Purpose: Primary firmware slot for OTA updates. This is where the current
+#             running firmware is stored.
+#
+# 4. app1
+#    Type: app
+#    SubType: ota_1
+#    Offset: 0x1A0000
+#    Size: 0x180000 (1.5 MB)
+#    Purpose: Secondary firmware slot for OTA updates. When performing OTA,
+#             new firmware is written here, then the bootloader switches to it.
+#
+# 5. spiffs
+#    Type: data
+#    SubType: spiffs
+#    Offset: 0x340000
+#    Size: 0x20000 (128 KB)
+#    Purpose: SPI Flash File System for storing:
+#       - Web UI assets (HTML/CSS/JS)
+#       - Configuration files
+#       - Other persistent application data
+#
+# Alignment Notes:
+# ----------------
+# - App partitions (app0 and app1) must start at multiples of 0x10000 (64 KB) for proper flash alignment.
+# - SPIFFS and data partitions can be less strictly aligned, but staying on 0x10000 boundaries is recommended.
+# - NVS must end before the first 0x10000 boundary so that app0 can start properly.
+#
+# Total Flash Usage:
+# ------------------
+# 4 MB total flash:
+# - nvs + otadata: 36 KB
+# - app0 + app1: 3 MB
+# - spiffs: 128 KB
+# - Remaining space: bootloader, alignment padding
+#
+# ===================================================================
+
+
+# Name,     Type,   SubType,  Offset,   Size,     Flags
+nvs,        data,   nvs,      0x9000,   0x7000,   
+otadata,    data,   ota,      0x10000,  0x2000,   
+app0,       app,    ota_0,    0x20000,  0x180000, 
+app1,       app,    ota_1,    0x1A0000, 0x180000, 
+spiffs,     data,   spiffs,   0x340000, 0x20000   
