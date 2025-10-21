@@ -73,8 +73,7 @@
 # - Remaining space: bootloader, alignment padding
 #
 # ===================================================================
-
-
+#
 # Name,     Type,   SubType,  Offset,   Size,     Flags
 nvs,        data,   nvs,      0x9000,   0x7000,   
 otadata,    data,   ota,      0x10000,  0x2000,   
