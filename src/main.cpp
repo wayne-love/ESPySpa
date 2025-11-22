@@ -629,6 +629,7 @@ void setup() {
 
   if (config.SoftAPAlwaysOn.getValue()) {
     WiFi.mode(WIFI_AP_STA);
+    WiFi.softAPConfig(IPAddress(168,254,1,1), IPAddress(168,254,1,1), IPAddress(255,255,255,0));
     WiFi.softAP(WiFi.getHostname(), config.SoftAPPassword.getValue().c_str());
   } else {
     WiFi.mode(WIFI_STA);
@@ -649,6 +650,7 @@ void setup() {
     debugW("Failed to connect to Wi-Fi, starting AP mode");
     if (!config.SoftAPAlwaysOn.getValue()) {
       WiFi.mode(WIFI_AP_STA);
+      WiFi.softAPConfig(IPAddress(168,254,1,1), IPAddress(168,254,1,1), IPAddress(255,255,255,0));
       WiFi.softAP(WiFi.getHostname(), config.SoftAPPassword.getValue().c_str());
     }
   }
@@ -711,6 +713,7 @@ void loop() {
         if (WiFi.getMode() == WIFI_STA && !config.SoftAPAlwaysOn.getValue()) {
           debugW("Failed to connect to Wi-Fi, starting AP mode");
           WiFi.mode(WIFI_AP_STA);
+          WiFi.softAPConfig(IPAddress(168,254,1,1), IPAddress(168,254,1,1), IPAddress(255,255,255,0));
           WiFi.softAP(WiFi.getHostname(), config.SoftAPPassword.getValue().c_str()); // Start the AP with the hostname and password
         } else {
           debugE("Failed to connect to Wi-Fi, but already in AP mode");
@@ -797,6 +800,7 @@ void loop() {
 
     if (config.SoftAPAlwaysOn.getValue()) {
       WiFi.mode(WIFI_AP_STA);
+      WiFi.softAPConfig(IPAddress(168,254,1,1), IPAddress(168,254,1,1), IPAddress(255,255,255,0));
       WiFi.softAP(config.SpaName.getValue().c_str(), config.SoftAPPassword.getValue().c_str());
       debugI("Soft AP enabled");
     } else {
