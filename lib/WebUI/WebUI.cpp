@@ -7,12 +7,20 @@ const char * WebUI::getError() {
 void WebUI::begin() {
     server.on("/reboot", HTTP_GET, [&](AsyncWebServerRequest *request) {
         debugD("uri: %s", request->url().c_str());
-        request->send(200, "text/plain", "Rebooting ESP...");
-        debugD("Rebooting...");
-        delay(200);
-        request->client()->setNoDelay(true);
-        request->client()->stop();
-        ESP.restart();
+
+        if (_setSpaCallback != nullptr) {
+            _setSpaCallback("reboot", "200");
+            request->send(200, "text/html", "Called setSpaCallback for reboot...");
+        } else {
+            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "Rebooting ESP...");
+            response->addHeader("Connection", "close");
+            request->send(response);
+            debugD("Rebooting...");
+            delay(200);
+            request->client()->setNoDelay(true);
+            request->client()->stop();
+            ESP.restart();
+        }
     });
 
     server.on("/fota", HTTP_GET, [&](AsyncWebServerRequest *request) {
