@@ -7,6 +7,7 @@ void WiFiTools::setup() {
 
     if (_config->SoftAPAlwaysOn.getValue()) {
         WiFi.mode(WIFI_AP_STA);
+        WiFi.softAPConfig(IPAddress(168,254,1,1), IPAddress(168,254,1,1), IPAddress(255,255,255,0));
         WiFi.softAP(WiFi.getHostname(), _config->SoftAPPassword.getValue().c_str());
     } else {
         WiFi.mode(WIFI_STA);
