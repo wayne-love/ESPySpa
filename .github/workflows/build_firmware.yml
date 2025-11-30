@@ -41,6 +41,8 @@ jobs:
           python-version: "3.x"
       - name: Install PlatformIO
         run: pip install platformio
+      - name: Update PlatformIO
+        run: pio update
       - name: Build file system image for ${{ inputs.platform }}
         run: pio run --target buildfs -e ${{ inputs.platform }}
       - name: Build for ${{ inputs.platform }}

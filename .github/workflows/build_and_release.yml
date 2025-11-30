@@ -29,7 +29,7 @@ jobs:
     if: needs.pre_job.outputs.concurrent_workflows == 'false' || (needs.pre_job.outputs.concurrent_workflows == 'true' && github.ref_type == 'tag')
     strategy:
       matrix:
-        platform: [esp32dev, spa-control-pcb]
+        platform: [esp32dev, espa-v1, espa-v2]
     uses: ./.github/workflows/build_firmware.yml
     with:
       platform: ${{ matrix.platform }}

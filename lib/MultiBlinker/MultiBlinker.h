@@ -7,11 +7,16 @@
 extern RemoteDebug Debug;
 
 // These are the four LEDs on the PCB
-#ifdef SPACTRLPCB
+#if defined(ESPA_V1)
     const int PCB_LED1 = 14;
     const int PCB_LED2 = 41;
     const int PCB_LED3 = 42;
     const int PCB_LED4 = 43;
+#elif defined(ESPA_V2)
+    const int PCB_LED1 = 18;
+    const int PCB_LED2 = 21;
+    const int PCB_LED3 = 22;
+    const int PCB_LED4 = 23;
 #endif
 
 // Define error state constants

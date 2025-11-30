@@ -23,7 +23,7 @@ RemoteDebug Debug;
 SpaInterface si;
 Config config;
 
-#if defined(SPACTRLPCB)
+#if defined(ESPA_V1) || defined(ESPA_V2)
   MultiBlinker blinker(PCB_LED1, PCB_LED2, PCB_LED3, PCB_LED4);
 #elif defined(LED_PIN)
   MultiBlinker blinker(LED_PIN);
