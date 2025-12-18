@@ -11,6 +11,10 @@
 #include "MQTTClientWrapper.h"
 #include "ESPAsyncWebServer.h"
 
+#ifdef ENABLE_ESPA_CONTROL
+#include "EspaControl.h"
+#endif
+
 extern RemoteDebug Debug;
 
 class WebUI {
@@ -30,6 +34,14 @@ class WebUI {
         void begin();
         bool initialised = false;
 
+        #ifdef ENABLE_ESPA_CONTROL
+          /// @brief Set the EspaControl instance for pairing support
+          /// @param control Pointer to EspaControl instance
+          void setEspaControl(EspaControl *control) {
+              _espaControl = control;
+          }
+        #endif
+
     private:
         AsyncWebServer server{80};
         SpaInterface *_spa;
@@ -37,6 +49,14 @@ class WebUI {
         MQTTClientWrapper *_mqttClient;
         void (*_wifiManagerCallback)() = nullptr;
         void (*_setSpaCallback)(const String, const String) = nullptr;
+
+        #ifdef ENABLE_ESPA_CONTROL
+          EspaControl *_espaControl = nullptr;
+          
+          // Pairing state
+          String _pendingPairingDeviceId;
+          String _pairingStatus; // "PENDING", "APPROVED", "REJECTED", ""
+        #endif
 
         const char* getError();
 

@@ -36,6 +36,7 @@
               <a class="dropdown-item" href="#" onclick="confirmAction('/wifi-manager'); return false;">Wi-Fi Manager</a>
               <a class="dropdown-item" href="#" id="fotaLink">Firmware Updater</a>
               <a class="dropdown-item" href="#" onclick="sendCurrentTime();">Send Current Time to Spa</a>
+              <a class="dropdown-item" href="/pairing.htm">Connect to eSpa Control</a>
               <div class="dropdown-divider"></div>
               <a class="dropdown-item" href="#" onclick="confirmFunction(reboot('Reboot initiated.')); return false;">Reboot eSpa</a>
             </div>
@@ -124,6 +125,10 @@
               <tr>
                 <td>MQTT status:</td>
                 <td><span id="status_mqtt" class="badge text-bg-warning">Loading...</span></td>
+              </tr>
+              <tr>
+                <td>eSpa Control connection:</td>
+                <td><span id="status_espaControl" class="badge text-bg-warning">Loading...</span></td>
               </tr>
               <tr>
                 <td>eSpa Model:</td>

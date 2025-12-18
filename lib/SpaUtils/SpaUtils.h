@@ -27,6 +27,10 @@ String getPumpPossibleStates(String pumpState);
 int getPumpSpeedMax(String pumpState);
 int getPumpSpeedMin(String pumpState);
 
-bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String &output, bool prettyJson=false);
+#ifdef ENABLE_ESPA_CONTROL
+  class EspaControl; // Forward declaration
+#endif
+
+bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String &output, bool prettyJson=false, EspaControl *espaControl=nullptr);
 
 #endif // SPAUTILS_H

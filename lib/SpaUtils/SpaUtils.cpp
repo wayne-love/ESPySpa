@@ -126,7 +126,11 @@ int getPumpSpeedMin(String pumpInstallState) {
   return min;
 }
 
-bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String &output, bool prettyJson) {
+#ifdef ENABLE_ESPA_CONTROL
+#include "EspaControl.h"
+#endif
+
+bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String &output, bool prettyJson, EspaControl *espaControl) {
   JsonDocument json;
 
   json["temperatures"]["setPoint"] = si.getSTMP() / 10.0;
@@ -152,6 +156,25 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
   json["status"]["serial"] = si.getSerialNo1() + "-" + si.getSerialNo2();
   json["status"]["siInitialised"] = si.isInitialised()?"true":"false";
   json["status"]["mqtt"] = mqttClient.connected()?"connected":"disconnected";
+  
+#ifdef ENABLE_ESPA_CONTROL
+  // Add eSpa Control connection status
+  if (espaControl) {
+    if (espaControl->isPaired()) {
+      if (espaControl->isConnected()) {
+        json["status"]["espaControl"] = "connected";
+      } else {
+        json["status"]["espaControl"] = "disconnected";
+      }
+    } else {
+      json["status"]["espaControl"] = "not_paired";
+    }
+  } else {
+    json["status"]["espaControl"] = "unavailable";
+  }
+#else
+  json["status"]["espaControl"] = "disabled";
+#endif
 
   json["eSpa"]["model"] = xstr(PIOENV);
   json["eSpa"]["update"]["installed_version"] = xstr(BUILD_INFO);

@@ -24,11 +24,8 @@ table {
 } */
 
 h1, h2, h3 {
-  text-align: left;
   font-weight: 300;
   padding-top: 20px;
-  display: flex;
-  align-items: center;
 }
 
 .footer {

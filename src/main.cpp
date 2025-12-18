@@ -16,6 +16,10 @@
 #include "HAAutoDiscovery.h"
 #include "MQTTClientWrapper.h"
 
+#ifdef ENABLE_ESPA_CONTROL
+#include <EspaControl.h>
+#endif
+
 
 unsigned long bootStartMillis;  // To track when the device started
 RemoteDebug Debug;
@@ -63,6 +67,18 @@ bool updateSoftAP = false;
 bool setSpaCallbackReady = false;
 String spaCallbackProperty;
 String spaCallbackValue;
+
+#ifdef ENABLE_ESPA_CONTROL
+  EspaControl espaControl;
+#endif
+
+// Desktop test mode - set to true to test without spa connection
+// Allows testing of web UI, eSpa Control pairing, etc. on desktop
+#ifdef DESKTOP_TEST_MODE
+  const bool desktopTestMode = true;
+#else
+  const bool desktopTestMode = false;
+#endif
 
 void WMsaveConfigCallback(){
   WMsaveConfig = true;
@@ -448,6 +464,12 @@ void mqttPublishStatus() {
   String json;
   if (generateStatusJson(si, mqttClient, json, false)) {
     mqttClient.publish(mqttStatusTopic.c_str(),json.c_str());
+
+    #ifdef ENABLE_ESPA_CONTROL
+      if (espaControl.isConnected()) {
+          espaControl.publishState(json);
+      }
+    #endif
   } else {
     debugD("Error generating json");
   }
@@ -605,6 +627,7 @@ void setup() {
   #endif
 
   Serial.begin(115200);
+  delay(100); // Give Serial time to initialize
   Serial.setDebugOutput(true);
   Debug.setSerialEnabled(true);
 
@@ -620,8 +643,13 @@ void setup() {
   debugA("Starting ESP...");
 
   if (!config.readConfig()) {
-    debugA("Failed to open config.json, starting Wi-Fi Manager");
-    startWiFiManager();
+    #if !defined(DEV_WIFI_SSID) && !defined(DEV_WIFI_PASSWORD)
+      // Only start WiFi Manager if we don't have hardcoded dev credentials
+      debugA("Failed to open config.json, starting Wi-Fi Manager");
+      startWiFiManager();
+    #else
+      Serial.println("Config: Skipping WiFi Manager (using dev credentials)");
+    #endif
   }
 
   blinker.setState(STATE_WIFI_NOT_CONNECTED);
@@ -635,8 +663,18 @@ void setup() {
     WiFi.mode(WIFI_STA);
   }
 
-  //WiFi.begin(config.WiFiSSID.getValue().c_str(), config.WiFiPassword.getValue().c_str());
-  WiFi.begin();
+  // Development WiFi credentials (skip WiFi Manager)
+  #ifdef DEV_WIFI_SSID
+    #ifdef DEV_WIFI_PASSWORD
+      WiFi.begin(DEV_WIFI_SSID, DEV_WIFI_PASSWORD);
+    #else
+      Serial.println("WiFi: DEV_WIFI_PASSWORD is NOT defined");
+      WiFi.begin(DEV_WIFI_SSID, "");
+    #endif
+  #else
+    WiFi.begin();
+  #endif
+  
   if (WiFi.waitForConnectResult() == WL_CONNECTED) {
     debugI("Connected to Wi-Fi as %s", WiFi.getHostname());
     int totalTry = 5;
@@ -675,13 +713,150 @@ void setup() {
   config.setCallback(configChangeCallbackInt);
   config.setCallback(configChangeCallbackBool);
 
+  #ifdef ENABLE_ESPA_CONTROL
+    // Register callbacks BEFORE begin() so they're available during initial connection
+    espaControl.setDebug(true);
+    
+    espaControl.onSetProperty([](const String& property, const String& value) {
+        setSpaProperty(property, value);  // Call existing function!
+        return true;
+    });
+    
+    // Publish state immediately when connected
+    espaControl.onConnected([]() {
+            debugI("eSpa Control connected - attempting to publish initial state");
+            
+            // Check if spa is initialized
+            if (spaSerialNumber == "") {
+                debugW("Spa not yet initialized - will publish on first status update");
+                
+                // In desktop test mode, send a minimal test status
+                if (desktopTestMode) {
+                    String testJson = "{\"status\":\"desktop_test_mode\",\"deviceId\":\"" + 
+                                     espaControl.getDeviceId() + "\"}";
+                    debugI("Publishing test status for desktop mode");
+                    espaControl.publishState(testJson);
+                }
+                return;
+            }
+            
+            // Try to publish current state
+            String json;
+            if (generateStatusJson(si, mqttClient, json, false)) {
+                if (espaControl.isConnected()) {
+                    debugI("Publishing initial state to eSpa Control");
+                    espaControl.publishState(json);
+                } else {
+                    debugW("eSpa Control not marked as connected yet");
+                }
+            } else {
+                debugW("Failed to generate status JSON");
+            }
+        });
+    
+    // Initialize eSpa Control - callbacks are now registered and will fire during connection
+    // Uses Config for pairing token storage
+    if (espaControl.begin(&config)) {
+        // Token is now loaded automatically from config in begin()
+        // Use serial commands to pair: "pair 123456", "unpair", "status", "help"
+        
+        // Pass EspaControl instance to WebUI for pairing support
+        ui.setEspaControl(&espaControl);
+        
+        debugI("eSpa Control initialized");
+        debugI("Device ID: %s", espaControl.getDeviceId().c_str());
+        
+        if (espaControl.isPaired()) {
+            debugI("Device is paired - will connect to cloud service");
+        } else {
+            debugI("Device needs pairing - use serial command: pair <code>");
+        }
+    }
+  #endif
 }
+
+#ifdef ENABLE_ESPA_CONTROL
+// Handle serial commands for EspaControl pairing
+void handleSerialCommands() {
+  static String serialBuffer = "";
+  
+  while (Serial.available()) {
+    char c = Serial.read();
+    
+    if (c == '\n' || c == '\r') {
+      if (serialBuffer.length() > 0) {
+        String cmd = serialBuffer;
+        cmd.trim();
+        serialBuffer = "";
+        
+        // Handle commands
+        if (cmd.startsWith("pair ")) {
+          String code = cmd.substring(5);
+          code.trim();
+          
+          if (code.length() == 6) {
+            debugI("Submitting pairing code: %s", code.c_str());
+            if (espaControl.submitPairingCode(code)) {
+              debugI("Pairing code submitted successfully");
+            } else {
+              debugE("Failed to submit pairing code");
+            }
+          } else {
+            debugE("Invalid pairing code. Must be 6 digits. Usage: pair 123456");
+          }
+        } 
+        else if (cmd == "unpair") {
+          debugI("Clearing pairing token...");
+          espaControl.unpair();
+          debugI("Device unpaired");
+        }
+        else if (cmd == "status") {
+          debugI("=== EspaControl Status ===");
+          debugI("Device ID: %s", espaControl.getDeviceId().c_str());
+          
+          PairingState state = espaControl.getPairingState();
+          String stateStr;
+          switch(state) {
+            case NOT_PAIRED: stateStr = "NOT_PAIRED"; break;
+            case CODE_SUBMITTED: stateStr = "CODE_SUBMITTED"; break;
+            case POLLING: stateStr = "POLLING"; break;
+            case PAIRED: stateStr = "PAIRED"; break;
+            case PAIRING_ERROR: stateStr = "PAIRING_ERROR"; break;
+            default: stateStr = "UNKNOWN"; break;
+          }
+          debugI("Pairing State: %s", stateStr.c_str());
+          debugI("Is Paired: %s", espaControl.isPaired() ? "YES" : "NO");
+          debugI("Connected: %s", espaControl.isConnected() ? "YES" : "NO");
+        }
+        else if (cmd == "help") {
+          debugI("=== EspaControl Commands ===");
+          debugI("pair <code>  - Submit 6-digit pairing code (e.g., pair 123456)");
+          debugI("unpair       - Clear pairing token and reset device");
+          debugI("status       - Show current pairing status");
+          debugI("help         - Show this help message");
+        }
+      }
+    } else {
+      serialBuffer += c;
+      
+      // Prevent buffer overflow
+      if (serialBuffer.length() > 100) {
+        serialBuffer = "";
+      }
+    }
+  }
+}
+#endif
 
 void loop() {  
 
   checkButton(); // Check if the button is pressed to start Wi-Fi Manager
 
   Debug.handle();
+  
+  #ifdef ENABLE_ESPA_CONTROL
+    handleSerialCommands();  // Handle serial commands for pairing
+  #endif
 
   if (setSpaCallbackReady) {
     if (spaCallbackProperty == "reboot") {
@@ -727,17 +902,27 @@ void loop() {
     if (delayedStart) {
       delayedStart = !(bootTime + 10000 < millis());
     } else {
-      si.loop();
+      // In desktop test mode, skip spa interface entirely
+      if (!desktopTestMode) {
+        si.loop();
+      }
 
-      if (!si.isInitialised()) {
+      if (!desktopTestMode && !si.isInitialised()) {
         // set status lights to indicate we are waiting for spa connection before we proceed
         blinker.setState(STATE_WAITING_FOR_SPA);
       } else {
         if ( spaSerialNumber=="" ) {
           debugI("Initialising...");
       
-          spaSerialNumber = si.getSerialNo1()+"-"+si.getSerialNo2();
-          debugI("Spa serial number is %s",spaSerialNumber.c_str());
+          if (desktopTestMode) {
+            // Use MAC address as serial number in test mode
+            spaSerialNumber = WiFi.macAddress();
+            spaSerialNumber.replace(":", "");
+            debugI("Desktop test mode - using MAC as serial: %s",spaSerialNumber.c_str());
+          } else {
+            spaSerialNumber = si.getSerialNo1()+"-"+si.getSerialNo2();
+            debugI("Spa serial number is %s",spaSerialNumber.c_str());
+          }
 
           mqttBase = String("sn_esp32/") + spaSerialNumber + String("/");
           mqttStatusTopic = mqttBase + "status";
@@ -745,7 +930,7 @@ void loop() {
           mqttAvailability = mqttBase+"available";
           debugI("MQTT base topic is %s",mqttBase.c_str());
         }
-        if (!mqttClient.connected()) {  // MQTT broker reconnect if not connected
+        if (!desktopTestMode && !mqttClient.connected()) {  // MQTT broker reconnect if not connected (skip in test mode)
           long now=millis();
           if (now - mqttLastConnect > 1000) {
             blinker.setState(STATE_MQTT_NOT_CONNECTED);
@@ -768,10 +953,9 @@ void loop() {
             } else {
               debugW("MQTT connection failed");
             }
-
           }
         } else {
-          if (!autoDiscoveryPublished) {  // This is the setup area, gets called once when communication with Spa and MQTT broker have been established.
+          if (!desktopTestMode && !autoDiscoveryPublished) {  // This is the setup area, gets called once when communication with Spa and MQTT broker have been established.
             debugI("Publish autodiscovery information");
             mqttHaAutoDiscovery();
             autoDiscoveryPublished = true;
@@ -780,15 +964,27 @@ void loop() {
 
             si.statusResponse.setCallback(mqttPublishStatusString);
           }
+
+          #ifdef ENABLE_ESPA_CONTROL
+            espaControl.loop();  // Process WebSocket events
+          #endif
           
           // all systems are go! Start the knight rider animation loop
+          blinker.setState(KNIGHT_RIDER);
+        }
+        
+        // In desktop test mode, we're always "ready" after delayed start
+        if (desktopTestMode) {
+          #ifdef ENABLE_ESPA_CONTROL
+            espaControl.loop();  // Process WebSocket events for pairing testing
+          #endif
           blinker.setState(KNIGHT_RIDER);
         }
       }
     }
   }
 
-  if (updateMqtt) {
+  if (!desktopTestMode && updateMqtt) {
     debugD("Changing MQTT settings...");
     mqttClient.disconnect();
     mqttClient.setServer(config.MqttServer.getValue(), config.MqttPort.getValue());
@@ -811,5 +1007,7 @@ void loop() {
     updateSoftAP = false;
   }
 
-  mqttClient.loop();
+  if (!desktopTestMode) {
+    mqttClient.loop();
+  }
 }

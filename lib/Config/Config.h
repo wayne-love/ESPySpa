@@ -72,6 +72,7 @@ public:
     Setting<int> SpaPollFrequency = Setting<int>("SpaPollFrequency", 60, 10, 300);
     Setting<bool> SoftAPAlwaysOn = Setting<bool>("SoftAPAlwaysOn", true);
     Setting<String> SoftAPPassword = Setting<String>("SoftAPPassword", "eSPA-Password");
+    Setting<String> EspaToken = Setting<String>("EspaToken", "");
 };
 
 class Config : public ControllerConfig {
