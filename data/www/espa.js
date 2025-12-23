@@ -96,6 +96,7 @@ function fetchStatus() {
             updateStatusElement('status_serial', value_json.status.serial);
             updateStatusElement('status_siInitialised', value_json.status.siInitialised);
             updateStatusElement('status_mqtt', value_json.status.mqtt);
+            updateEspaControlStatus(value_json.status.espaControl);
             updateStatusElement('espa_model', value_json.eSpa.model);
             updateStatusElement('espa_build', value_json.eSpa.update.installed_version);
         })
@@ -111,6 +112,7 @@ function fetchStatus() {
             handleStatusError('status_serial');
             handleStatusError('status_siInitialised');
             handleStatusError('status_mqtt');
+            handleStatusError('status_espaControl');
             handleStatusError('espa_model');
             handleStatusError('espa_build');
         });
@@ -123,6 +125,37 @@ function updateStatusElement(elementId, value) {
         element.value = value;
     } else {
         element.textContent = value;
+    }
+}
+
+function updateEspaControlStatus(status) {
+    const element = document.getElementById('status_espaControl');
+    if (!element) return;
+    
+    element.classList.remove('text-bg-success', 'text-bg-danger', 'text-bg-warning', 'text-bg-secondary');
+    
+    switch(status) {
+        case 'connected':
+            element.classList.add('text-bg-success');
+            element.textContent = 'Connected';
+            break;
+        case 'disconnected':
+            element.classList.add('text-bg-warning');
+            element.textContent = 'Disconnected';
+            break;
+        case 'not_paired':
+            element.classList.add('text-bg-secondary');
+            element.textContent = 'Not Paired';
+            break;
+        case 'disabled':
+            element.classList.add('text-bg-secondary');
+            element.textContent = 'Disabled';
+            break;
+        case 'unavailable':
+        default:
+            element.classList.add('text-bg-secondary');
+            element.textContent = 'Unavailable';
+            break;
     }
 }
 

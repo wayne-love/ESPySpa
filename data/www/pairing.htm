@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link rel="stylesheet" href="styles.css">
+  <title>eSpa Control Pairing</title>
+</head>
+
+<body>
+  <nav class="navbar navbar-expand-lg bg-body-secondary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/">
+        <img src="images/logo_eSpa_64px.png" width="30" height="30" class="d-inline-block align-top" alt="" />
+        &nbsp;&nbsp;
+        eSpa Control Pairing
+      </a>
+      <div class="d-flex align-items-center gap-3">
+        <a href="/" class="btn btn-outline-secondary btn-sm">← Back to Home</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-7 col-md-9">
+        <!-- Header with Icon and Gradient Background -->
+        <div class="text-center mb-5 mx-auto">
+          <div class="mb-3">
+            <span style="font-size: 3rem;">✨</span>
+          </div>
+          <h1 class="fw-bold mb-3 text-center" style="font-size: 2.5rem;">Connect to eSpa Control</h1>
+          <p class="lead text-muted mb-2 text-center">Cloud monitoring and control for your spa 🏊‍♂️</p>
+          <div class="text-center">
+            <a href="http://control.espa.diy" target="_blank" class="text-decoration-none d-inline-flex align-items-center gap-1">
+              <small class="text-primary fw-semibold">🌐 control.espa.diy</small>
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="text-primary" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/>
+                <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+        
+        <!-- Progress Steps with Better Design -->
+        <div class="d-flex justify-content-center align-items-center mb-5">
+          <div class="d-flex align-items-start position-relative" style="width: 100%; max-width: 400px;">
+            <div class="position-absolute w-100 border-top border-2 border-secondary" style="top: 24px; z-index: 0;"></div>
+            <div class="d-flex justify-content-between w-100 position-relative" style="z-index: 1;">
+              <div class="d-flex flex-column align-items-center">
+                <span class="badge rounded-circle bg-secondary d-flex align-items-center justify-content-center" id="step-1" style="width: 48px; height: 48px; font-size: 1.2rem; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">1</span>
+                <small class="text-muted mt-2 fw-semibold">Setup</small>
+              </div>
+              <div class="d-flex flex-column align-items-center">
+                <span class="badge rounded-circle bg-secondary d-flex align-items-center justify-content-center" id="step-2" style="width: 48px; height: 48px; font-size: 1.2rem; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">2</span>
+                <small class="text-muted mt-2 fw-semibold">Pair</small>
+              </div>
+              <div class="d-flex flex-column align-items-center">
+                <span class="badge rounded-circle bg-secondary d-flex align-items-center justify-content-center" id="step-3" style="width: 48px; height: 48px; font-size: 1.2rem; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">3</span>
+                <small class="text-muted mt-2 fw-semibold">Done</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 1: Introduction -->
+        <div id="step1-content" class="step-content">
+          <div class="card border-0" style="box-shadow: 0 10px 40px rgba(0,0,0,0.1); border-radius: 16px; overflow: hidden;">
+            <div class="card-body p-5">
+              <h3 class="card-title fw-bold mb-2">🚀 Get Started</h3>
+              <p class="text-muted mb-4">
+                Pair your device with eSpa Control to monitor and control your spa from anywhere 🌍
+              </p>
+              
+              <div class="border rounded-3 p-4 mb-4" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border: none !important;">
+                <div class="d-flex align-items-center">
+                  <div class="rounded-circle p-2 me-3" style="background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="text-primary" viewBox="0 0 16 16">
+                      <path d="M11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm.256 7a4.474 4.474 0 0 1-.229-1.004H3c.001-.246.154-.986.832-1.664C4.484 10.68 5.711 10 8 10c.26 0 .507.009.740.025.226-.341.496-.65.804-.918C9.077 9.038 8.564 9 8 9c-5 0-6 3-6 4s1 1 1 1h5.256Z"/>
+                      <path d="M16 12.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Zm-3.5-2a.5.5 0 0 0-.5.5v1h-1a.5.5 0 0 0 0 1h1v1a.5.5 0 0 0 1 0v-1h1a.5.5 0 0 0 0-1h-1v-1a.5.5 0 0 0-.5-.5Z"/>
+                    </svg>
+                  </div>
+                  <div class="flex-grow-1">
+                    <small class="text-muted d-block mb-1 fw-semibold">🔑 Your Device ID</small>
+                    <code class="fs-5 fw-bold text-dark" id="device-id-display" style="letter-spacing: 1px;">Loading...</code>
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-grid gap-3 mb-4">
+                <a href="http://control.espa.diy/auth/login" target="_blank" class="btn btn-lg btn-primary fw-semibold text-decoration-none" style="border-radius: 12px; padding: 16px; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3); transition: all 0.3s ease;">
+                  <span class="me-2" style="font-size: 1.2rem;">🔐</span>
+                  Sign In to Your Account
+                </a>
+                <a href="http://control.espa.diy/auth/register" target="_blank" class="btn btn-lg btn-outline-primary fw-semibold text-decoration-none" style="border-radius: 12px; padding: 16px; border-width: 2px; transition: all 0.3s ease;">
+                  <span class="me-2" style="font-size: 1.2rem;">✨</span>
+                  Create New Account
+                </a>
+              </div>
+              
+              <div class="text-center">
+                <button class="btn btn-link text-decoration-none fw-semibold" onclick="showStep2()" style="color: #6c757d;">
+                  Already have a pairing code? <span class="text-primary">Enter it here →</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Enter Pairing Code -->
+        <div id="step2-content" class="step-content" style="display: none;">
+          <div class="card border-0" style="box-shadow: 0 10px 40px rgba(0,0,0,0.1); border-radius: 16px; overflow: hidden;">
+            <div class="card-body p-5">
+              <h3 class="card-title fw-bold mb-2">🔢 Enter Pairing Code</h3>
+              <p class="text-muted mb-4">Enter the 6-digit code from the eSpa Control web app 💻</p>
+              
+              <div class="mb-4">
+                <label for="pairing-input" class="form-label fw-semibold mb-3">🎯 Pairing Code</label>
+                <div class="position-relative">
+                  <input 
+                    type="text" 
+                    class="form-control form-control-lg text-center fs-2 py-4 border-2" 
+                    id="pairing-input" 
+                    maxlength="6" 
+                    placeholder="● ● ● ● ● ●" 
+                    pattern="[0-9]{6}"
+                    inputmode="numeric"
+                    style="letter-spacing: 16px; font-family: 'Courier New', monospace; font-weight: bold; border-radius: 12px; box-shadow: inset 0 2px 8px rgba(0,0,0,0.05); transition: all 0.3s ease;">
+                </div>
+                <div class="text-center mt-3">
+                  <small class="text-muted">
+                    💡 Get this code from <strong>Pair New Device</strong> after logging in
+                  </small>
+                </div>
+              </div>
+
+              <div class="d-grid gap-3 mb-3">
+                <button class="btn btn-lg btn-primary fw-semibold" onclick="submitPairingCode()" id="pair-button" disabled style="border-radius: 12px; padding: 16px; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3); transition: all 0.3s ease;">
+                  <span class="me-2" style="font-size: 1.2rem;">🔗</span>
+                  Pair Device
+                </button>
+                <button class="btn btn-outline-secondary fw-semibold" onclick="showStep1()" style="border-radius: 12px; padding: 12px; border-width: 2px;">
+                  ← Back
+                </button>
+              </div>
+
+              <div id="status" class="alert mt-4" style="display: none; border-radius: 12px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Success -->
+        <div id="step3-content" class="step-content" style="display: none;">
+          <div class="card border-0" style="box-shadow: 0 10px 40px rgba(0,0,0,0.1); border-radius: 16px; overflow: hidden;">
+            <div class="card-body p-5 text-center">
+              <div class="mb-4">
+                <div class="d-inline-block p-4 rounded-circle" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); box-shadow: 0 10px 30px rgba(56, 239, 125, 0.4);">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="white" viewBox="0 0 16 16">
+                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                  </svg>
+                </div>
+              </div>
+              <h2 class="fw-bold mb-3" style="color: #198754;">🎉 Pairing Successful!</h2>
+              <p class="lead text-muted mb-4">Your device is now connected to eSpa Control ✓</p>
+              <div class="rounded-3 p-4 mb-4" style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 2px solid #81c784;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#2e7d32" class="mb-2" viewBox="0 0 16 16">
+                  <path d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z"/>
+                  <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5zM2 5h12v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5z"/>
+                </svg>
+                <p class="mb-0 fw-semibold" style="color: #2e7d32;">
+                  🌟 You can now monitor and control your spa from anywhere using the dashboard!
+                </p>
+              </div>
+              
+              <div class="d-grid gap-3">
+                <a href="#" id="dashboard-link" class="btn btn-lg btn-success fw-semibold" target="_blank" style="border-radius: 12px; padding: 16px; box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3); background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border: none;">
+                  <span class="me-2" style="font-size: 1.2rem;">🚀</span>
+                  Open Dashboard
+                </a>
+                <a href="/" class="btn btn-outline-secondary fw-semibold" style="border-radius: 12px; padding: 12px; border-width: 2px;">
+                  🏠 Return to Device Home
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  
+  <script>
+    let DEVICE_ID = '';
+    let pollingInterval = null;
+    let SERVER_URL = 'http://control.espa.diy';
+
+    // Load device ID and server URL on page load
+    $(document).ready(function() {
+      loadConfig();
+      loadDeviceId();
+      checkPairingStatus();
+      
+      // Auto-format pairing code input
+      $('#pairing-input').on('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '');
+        if (this.value.length === 6) {
+          $('#pair-button').prop('disabled', false);
+        } else {
+          $('#pair-button').prop('disabled', true);
+        }
+      });
+    });
+
+    async function loadConfig() {
+      try {
+        const response = await fetch('/api/espa-control/config');
+        const data = await response.json();
+        SERVER_URL = data.serverUrl || 'http://control.espa.diy';
+        console.log('eSpa Control Server URL:', SERVER_URL);
+      } catch (error) {
+        console.error('Failed to load config:', error);
+        // Use default URL if config fetch fails
+      }
+    }
+
+    async function loadDeviceId() {
+      try {
+        const response = await fetch('/api/espa-control/device-id');
+        const data = await response.json();
+        DEVICE_ID = data.deviceId;
+        $('#device-id-display').text(DEVICE_ID);
+      } catch (error) {
+        console.error('Failed to load device ID:', error);
+        $('#device-id-display').text('Error loading device ID');
+      }
+    }
+    
+    async function checkPairingStatus() {
+      try {
+        const response = await fetch('/api/espa-control/pairing-status');
+        const data = await response.json();
+        
+        if (data.isPaired) {
+          // Show already paired message at top of page
+          const alertHtml = `
+            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert" style="border-radius: 12px;">
+              <strong>✓ Already Paired!</strong> Your device is connected to eSpa Control.
+              <a href="${SERVER_URL}/dashboard" target="_blank" class="alert-link">Open Dashboard →</a>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          `;
+          $('#step1-content .card-body').prepend(alertHtml);
+        }
+      } catch (error) {
+        console.error('Failed to check pairing status:', error);
+      }
+    }
+
+    function showStep1() {
+      $('.step-content').hide();
+      $('#step1-content').show();
+      $('.badge').removeClass('bg-primary bg-success').addClass('bg-secondary');
+      $('#step-1').removeClass('bg-secondary').addClass('bg-primary');
+      clearStatus();
+    }
+
+    function showStep2() {
+      $('.step-content').hide();
+      $('#step2-content').show();
+      $('.badge').removeClass('bg-primary').addClass('bg-secondary');
+      $('#step-1').removeClass('bg-secondary').addClass('bg-success');
+      $('#step-2').removeClass('bg-secondary').addClass('bg-primary');
+      $('#pairing-input').focus();
+      clearStatus();
+    }
+
+    function showStep3() {
+      $('.step-content').hide();
+      $('#step3-content').show();
+      $('.badge').removeClass('bg-primary').addClass('bg-secondary');
+      $('#step-1, #step-2').removeClass('bg-secondary').addClass('bg-success');
+      $('#step-3').removeClass('bg-secondary').addClass('bg-primary');
+    }
+
+    function checkAccountStatus() {
+      // This function is no longer used - buttons now use direct links
+    }
+
+    function createAccount() {
+      // This function is no longer used - buttons now use direct links
+    }
+
+    async function submitPairingCode() {
+      const code = $('#pairing-input').val().trim();
+      
+      if (code.length !== 6) {
+        showStatus('Please enter a valid 6-digit code', 'error');
+        return;
+      }
+
+      showStatus('Pairing device... <span class="spinner-border spinner-border-sm" role="status"></span>', 'info');
+      $('#pair-button').prop('disabled', true);
+
+      try {
+        const response = await fetch('/api/espa-control/pair', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            deviceId: DEVICE_ID,
+            pairingCode: code
+          })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          if (result.status === 'PENDING') {
+            showStatus('Waiting for confirmation... Please approve the pairing request in the web app.', 'info');
+            startPolling();
+          } else if (result.status === 'APPROVED') {
+            clearPolling();
+            showSuccess();
+          }
+        } else {
+          showStatus('✗ ' + (result.message || 'Pairing failed. Please check your code and try again.'), 'error');
+          $('#pair-button').prop('disabled', false);
+        }
+      } catch (error) {
+        console.error('Pairing error:', error);
+        showStatus('✗ Connection error. Please check your network and try again.', 'error');
+        $('#pair-button').prop('disabled', false);
+      }
+    }
+
+    function startPolling() {
+      // Poll for pairing status every 2 seconds
+      pollingInterval = setInterval(async () => {
+        try {
+          const response = await fetch('/api/espa-control/pairing-status');
+          const result = await response.json();
+
+          if (result.status === 'PAIRED' || result.isPaired === true) {
+            clearPolling();
+            showSuccess();
+          } else if (result.status === 'ERROR') {
+            clearPolling();
+            showStatus('✗ Pairing request failed. Please try again.', 'error');
+            $('#pair-button').prop('disabled', false);
+          }
+          // If POLLING, CODE_SUBMITTED, or NOT_PAIRED, continue polling
+        } catch (error) {
+          console.error('Polling error:', error);
+        }
+      }, 2000);
+
+      // Stop polling after 2 minutes
+      setTimeout(() => {
+        if (pollingInterval) {
+          clearPolling();
+          showStatus('✗ Pairing timeout. Please try again.', 'error');
+          $('#pair-button').prop('disabled', false);
+        }
+      }, 120000);
+    }
+
+    function clearPolling() {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+      }
+    }
+
+    function showSuccess() {
+      showStep3();
+      $('#dashboard-link').attr('href', SERVER_URL + '/dashboard');
+    }
+
+    function showStatus(message, type) {
+      const status = $('#status');
+      const alertClass = type === 'success' ? 'alert-success' : 
+                        type === 'error' ? 'alert-danger' : 'alert-info';
+      status.removeClass('alert-success alert-danger alert-info').addClass(alertClass);
+      status.html(message);
+      status.show();
+    }
+
+    function clearStatus() {
+      $('#status').hide().html('');
+    }
+  </script>
+</body>
+
+</html>

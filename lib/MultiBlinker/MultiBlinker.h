@@ -11,7 +11,7 @@ extern RemoteDebug Debug;
     const int PCB_LED1 = 14;
     const int PCB_LED2 = 41;
     const int PCB_LED3 = 42;
-    const int PCB_LED4 = 43;
+    const int PCB_LED4 = -1;  // GPIO 43 conflicts with USB on ESP32-S3, disabled
 #elif defined(ESPA_V2)
     const int PCB_LED1 = 18;
     const int PCB_LED2 = 21;

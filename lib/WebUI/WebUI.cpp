@@ -1,4 +1,8 @@
 #include "WebUI.h"
+#ifdef ENABLE_ESPA_CONTROL
+#include <HTTPClient.h>
+#include <WiFi.h>
+#endif
 
 WebUI::WebUI(SpaInterface *spa, Config *config, MQTTClientWrapper *mqttClient) {
     _spa = spa;
@@ -127,7 +131,11 @@ void WebUI::begin() {
         debugD("uri: %s", request->url().c_str());
         String json;
         AsyncWebServerResponse *response;
+#ifdef ENABLE_ESPA_CONTROL
+        if (generateStatusJson(*_spa, *_mqttClient, json, true, _espaControl)) {
+#else
         if (generateStatusJson(*_spa, *_mqttClient, json, true)) {
+#endif
             response = request->beginResponse(200, "application/json", json);
         } else {
             response = request->beginResponse(200, "text/plain", "Error generating json");
@@ -169,6 +177,152 @@ void WebUI::begin() {
         response->addHeader("Connection", "close");
         request->send(response);
     });
+
+#ifdef ENABLE_ESPA_CONTROL
+    // eSpa Control Pairing API Endpoints
+    
+    // Get eSpa Control configuration (server URL)
+    server.on("/api/espa-control/config", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        debugD("uri: %s", request->url().c_str());
+        bool isPaired = _espaControl ? _espaControl->isPaired() : false;
+        String json = "{\"serverUrl\":\"" + String(ESPA_CONTROL_SERVER_URL) + \
+                      "\",\"isPaired\":" + (isPaired ? "true" : "false") + "}";
+        AsyncWebServerResponse *response = request->beginResponse(200, "application/json", json);
+        response->addHeader("Connection", "close");
+        request->send(response);
+    });
+    
+    // Get device ID
+    server.on("/api/espa-control/device-id", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        debugD("uri: %s", request->url().c_str());
+        String deviceId = _espaControl ? _espaControl->getDeviceId() : "unknown";
+        String json = "{\"deviceId\":\"" + deviceId + "\"}";
+        AsyncWebServerResponse *response = request->beginResponse(200, "application/json", json);
+        response->addHeader("Connection", "close");
+        request->send(response);
+    });
+
+    // Handle pairing request
+    server.on("/api/espa-control/pair", HTTP_POST, [this](AsyncWebServerRequest *request){}, NULL,
+        [this](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+        debugD("uri: %s", request->url().c_str());
+        
+        if (!_espaControl) {
+            AsyncWebServerResponse *response = request->beginResponse(400, "application/json", 
+                "{\"success\":false,\"message\":\"eSpa Control not initialized\"}");
+            response->addHeader("Connection", "close");
+            request->send(response);
+            return;
+        }
+
+        // Parse JSON body
+        StaticJsonDocument<256> doc;
+        DeserializationError error = deserializeJson(doc, data, len);
+        
+        if (error) {
+            AsyncWebServerResponse *response = request->beginResponse(400, "application/json",
+                "{\"success\":false,\"message\":\"Invalid JSON\"}");
+            response->addHeader("Connection", "close");
+            request->send(response);
+            return;
+        }
+
+        String deviceId = doc["deviceId"].as<String>();
+        String pairingCode = doc["pairingCode"].as<String>();
+
+        if (pairingCode.length() != 6) {
+            AsyncWebServerResponse *response = request->beginResponse(400, "application/json",
+                "{\"success\":false,\"message\":\"Invalid pairing code\"}");
+            response->addHeader("Connection", "close");
+            request->send(response);
+            return;
+        }
+
+        // Use EspaControl's pairing method
+        bool success = _espaControl->submitPairingCode(pairingCode);
+        
+        if (success) {
+            debugI("Pairing code submitted successfully");
+            String json = "{\"success\":true,\"message\":\"Pairing code submitted\"}";
+            AsyncWebServerResponse *response = request->beginResponse(200, "application/json", json);
+            response->addHeader("Connection", "close");
+            request->send(response);
+        } else {
+            debugE("Failed to submit pairing code");
+            String json = "{\"success\":false,\"message\":\"Failed to submit pairing code\"}";
+            AsyncWebServerResponse *response = request->beginResponse(400, "application/json", json);
+            response->addHeader("Connection", "close");
+            request->send(response);
+        }
+    });
+
+    // Get pairing status
+    server.on("/api/espa-control/pairing-status", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        debugD("uri: %s", request->url().c_str());
+        
+        if (!_espaControl) {
+            AsyncWebServerResponse *response = request->beginResponse(400, "application/json",
+                "{\"status\":\"NONE\",\"message\":\"eSpa Control not initialized\"}");
+            response->addHeader("Connection", "close");
+            request->send(response);
+            return;
+        }
+
+        // Get pairing state from EspaControl
+        PairingState state = _espaControl->getPairingState();
+        String statusStr;
+        
+        switch(state) {
+            case NOT_PAIRED:
+                statusStr = "NOT_PAIRED";
+                break;
+            case CODE_SUBMITTED:
+                statusStr = "CODE_SUBMITTED";
+                break;
+            case POLLING:
+                statusStr = "POLLING";
+                break;
+            case PAIRED:
+                statusStr = "PAIRED";
+                break;
+            case PAIRING_ERROR:
+                statusStr = "ERROR";
+                break;
+            default:
+                statusStr = "UNKNOWN";
+                break;
+        }
+        
+        String json = "{\"status\":\"" + statusStr + "\",\"isPaired\":" + 
+                      (_espaControl->isPaired() ? "true" : "false") + "}";
+        AsyncWebServerResponse *response = request->beginResponse(200, "application/json", json);
+        response->addHeader("Connection", "close");
+        request->send(response);
+    });
+
+    // Unpair device - clear authentication token
+    server.on("/api/espa-control/unpair", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        debugD("uri: %s", request->url().c_str());
+        
+        if (_espaControl) {
+            _espaControl->unpair();
+            debugI("Device unpaired via web UI");
+        }
+        
+        // Also clear config token for backwards compatibility
+        _config->EspaToken.setValue("");
+        _config->writeConfig();
+        
+        // Clear pairing state
+        _pendingPairingDeviceId = "";
+        _pairingStatus = "";
+        
+        String json = "{\"success\":true,\"message\":\"Device unpaired successfully\"}";
+        AsyncWebServerResponse *response = request->beginResponse(200, "application/json", json);
+        response->addHeader("Connection", "close");
+        request->send(response);
+    });
+#endif
 
     // As a fallback we try to load from /www any requested URL
     server.serveStatic("/", SPIFFS, "/www/");

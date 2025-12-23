@@ -25,6 +25,7 @@ bool Config::readConfig() {
     SpaPollFrequency.setValue(preferences.getInt("spaPollFreq", 60));
     SoftAPAlwaysOn.setValue(preferences.getBool("SoftAPAlwaysOn", true));
     SoftAPPassword.setValue(preferences.getString("SoftAPPassword", "eSPA-Password"));
+    EspaToken.setValue(preferences.getString("EspaToken", ""));
 
     preferences.end();
     return true;
@@ -46,6 +47,7 @@ void Config::writeConfig() {
     preferences.putInt("spaPollFreq", SpaPollFrequency.getValue());
     preferences.putBool("SoftAPAlwaysOn", SoftAPAlwaysOn.getValue());
     preferences.putString("SoftAPPassword", SoftAPPassword.getValue());
+    preferences.putString("EspaToken", EspaToken.getValue());
     preferences.end();
   } else {
     debugE("Failed to open Preferences for writing");
