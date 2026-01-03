@@ -1,6 +1,16 @@
-**New Web UI**
+# Changelog
 
-***Breaking change*** *You should deploy v1.0.9 if migrating from an ealier version, this will ensure your settings (mqtt server, spa name, etc) are migrated.*
+### Changed
+- Changed spa-base to ESP32-S3
+- Disabled LED 4 on ESP32-S3 due to conflict
+- Increased memory allocation
 
-* Changed settings to be stored in Preferences
-* New Web UI
+## [1.0.13] 
+
+### Fixed
+- Fixed access point address space to 169.254.1.1/24
+
+## [1.0.12] 
+
+### Changed
+- Changed AP network to link-local address space (168.254.1.0/24)
