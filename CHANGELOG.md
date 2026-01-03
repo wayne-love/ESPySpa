@@ -5,6 +5,7 @@
 - Disabled LED 4 on ESP32-S3 due to conflict
 - Increased memory allocation
 - Fix Python version rather than have it auto update to new versions
+- Force 1.0.14 release
 
 ## [1.0.13] 
 
