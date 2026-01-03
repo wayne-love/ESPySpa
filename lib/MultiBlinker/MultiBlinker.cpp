@@ -51,7 +51,7 @@ void MultiBlinker::start() {
         return;
     }
     running = true;
-    xTaskCreate(runTask, "MultiBlinkerTask", 2048, this, 1, &taskHandle);
+    xTaskCreate(runTask, "MultiBlinkerTask", 4096, this, 1, &taskHandle);
 }
 
 void MultiBlinker::stop() {
