@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.0.15]
+- Fixed setMode 
+
+## [1.0.14] 
+
 ### Changed
 - Changed spa-base to ESP32-S3
 - Disabled LED 4 on ESP32-S3 due to conflict
