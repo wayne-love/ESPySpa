@@ -476,8 +476,8 @@ bool SpaInterface::setVARIValue(int mode){
 
 bool SpaInterface::setMode(int mode){
     debugD("setMode - %i", mode);
-    if (mode == getMode().toInt()) {  //TODO - change getMode to return int??? why is it string???
-        debugD("No Mode change detected - current %i, new %i", getMode(), mode);
+    if (mode == getModeIndex(getMode())) {
+        debugD("No Mode change detected - current %i, new %i", getModeIndex(getMode()), mode);
         return true;
     }
     
@@ -712,7 +712,7 @@ void SpaInterface::loop(){
     }
 
     if (_resultRegistersDirty) {
-        _nextUpdateDue = millis() + 200;  // if we need to read the registers, pause a bit to see if there are more commands coming.
+        _nextUpdateDue = millis() + 500;  // if we need to read the registers, pause a bit to see if there are more commands coming.
         _resultRegistersDirty = false;
     }
 

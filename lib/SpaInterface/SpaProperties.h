@@ -1034,6 +1034,14 @@ public:
     void setHCONCallback(void (*callback)(int)) { HCON.setCallback(callback); }
 
     String getMode() { return Mode.getValue(); }
+    int getModeIndex(String mode) {
+        for (size_t i = 0; i < spaModeStrings.size(); i++)
+        {
+            if (spaModeStrings[i] == mode)
+                return i;
+        }
+        return -1;
+    }
     void setModeCallback(void (*callback)(String)) { Mode.setCallback(callback); }
     const std::array <String, 4> spaModeStrings = {"NORM","ECON", "AWAY","WEEK"};
 
