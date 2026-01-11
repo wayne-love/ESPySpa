@@ -33,17 +33,17 @@ struct AutoDiscoveryInformationTemplate {
 /// @param spa Structure to define Spa information
 /// @param discoveryTopic String to retun discovrery topic
 /// @param type String to provide the type
-void generateCommonAdJSON(JsonDocument& json, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, String type);
+void generateCommonAdJSON(JsonDocument& json, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, String type, bool enabledByDefault=true);
 
-void generateSensorAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, String stateClass="", String unitOfMeasure="");
-void generateBinarySensorAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic);
-void generateTextAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, String regex="");
-void generateSwitchAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic);
+void generateSensorAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, String stateClass="", String unitOfMeasure="", bool enabledByDefault=true);
+void generateBinarySensorAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, bool enabledByDefault=true);
+void generateTextAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, String regex="", bool enabledByDefault=true);
+void generateSwitchAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, bool enabledByDefault=true);
 
 template <typename T, size_t N>
-void generateSelectAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, const std::array<T, N>& options) {
+void generateSelectAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, const std::array<T, N>& options, bool enabledByDefault=true) {
    JsonDocument json;
-   generateCommonAdJSON(json, config, spa, discoveryTopic, "select");
+   generateCommonAdJSON(json, config, spa, discoveryTopic, "select", enabledByDefault);
 
    json["command_topic"] = spa.commandTopic + "/" + config.propertyId;
    JsonArray opts = json["options"].to<JsonArray>();
@@ -52,12 +52,12 @@ void generateSelectAdJSON(String& output, const AutoDiscoveryInformationTemplate
    serializeJson(json, output);
 }
 
-void generateFanAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, int min, int max, const String* modes, const size_t modesSize=0);
+void generateFanAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, int min, int max, const String* modes, const size_t modesSize=0, bool enabledByDefault=true);
 
 template <typename T, size_t N>
-void generateLightAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, const std::array<T, N>& colorModes) {
+void generateLightAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, const std::array<T, N>& colorModes, bool enabledByDefault=true) {
    JsonDocument json;
-   generateCommonAdJSON(json, config, spa, discoveryTopic, "light");
+   generateCommonAdJSON(json, config, spa, discoveryTopic, "light", enabledByDefault);
 
    json["brightness_state_topic"] = spa.stateTopic;
    json["color_mode_state_topic"] = spa.stateTopic;
@@ -94,7 +94,7 @@ void generateLightAdJSON(String& output, const AutoDiscoveryInformationTemplate&
    serializeJson(json, output);
 }
 
-void generateClimateAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic);
+void generateClimateAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, bool enabledByDefault=true);
 
 /*
 struct SensorAdConfig {
