@@ -5,12 +5,28 @@ inline boolean isNumber(String s) {
     if (s.isEmpty()) {
         return false;
     }
-    for (u_int i = 0; i < s.length(); i++) {
-        if ((!isDigit(s[i])) && !(s[i] == '-') && !(s[i]=='.')) {
+    // Accepts optional leading '-', digits, and a single decimal point.
+    u_int start = 0;
+    if (s[0] == '-') {
+        if (s.length() == 1) {
             return false;
         }
+        start = 1;
     }
-    return true;
+    bool saw_digit = false;
+    bool saw_dot = false;
+    for (u_int i = start; i < s.length(); i++) {
+        if (isDigit(s[i])) {
+            saw_digit = true;
+            continue;
+        }
+        if (s[i] == '.' && !saw_dot) {
+            saw_dot = true;
+            continue;
+        }
+        return false;
+    }
+    return saw_digit;
 }
 
 boolean SpaProperties::update_MainsCurrent(String s){
@@ -1171,11 +1187,12 @@ boolean SpaProperties::update_AHYS(String s){
 }
 
 boolean SpaProperties::update_HUSE(String s){
-    if (!isNumber(s)) {
+    // HUSE is a bool; only accept 0/1.
+    if (s!="0" && s!="1") {
         return false;
     }
 
-    HUSE.update_Value(s.toInt());
+    HUSE.update_Value( s == "1" );
     return true;
 }
 
@@ -1810,10 +1827,11 @@ boolean SpaProperties::update_Pump5OkToRun(String s) {
 }
 
 boolean SpaProperties::update_LockMode(String s) {
-    if (s!="0" && s!="1") {
+    // LockMode is tri-state: 0 = unlocked, 1 = partial, 2 = full.
+    if (s!="0" && s!="1" && s!="2") {
         return false;
     }
 
-    LockMode.update_Value( s == "1" );
+    LockMode.update_Value( s.toInt() );
     return true;
 }
