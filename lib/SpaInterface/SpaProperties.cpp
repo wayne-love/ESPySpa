@@ -29,22 +29,44 @@ inline boolean isNumber(String s) {
     return saw_digit;
 }
 
-boolean SpaProperties::update_MainsCurrent(String s){
+static boolean updateIntProperty(Property<int>& prop, const String& s) {
     if (!isNumber(s)) {
         return false;
     }
 
-    MainsCurrent.update_Value(s.toInt());
+    prop.update_Value(s.toInt());
     return true;
 }
 
-boolean SpaProperties::update_SpaDayOfWeek(String s){
-    if (!isNumber(s)) {
+static boolean updateBool01Property(Property<bool>& prop, const String& s) {
+    if (s!="0" && s!="1") {
         return false;
     }
 
-    SpaDayOfWeek.update_Value(s.toInt());
+    prop.update_Value(s == "1");
     return true;
+}
+
+static boolean updateStringProperty(Property<String>& prop, const String& s) {
+    prop.update_Value(s);
+    return true;
+}
+
+static boolean updateTriStateProperty(Property<int>& prop, const String& s) {
+    if (s!="0" && s!="1" && s!="2") {
+        return false;
+    }
+
+    prop.update_Value(s.toInt());
+    return true;
+}
+
+boolean SpaProperties::update_MainsCurrent(String s){
+    return updateIntProperty(MainsCurrent, s);
+}
+
+boolean SpaProperties::update_SpaDayOfWeek(String s){
+    return updateIntProperty(SpaDayOfWeek, s);
 }
 
 boolean SpaProperties::update_SpaTime(String year, String month, String day, String hour, String minute, String second){
@@ -63,1775 +85,813 @@ boolean SpaProperties::update_SpaTime(String year, String month, String day, Str
 }
 
 boolean SpaProperties::update_MainsVoltage(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    MainsVoltage.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(MainsVoltage, s);
 }
 
 boolean SpaProperties::update_CaseTemperature(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    CaseTemperature.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(CaseTemperature, s);
 }
 
 boolean SpaProperties::update_PortCurrent(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    PortCurrent.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(PortCurrent, s);
 }
 
 boolean SpaProperties::update_HeaterTemperature(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    HeaterTemperature.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(HeaterTemperature, s);
 }
 
 boolean SpaProperties::update_PoolTemperature(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    PoolTemperature.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(PoolTemperature, s);
 }
 
 boolean SpaProperties::update_WaterPresent(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    WaterPresent.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(WaterPresent, s);
 }
 
 boolean SpaProperties::update_AwakeMinutesRemaining(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    AwakeMinutesRemaining.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(AwakeMinutesRemaining, s);
 }
 
 boolean SpaProperties::update_FiltPumpRunTimeTotal(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    FiltPumpRunTimeTotal.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(FiltPumpRunTimeTotal, s);
 }
 
 boolean SpaProperties::update_FiltPumpReqMins(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    FiltPumpReqMins.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(FiltPumpReqMins, s);
 }
 
 boolean SpaProperties::update_LoadTimeOut(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    LoadTimeOut.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(LoadTimeOut, s);
 }
 
 boolean SpaProperties::update_HourMeter(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    HourMeter.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(HourMeter, s);
 }
 
 boolean SpaProperties::update_Relay1(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Relay1.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Relay1, s);
 }
 
 boolean SpaProperties::update_Relay2(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Relay2.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Relay2, s);
 }
 
 boolean SpaProperties::update_Relay3(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Relay3.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Relay3, s);
 }
 
 boolean SpaProperties::update_Relay4(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Relay4.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Relay4, s);
 }
 
 boolean SpaProperties::update_Relay5(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Relay5.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Relay5, s);
 }
 
 boolean SpaProperties::update_Relay6(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Relay6.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Relay6, s);
 }
 
 boolean SpaProperties::update_Relay7(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Relay7.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Relay7, s);
 }
 
 boolean SpaProperties::update_Relay8(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Relay8.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Relay8, s);
 }
 
 boolean SpaProperties::update_Relay9(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Relay9.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Relay9, s);
 }
 
 boolean SpaProperties::update_CLMT(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    CLMT.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(CLMT, s);
 }
 
 boolean SpaProperties::update_PHSE(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    PHSE.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(PHSE, s);
 }
 
 boolean SpaProperties::update_LLM1(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    LLM1.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(LLM1, s);
 }
 
 boolean SpaProperties::update_LLM2(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    LLM2.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(LLM2, s);
 }
 
 boolean SpaProperties::update_LLM3(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    LLM3.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(LLM3, s);
 }
 
 boolean SpaProperties::update_SVER(String s){
-    SVER.update_Value(s);
-    return true;
+    return updateStringProperty(SVER, s);
 }
 
 boolean SpaProperties::update_Model(String s){
-    Model.update_Value(s);
-    return true;
+    return updateStringProperty(Model, s);
 }
 
 boolean SpaProperties::update_SerialNo1(String s){
-    SerialNo1.update_Value(s);
-    return true;
+    return updateStringProperty(SerialNo1, s);
 }
 
 boolean SpaProperties::update_SerialNo2(String s){
-    SerialNo2.update_Value(s);
-    return true;
+    return updateStringProperty(SerialNo2, s);
 }
 
 boolean SpaProperties::update_D1(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    D1.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(D1, s);
 }
 
 boolean SpaProperties::update_D2(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    D2.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(D2, s);
 }
 
 boolean SpaProperties::update_D3(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    D3.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(D3, s);
 }
 
 boolean SpaProperties::update_D4(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    D4.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(D4, s);
 }
 
 boolean SpaProperties::update_D5(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    D5.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(D5, s);
 }
 
 boolean SpaProperties::update_D6(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    D6.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(D6, s);
 }
 
 boolean SpaProperties::update_Pump(String s){
-    Pump.update_Value(s);
-    return true;
+    return updateStringProperty(Pump, s);
 }
 
 boolean SpaProperties::update_LS(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    LS.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(LS, s);
 }
 
 boolean SpaProperties::update_HV(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    HV.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(HV, s);
 }
 
 boolean SpaProperties::update_SnpMR(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    SnpMR.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(SnpMR, s);
 }
 
 boolean SpaProperties::update_Status(String s){
-    Status.update_Value(s);
-    return true;
+    return updateStringProperty(Status, s);
 }
 
 boolean SpaProperties::update_PrimeCount(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    PrimeCount.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(PrimeCount, s);
 }
 
 boolean SpaProperties::update_EC(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    EC.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(EC, s);
 }
 
 boolean SpaProperties::update_HAMB(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    HAMB.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(HAMB, s);
 }
 
 boolean SpaProperties::update_HCON(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    HCON.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(HCON, s);
 }
 
 boolean SpaProperties::update_Mode(String s){
-    Mode.update_Value(s);
-    return true;
+    return updateStringProperty(Mode, s);
 }
 
 boolean SpaProperties::update_Ser1_Timer(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Ser1_Timer.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Ser1_Timer, s);
 }
 
 boolean SpaProperties::update_Ser2_Timer(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Ser2_Timer.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Ser2_Timer, s);
 }
 
 boolean SpaProperties::update_Ser3_Timer(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Ser3_Timer.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Ser3_Timer, s);
 }
 
 boolean SpaProperties::update_HeatMode(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    HeatMode.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(HeatMode, s);
 }
 
 boolean SpaProperties::update_PumpIdleTimer(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    PumpIdleTimer.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(PumpIdleTimer, s);
 }
 
 boolean SpaProperties::update_PumpRunTimer(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    PumpRunTimer.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(PumpRunTimer, s);
 }
 
 boolean SpaProperties::update_AdtPoolHys(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    AdtPoolHys.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(AdtPoolHys, s);
 }
 
 boolean SpaProperties::update_AdtHeaterHys(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    AdtHeaterHys.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(AdtHeaterHys, s);
 }
 
 boolean SpaProperties::update_Power(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Power.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Power, s);
 }
 
 boolean SpaProperties::update_Power_kWh(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Power_kWh.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Power_kWh, s);
 }
 
 boolean SpaProperties::update_Power_Today(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Power_Today.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Power_Today, s);
 }
 
 boolean SpaProperties::update_Power_Yesterday(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Power_Yesterday.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Power_Yesterday, s);
 }
 
 boolean SpaProperties::update_ThermalCutOut(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    ThermalCutOut.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(ThermalCutOut, s);
 }
 
 boolean SpaProperties::update_Test_D1(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Test_D1.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Test_D1, s);
 }
 
 boolean SpaProperties::update_Test_D2(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Test_D2.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Test_D2, s);
 }
 
 boolean SpaProperties::update_Test_D3(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Test_D3.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Test_D3, s);
 }
 
 boolean SpaProperties::update_ElementHeatSourceOffset(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    ElementHeatSourceOffset.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(ElementHeatSourceOffset, s);
 }
 
 boolean SpaProperties::update_Frequency(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Frequency.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Frequency, s);
 }
 
 boolean SpaProperties::update_HPHeatSourceOffset_Heat(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    HPHeatSourceOffset_Heat.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(HPHeatSourceOffset_Heat, s);
 }
 
 boolean SpaProperties::update_HPHeatSourceOffset_Cool(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    HPHeatSourceOffset_Cool.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(HPHeatSourceOffset_Cool, s);
 }
 
 boolean SpaProperties::update_HeatSourceOffTime(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    HeatSourceOffTime.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(HeatSourceOffTime, s);
 }
 
 boolean SpaProperties::update_Vari_Speed(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Vari_Speed.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Vari_Speed, s);
 }
 
 boolean SpaProperties::update_Vari_Percent(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Vari_Percent.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Vari_Percent, s);
 }
 
 boolean SpaProperties::update_Vari_Mode(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Vari_Mode.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Vari_Mode, s);
 }
 
 boolean SpaProperties::update_RB_TP_Pump1(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    RB_TP_Pump1.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(RB_TP_Pump1, s);
 }
 
 boolean SpaProperties::update_RB_TP_Pump2(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    RB_TP_Pump2.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(RB_TP_Pump2, s);
 }
 
 boolean SpaProperties::update_RB_TP_Pump3(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    RB_TP_Pump3.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(RB_TP_Pump3, s);
 }
 
 boolean SpaProperties::update_RB_TP_Pump4(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    RB_TP_Pump4.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(RB_TP_Pump4, s);
 }
 
 boolean SpaProperties::update_RB_TP_Pump5(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    RB_TP_Pump5.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(RB_TP_Pump5, s);
 }
 
 boolean SpaProperties::update_RB_TP_Blower(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    RB_TP_Blower.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(RB_TP_Blower, s);
 }
 
 boolean SpaProperties::update_RB_TP_Light(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    RB_TP_Light.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(RB_TP_Light, s);
 }
 
 boolean SpaProperties::update_RB_TP_Auto(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    RB_TP_Auto.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(RB_TP_Auto, s);
 }
 
 boolean SpaProperties::update_RB_TP_Heater(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    RB_TP_Heater.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(RB_TP_Heater, s);
 }
 
 boolean SpaProperties::update_RB_TP_Ozone(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    RB_TP_Ozone.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(RB_TP_Ozone, s);
 }
 
 boolean SpaProperties::update_RB_TP_Sleep(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    RB_TP_Sleep.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(RB_TP_Sleep, s);
 }
 
 boolean SpaProperties::update_WTMP(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    WTMP.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(WTMP, s);
 }
 
 boolean SpaProperties::update_CleanCycle(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    CleanCycle.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(CleanCycle, s);
 }
 
 boolean SpaProperties::update_VARIValue(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    VARIValue.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(VARIValue, s);
 }
 
 boolean SpaProperties::update_LBRTValue(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    LBRTValue.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(LBRTValue, s);
 }
 
 boolean SpaProperties::update_CurrClr(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    CurrClr.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(CurrClr, s);
 }
 
 boolean SpaProperties::update_ColorMode(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    ColorMode.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(ColorMode, s);
 }
 
 boolean SpaProperties::update_LSPDValue(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    LSPDValue.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(LSPDValue, s);
 }
 
 boolean SpaProperties::update_FiltHrs(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    FiltSetHrs.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(FiltSetHrs, s);
 }
 
 boolean SpaProperties::update_FiltBlockHrs(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    FiltBlockHrs.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(FiltBlockHrs, s);
 }
 
 boolean SpaProperties::update_STMP(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    STMP.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(STMP, s);
 }
 
 boolean SpaProperties::update_L_24HOURS(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    L_24HOURS.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(L_24HOURS, s);
 }
 
 boolean SpaProperties::update_PSAV_LVL(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    PSAV_LVL.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(PSAV_LVL, s);
 }
 
 boolean SpaProperties::update_PSAV_BGN(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    PSAV_BGN.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(PSAV_BGN, s);
 }
 
 boolean SpaProperties::update_PSAV_END(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    PSAV_END.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(PSAV_END, s);
 }
 
 boolean SpaProperties::update_L_1SNZ_DAY(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    L_1SNZ_DAY.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(L_1SNZ_DAY, s);
 }
 
 boolean SpaProperties::update_L_2SNZ_DAY(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    L_2SNZ_DAY.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(L_2SNZ_DAY, s);
 }
 
 boolean SpaProperties::update_L_1SNZ_BGN(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    L_1SNZ_BGN.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(L_1SNZ_BGN, s);
 }
 
 boolean SpaProperties::update_L_2SNZ_BGN(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    L_2SNZ_BGN.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(L_2SNZ_BGN, s);
 }
 
 boolean SpaProperties::update_L_1SNZ_END(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    L_1SNZ_END.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(L_1SNZ_END, s);
 }
 
 boolean SpaProperties::update_L_2SNZ_END(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    L_2SNZ_END.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(L_2SNZ_END, s);
 }
 
 boolean SpaProperties::update_DefaultScrn(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    DefaultScrn.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(DefaultScrn, s);
 }
 
 boolean SpaProperties::update_TOUT(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    TOUT.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(TOUT, s);
 }
 
 boolean SpaProperties::update_VPMP(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    VPMP.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(VPMP, s);
 }
 
 boolean SpaProperties::update_HIFI(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    HIFI.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(HIFI, s);
 }
 
 boolean SpaProperties::update_BRND(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    BRND.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(BRND, s);
 }
 
 boolean SpaProperties::update_PRME(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    PRME.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(PRME, s);
 }
 
 boolean SpaProperties::update_ELMT(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    ELMT.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(ELMT, s);
 }
 
 boolean SpaProperties::update_TYPE(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    TYPE.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(TYPE, s);
 }
 
 boolean SpaProperties::update_GAS(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    GAS.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(GAS, s);
 }
 
 boolean SpaProperties::update_WCLNTime(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    WCLNTime.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(WCLNTime, s);
 }
 
 boolean SpaProperties::update_TemperatureUnits(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    TemperatureUnits.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(TemperatureUnits, s);
 }
 
 boolean SpaProperties::update_OzoneOff(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    OzoneOff.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(OzoneOff, s);
 }
 
 boolean SpaProperties::update_Ozone24(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    Ozone24.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(Ozone24, s);
 }
 
 boolean SpaProperties::update_Circ24(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    Circ24.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(Circ24, s);
 }
 
 boolean SpaProperties::update_CJET(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    CJET.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(CJET, s);
 }
 
 boolean SpaProperties::update_VELE(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    VELE.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(VELE, s);
 }
 
 boolean SpaProperties::update_V_Max(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    V_Max.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(V_Max, s);
 }
 
 boolean SpaProperties::update_V_Min(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    V_Min.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(V_Min, s);
 }
 
 boolean SpaProperties::update_V_Max_24(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    V_Max_24.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(V_Max_24, s);
 }
 
 boolean SpaProperties::update_V_Min_24(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    V_Min_24.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(V_Min_24, s);
 }
 
 boolean SpaProperties::update_CurrentZero(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    CurrentZero.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(CurrentZero, s);
 }
 
 boolean SpaProperties::update_CurrentAdjust(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    CurrentAdjust.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(CurrentAdjust, s);
 }
 
 boolean SpaProperties::update_VoltageAdjust(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    VoltageAdjust.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(VoltageAdjust, s);
 }
 
 boolean SpaProperties::update_Ser1(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Ser1.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Ser1, s);
 }
 
 boolean SpaProperties::update_Ser2(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Ser2.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Ser2, s);
 }
 
 boolean SpaProperties::update_Ser3(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Ser3.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Ser3, s);
 }
 
 boolean SpaProperties::update_VMAX(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    VMAX.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(VMAX, s);
 }
 
 boolean SpaProperties::update_AHYS(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    AHYS.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(AHYS, s);
 }
 
 boolean SpaProperties::update_HUSE(String s){
     // HUSE is a bool; only accept 0/1.
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    HUSE.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(HUSE, s);
 }
 
 boolean SpaProperties::update_HELE(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    HELE.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(HELE, s);
 }
 
 boolean SpaProperties::update_HPMP(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    HPMP.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(HPMP, s);
 }
 
 boolean SpaProperties::update_PMIN(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    PMIN.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(PMIN, s);
 }
 
 boolean SpaProperties::update_PFLT(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    PFLT.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(PFLT, s);
 }
 
 boolean SpaProperties::update_PHTR(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    PHTR.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(PHTR, s);
 }
 
 boolean SpaProperties::update_PMAX(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    PMAX.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(PMAX, s);
 }
 
 boolean SpaProperties::update_F1_HR(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F1_HR.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F1_HR, s);
 }
 
 boolean SpaProperties::update_F1_Time(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F1_Time.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F1_Time, s);
 }
 
 boolean SpaProperties::update_F1_ER(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F1_ER.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F1_ER, s);
 }
 
 boolean SpaProperties::update_F1_I(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F1_I.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F1_I, s);
 }
 
 boolean SpaProperties::update_F1_V(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F1_V.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F1_V, s);
 }
 
 boolean SpaProperties::update_F1_PT(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F1_PT.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F1_PT, s);
 }
 
 boolean SpaProperties::update_F1_HT(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F1_HT.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F1_HT, s);
 }
 
 boolean SpaProperties::update_F1_CT(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F1_CT.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F1_CT, s);
 }
 
 boolean SpaProperties::update_F1_ST(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F1_ST.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F1_ST, s);
 }
 
 boolean SpaProperties::update_F1_PU(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F1_PU.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F1_PU, s);
 }
 
 boolean SpaProperties::update_F1_VE(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    F1_VE.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(F1_VE, s);
 }
 
 boolean SpaProperties::update_F2_HR(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F2_HR.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F2_HR, s);
 }
 
 boolean SpaProperties::update_F2_Time(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F2_Time.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F2_Time, s);
 }
 
 boolean SpaProperties::update_F2_ER(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F2_ER.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F2_ER, s);
 }
 
 boolean SpaProperties::update_F2_I(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F2_I.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F2_I, s);
 }
 
 boolean SpaProperties::update_F2_V(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F2_V.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F2_V, s);
 }
 
 boolean SpaProperties::update_F2_PT(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F2_PT.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F2_PT, s);
 }
 
 boolean SpaProperties::update_F2_HT(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F2_HT.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F2_HT, s);
 }
 
 boolean SpaProperties::update_F2_CT(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F2_CT.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F2_CT, s);
 }
 
 boolean SpaProperties::update_F2_ST(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F2_ST.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F2_ST, s);
 }
 
 boolean SpaProperties::update_F2_PU(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F2_PU.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F2_PU, s);
 }
 
 boolean SpaProperties::update_F2_VE(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    F2_VE.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(F2_VE, s);
 }
 
 boolean SpaProperties::update_F3_HR(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F3_HR.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F3_HR, s);
 }
 
 boolean SpaProperties::update_F3_Time(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F3_Time.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F3_Time, s);
 }
 
 boolean SpaProperties::update_F3_ER(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F3_ER.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F3_ER, s);
 }
 
 boolean SpaProperties::update_F3_I(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F3_I.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F3_I, s);
 }
 
 boolean SpaProperties::update_F3_V(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F3_V.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F3_V, s);
 }
 
 boolean SpaProperties::update_F3_PT(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F3_PT.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F3_PT, s);
 }
 
 boolean SpaProperties::update_F3_HT(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F3_HT.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F3_HT, s);
 }
 
 boolean SpaProperties::update_F3_CT(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F3_CT.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F3_CT, s);
 }
 
 boolean SpaProperties::update_F3_ST(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F3_ST.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F3_ST, s);
 }
 
 boolean SpaProperties::update_F3_PU(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    F3_PU.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(F3_PU, s);
 }
 
 boolean SpaProperties::update_F3_VE(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    F3_VE.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(F3_VE, s);
 }
 
 boolean SpaProperties::update_Outlet_Blower(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    Outlet_Blower.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(Outlet_Blower, s);
 }
 
 boolean SpaProperties::update_HP_Present(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    HP_Present.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(HP_Present, s);
 }
 
 boolean SpaProperties::update_HP_Ambient(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    HP_Ambient.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(HP_Ambient, s);
 }
 
 
 boolean SpaProperties::update_HP_Condensor(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    HP_Condensor.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(HP_Condensor, s);
 }
 
 boolean SpaProperties::update_HP_Compressor_State(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    HP_Compressor_State.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(HP_Compressor_State, s);
 }
 
 boolean SpaProperties::update_HP_Fan_State(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    HP_Fan_State.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(HP_Fan_State, s);
 }
 
 boolean SpaProperties::update_HP_4W_Valve(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    HP_4W_Valve.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(HP_4W_Valve, s);
 }
 
 boolean SpaProperties::update_HP_Heater_State(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    HP_Heater_State.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(HP_Heater_State, s);
 }
 
 
 boolean SpaProperties::update_HP_State(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    HP_State.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(HP_State, s);
 }
 
 boolean SpaProperties::update_HP_Mode(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    HP_Mode.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(HP_Mode, s);
 }
 
 boolean SpaProperties::update_HP_Defrost_Timer(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    HP_Defrost_Timer.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(HP_Defrost_Timer, s);
 }
 
 boolean SpaProperties::update_HP_Comp_Run_Timer(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    HP_Comp_Run_Timer.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(HP_Comp_Run_Timer, s);
 }
 
 boolean SpaProperties::update_HP_Low_Temp_Timer(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    HP_Low_Temp_Timer.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(HP_Low_Temp_Timer, s);
 }
 
 boolean SpaProperties::update_HP_Heat_Accum_Timer(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    HP_Heat_Accum_Timer.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(HP_Heat_Accum_Timer, s);
 }
 
 boolean SpaProperties::update_HP_Sequence_Timer(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    HP_Sequence_Timer.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(HP_Sequence_Timer, s);
 }
 
 boolean SpaProperties::update_HP_Warning(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    HP_Warning.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(HP_Warning, s);
 }
 
 boolean SpaProperties::update_FrezTmr(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    FrezTmr.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(FrezTmr, s);
 }
 
 boolean SpaProperties::update_DBGN(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    DBGN.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(DBGN, s);
 }
 
 boolean SpaProperties::update_DEND(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    DEND.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(DEND, s);
 }
 
 boolean SpaProperties::update_DCMP(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    DCMP.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(DCMP, s);
 }
 
 boolean SpaProperties::update_DMAX(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    DMAX.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(DMAX, s);
 }
 
 boolean SpaProperties::update_DELE(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    DELE.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(DELE, s);
 }
 
 boolean SpaProperties::update_DPMP(String s){
-    if (!isNumber(s)) {
-        return false;
-    }
-
-    DPMP.update_Value(s.toInt());
-    return true;
+    return updateIntProperty(DPMP, s);
 }
 
 boolean SpaProperties::update_Pump1InstallState(String s){
-    Pump1InstallState.update_Value(s);
-    return true;
+    return updateStringProperty(Pump1InstallState, s);
 }
 
 boolean SpaProperties::update_Pump2InstallState(String s){
-    Pump2InstallState.update_Value(s);
-    return true;
+    return updateStringProperty(Pump2InstallState, s);
 }
 
 boolean SpaProperties::update_Pump3InstallState(String s){
-    Pump3InstallState.update_Value(s);
-    return true;
+    return updateStringProperty(Pump3InstallState, s);
 }
 
 boolean SpaProperties::update_Pump4InstallState(String s){
-    Pump4InstallState.update_Value(s);
-    return true;
+    return updateStringProperty(Pump4InstallState, s);
 }
 
 boolean SpaProperties::update_Pump5InstallState(String s){
-    Pump5InstallState.update_Value(s);
-    return true;
+    return updateStringProperty(Pump5InstallState, s);
 }
 
 boolean SpaProperties::update_Pump1OkToRun(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    Pump1OkToRun.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(Pump1OkToRun, s);
 }
 
 boolean SpaProperties::update_Pump2OkToRun(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    Pump2OkToRun.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(Pump2OkToRun, s);
 }
 
 boolean SpaProperties::update_Pump3OkToRun(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    Pump3OkToRun.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(Pump3OkToRun, s);
 }
 
 boolean SpaProperties::update_Pump4OkToRun(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    Pump4OkToRun.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(Pump4OkToRun, s);
 }
 
 boolean SpaProperties::update_Pump5OkToRun(String s) {
-    if (s!="0" && s!="1") {
-        return false;
-    }
-
-    Pump5OkToRun.update_Value( s == "1" );
-    return true;
+    return updateBool01Property(Pump5OkToRun, s);
 }
 
 boolean SpaProperties::update_LockMode(String s) {
     // LockMode is tri-state: 0 = unlocked, 1 = partial, 2 = full.
-    if (s!="0" && s!="1" && s!="2") {
-        return false;
-    }
-
-    LockMode.update_Value( s.toInt() );
-    return true;
+    return updateTriStateProperty(LockMode, s);
 }
