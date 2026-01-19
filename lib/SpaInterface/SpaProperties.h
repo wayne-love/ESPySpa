@@ -9,6 +9,7 @@
 
 
 template <typename T>
+// Simple value holder with an optional change callback.
 class Property
 {
 private:
@@ -21,6 +22,7 @@ public:
     {
         T oldvalue = _value;
         _value = newval;
+        // Only notify on actual value change.
         if ((_callback) && (oldvalue != newval))
             {
                 _callback(_value);
@@ -619,200 +621,200 @@ Property<bool> HV_2;
 
 protected:
 #pragma region R2
-    boolean update_MainsCurrent(String);
-    boolean update_SpaDayOfWeek(String);
-    boolean update_SpaTime(String year, String month, String day, String hour, String minute, String second);
-    boolean update_MainsVoltage(String);
-    boolean update_CaseTemperature(String);
-    boolean update_PortCurrent(String);
-    boolean update_SpaTime(String);
-    boolean update_HeaterTemperature(String);
-    boolean update_PoolTemperature(String);
-    boolean update_WaterPresent(String);
-    boolean update_AwakeMinutesRemaining(String);
-    boolean update_FiltPumpRunTimeTotal(String);
-    boolean update_FiltPumpReqMins(String);
-    boolean update_LoadTimeOut(String);
-    boolean update_HourMeter(String);
-    boolean update_Relay1(String);
-    boolean update_Relay2(String);
-    boolean update_Relay3(String);
-    boolean update_Relay4(String);
-    boolean update_Relay5(String);
-    boolean update_Relay6(String);
-    boolean update_Relay7(String);
-    boolean update_Relay8(String);
-    boolean update_Relay9(String);
+    boolean update_MainsCurrent(const String&);
+    boolean update_SpaDayOfWeek(const String&);
+    boolean update_SpaTime(const String& year, const String& month, const String& day, const String& hour, const String& minute, const String& second);
+    boolean update_MainsVoltage(const String&);
+    boolean update_CaseTemperature(const String&);
+    boolean update_PortCurrent(const String&);
+    boolean update_SpaTime(const String&);
+    boolean update_HeaterTemperature(const String&);
+    boolean update_PoolTemperature(const String&);
+    boolean update_WaterPresent(const String&);
+    boolean update_AwakeMinutesRemaining(const String&);
+    boolean update_FiltPumpRunTimeTotal(const String&);
+    boolean update_FiltPumpReqMins(const String&);
+    boolean update_LoadTimeOut(const String&);
+    boolean update_HourMeter(const String&);
+    boolean update_Relay1(const String&);
+    boolean update_Relay2(const String&);
+    boolean update_Relay3(const String&);
+    boolean update_Relay4(const String&);
+    boolean update_Relay5(const String&);
+    boolean update_Relay6(const String&);
+    boolean update_Relay7(const String&);
+    boolean update_Relay8(const String&);
+    boolean update_Relay9(const String&);
 #pragma endregion
 #pragma region R3
-    boolean update_CLMT(String);
-    boolean update_PHSE(String);
-    boolean update_LLM1(String);
-    boolean update_LLM2(String);
-    boolean update_LLM3(String);
-    boolean update_SVER(String);
-    boolean update_Model(String);
-    boolean update_SerialNo1(String);
-    boolean update_SerialNo2(String);
-    boolean update_D1(String);
-    boolean update_D2(String);
-    boolean update_D3(String);
-    boolean update_D4(String);
-    boolean update_D5(String);
-    boolean update_D6(String);
-    boolean update_Pump(String);
-    boolean update_LS(String);
-    boolean update_HV(String);
-    boolean update_SnpMR(String);
-    boolean update_Status(String);
-    boolean update_PrimeCount(String);
-    boolean update_EC(String);
-    boolean update_HAMB(String);
-    boolean update_HCON(String);
-//    boolean update_HV_2(String);
+    boolean update_CLMT(const String&);
+    boolean update_PHSE(const String&);
+    boolean update_LLM1(const String&);
+    boolean update_LLM2(const String&);
+    boolean update_LLM3(const String&);
+    boolean update_SVER(const String&);
+    boolean update_Model(const String&);
+    boolean update_SerialNo1(const String&);
+    boolean update_SerialNo2(const String&);
+    boolean update_D1(const String&);
+    boolean update_D2(const String&);
+    boolean update_D3(const String&);
+    boolean update_D4(const String&);
+    boolean update_D5(const String&);
+    boolean update_D6(const String&);
+    boolean update_Pump(const String&);
+    boolean update_LS(const String&);
+    boolean update_HV(const String&);
+    boolean update_SnpMR(const String&);
+    boolean update_Status(const String&);
+    boolean update_PrimeCount(const String&);
+    boolean update_EC(const String&);
+    boolean update_HAMB(const String&);
+    boolean update_HCON(const String&);
+//    boolean update_HV_2(const String&);
 #pragma endregion
 #pragma region R4
-    boolean update_Mode(String);
-    boolean update_Ser1_Timer(String);
-    boolean update_Ser2_Timer(String);
-    boolean update_Ser3_Timer(String);
-    boolean update_HeatMode(String);
-    boolean update_PumpIdleTimer(String);
-    boolean update_PumpRunTimer(String);
-    boolean update_AdtPoolHys(String);
-    boolean update_AdtHeaterHys(String);
-    boolean update_Power(String);
-    boolean update_Power_kWh(String);
-    boolean update_Power_Today(String);
-    boolean update_Power_Yesterday(String);
-    boolean update_ThermalCutOut(String);
-    boolean update_Test_D1(String);
-    boolean update_Test_D2(String);
-    boolean update_Test_D3(String);
-    boolean update_ElementHeatSourceOffset(String);
-    boolean update_Frequency(String);
-    boolean update_HPHeatSourceOffset_Heat(String);
-    boolean update_HPHeatSourceOffset_Cool(String);
-    boolean update_HeatSourceOffTime(String);
-    boolean update_Vari_Speed(String);
-    boolean update_Vari_Percent(String);
-    boolean update_Vari_Mode(String);
+    boolean update_Mode(const String&);
+    boolean update_Ser1_Timer(const String&);
+    boolean update_Ser2_Timer(const String&);
+    boolean update_Ser3_Timer(const String&);
+    boolean update_HeatMode(const String&);
+    boolean update_PumpIdleTimer(const String&);
+    boolean update_PumpRunTimer(const String&);
+    boolean update_AdtPoolHys(const String&);
+    boolean update_AdtHeaterHys(const String&);
+    boolean update_Power(const String&);
+    boolean update_Power_kWh(const String&);
+    boolean update_Power_Today(const String&);
+    boolean update_Power_Yesterday(const String&);
+    boolean update_ThermalCutOut(const String&);
+    boolean update_Test_D1(const String&);
+    boolean update_Test_D2(const String&);
+    boolean update_Test_D3(const String&);
+    boolean update_ElementHeatSourceOffset(const String&);
+    boolean update_Frequency(const String&);
+    boolean update_HPHeatSourceOffset_Heat(const String&);
+    boolean update_HPHeatSourceOffset_Cool(const String&);
+    boolean update_HeatSourceOffTime(const String&);
+    boolean update_Vari_Speed(const String&);
+    boolean update_Vari_Percent(const String&);
+    boolean update_Vari_Mode(const String&);
 #pragma endregion
 #pragma region R5
     // R5
     //  Unknown encoding - TouchPad2.update_Value();
     //  Unknown encoding - TouchPad1.update_Value();
-    boolean update_RB_TP_Pump1(String);
-    boolean update_RB_TP_Pump2(String);
-    boolean update_RB_TP_Pump3(String);
-    boolean update_RB_TP_Pump4(String);
-    boolean update_RB_TP_Pump5(String);
-    boolean update_RB_TP_Blower(String);
-    boolean update_RB_TP_Light(String);
-    boolean update_RB_TP_Auto(String);
-    boolean update_RB_TP_Heater(String);
-    boolean update_RB_TP_Ozone(String);
-    boolean update_RB_TP_Sleep(String);
-    boolean update_WTMP(String);
-    boolean update_CleanCycle(String);
+    boolean update_RB_TP_Pump1(const String&);
+    boolean update_RB_TP_Pump2(const String&);
+    boolean update_RB_TP_Pump3(const String&);
+    boolean update_RB_TP_Pump4(const String&);
+    boolean update_RB_TP_Pump5(const String&);
+    boolean update_RB_TP_Blower(const String&);
+    boolean update_RB_TP_Light(const String&);
+    boolean update_RB_TP_Auto(const String&);
+    boolean update_RB_TP_Heater(const String&);
+    boolean update_RB_TP_Ozone(const String&);
+    boolean update_RB_TP_Sleep(const String&);
+    boolean update_WTMP(const String&);
+    boolean update_CleanCycle(const String&);
 #pragma endregion
 #pragma region R6
-    boolean update_VARIValue(String);
-    boolean update_LBRTValue(String);
-    boolean update_CurrClr(String);
-    boolean update_ColorMode(String);
-    boolean update_LSPDValue(String);
-    boolean update_FiltHrs(String);
-    boolean update_FiltBlockHrs(String);
-    boolean update_STMP(String);
-    boolean update_L_24HOURS(String);
-    boolean update_PSAV_LVL(String);
-    boolean update_PSAV_BGN(String);
-    boolean update_PSAV_END(String);
-    boolean update_L_1SNZ_DAY(String);
-    boolean update_L_2SNZ_DAY(String);
-    boolean update_L_1SNZ_BGN(String);
-    boolean update_L_2SNZ_BGN(String);
-    boolean update_L_1SNZ_END(String);
-    boolean update_L_2SNZ_END(String);
-    boolean update_DefaultScrn(String);
-    boolean update_TOUT(String);
-    boolean update_VPMP(String);
-    boolean update_HIFI(String);
-    boolean update_BRND(String);
-    boolean update_PRME(String);
-    boolean update_ELMT(String);
-    boolean update_TYPE(String);
-    boolean update_GAS(String);
+    boolean update_VARIValue(const String&);
+    boolean update_LBRTValue(const String&);
+    boolean update_CurrClr(const String&);
+    boolean update_ColorMode(const String&);
+    boolean update_LSPDValue(const String&);
+    boolean update_FiltHrs(const String&);
+    boolean update_FiltBlockHrs(const String&);
+    boolean update_STMP(const String&);
+    boolean update_L_24HOURS(const String&);
+    boolean update_PSAV_LVL(const String&);
+    boolean update_PSAV_BGN(const String&);
+    boolean update_PSAV_END(const String&);
+    boolean update_L_1SNZ_DAY(const String&);
+    boolean update_L_2SNZ_DAY(const String&);
+    boolean update_L_1SNZ_BGN(const String&);
+    boolean update_L_2SNZ_BGN(const String&);
+    boolean update_L_1SNZ_END(const String&);
+    boolean update_L_2SNZ_END(const String&);
+    boolean update_DefaultScrn(const String&);
+    boolean update_TOUT(const String&);
+    boolean update_VPMP(const String&);
+    boolean update_HIFI(const String&);
+    boolean update_BRND(const String&);
+    boolean update_PRME(const String&);
+    boolean update_ELMT(const String&);
+    boolean update_TYPE(const String&);
+    boolean update_GAS(const String&);
 #pragma endregion
 #pragma region R7
-    boolean update_WCLNTime(String);
+    boolean update_WCLNTime(const String&);
     // The following 2 may be reversed
-    boolean update_TemperatureUnits(String);
-    boolean update_OzoneOff(String);
-    boolean update_Ozone24(String);
+    boolean update_TemperatureUnits(const String&);
+    boolean update_OzoneOff(const String&);
+    boolean update_Ozone24(const String&);
     // The following 2 may be reversed
-    boolean update_Circ24(String);
-    boolean update_CJET(String);
-    boolean update_VELE(String);
-    boolean update_V_Max(String);
-    boolean update_V_Min(String);
-    boolean update_V_Max_24(String);
-    boolean update_V_Min_24(String);
-    boolean update_CurrentZero(String);
-    boolean update_CurrentAdjust(String);
-    boolean update_VoltageAdjust(String);
-    boolean update_Ser1(String);
-    boolean update_Ser2(String);
-    boolean update_Ser3(String);
-    boolean update_VMAX(String);
-    boolean update_AHYS(String);
-    boolean update_HUSE(String);
-    boolean update_HELE(String);
-    boolean update_HPMP(String);
-    boolean update_PMIN(String);
-    boolean update_PFLT(String);
-    boolean update_PHTR(String);
-    boolean update_PMAX(String);
+    boolean update_Circ24(const String&);
+    boolean update_CJET(const String&);
+    boolean update_VELE(const String&);
+    boolean update_V_Max(const String&);
+    boolean update_V_Min(const String&);
+    boolean update_V_Max_24(const String&);
+    boolean update_V_Min_24(const String&);
+    boolean update_CurrentZero(const String&);
+    boolean update_CurrentAdjust(const String&);
+    boolean update_VoltageAdjust(const String&);
+    boolean update_Ser1(const String&);
+    boolean update_Ser2(const String&);
+    boolean update_Ser3(const String&);
+    boolean update_VMAX(const String&);
+    boolean update_AHYS(const String&);
+    boolean update_HUSE(const String&);
+    boolean update_HELE(const String&);
+    boolean update_HPMP(const String&);
+    boolean update_PMIN(const String&);
+    boolean update_PFLT(const String&);
+    boolean update_PHTR(const String&);
+    boolean update_PMAX(const String&);
 #pragma endregion
 #pragma region R9
-    boolean update_F1_HR(String);
-    boolean update_F1_Time(String);
-    boolean update_F1_ER(String);
-    boolean update_F1_I(String);
-    boolean update_F1_V(String);
-    boolean update_F1_PT(String);
-    boolean update_F1_HT(String);
-    boolean update_F1_CT(String);
-    boolean update_F1_PU(String);
-    boolean update_F1_VE(String);
-    boolean update_F1_ST(String);
+    boolean update_F1_HR(const String&);
+    boolean update_F1_Time(const String&);
+    boolean update_F1_ER(const String&);
+    boolean update_F1_I(const String&);
+    boolean update_F1_V(const String&);
+    boolean update_F1_PT(const String&);
+    boolean update_F1_HT(const String&);
+    boolean update_F1_CT(const String&);
+    boolean update_F1_PU(const String&);
+    boolean update_F1_VE(const String&);
+    boolean update_F1_ST(const String&);
 #pragma endregion
 #pragma region RA
-    boolean update_F2_HR(String);
-    boolean update_F2_Time(String);
-    boolean update_F2_ER(String);
-    boolean update_F2_I(String);
-    boolean update_F2_V(String);
-    boolean update_F2_PT(String);
-    boolean update_F2_HT(String);
-    boolean update_F2_CT(String);
-    boolean update_F2_PU(String);
-    boolean update_F2_VE(String);
-    boolean update_F2_ST(String);
+    boolean update_F2_HR(const String&);
+    boolean update_F2_Time(const String&);
+    boolean update_F2_ER(const String&);
+    boolean update_F2_I(const String&);
+    boolean update_F2_V(const String&);
+    boolean update_F2_PT(const String&);
+    boolean update_F2_HT(const String&);
+    boolean update_F2_CT(const String&);
+    boolean update_F2_PU(const String&);
+    boolean update_F2_VE(const String&);
+    boolean update_F2_ST(const String&);
 #pragma endregion
 #pragma region RB
-    boolean update_F3_HR(String);
-    boolean update_F3_Time(String);
-    boolean update_F3_ER(String);
-    boolean update_F3_I(String);
-    boolean update_F3_V(String);
-    boolean update_F3_PT(String);
-    boolean update_F3_HT(String);
-    boolean update_F3_CT(String);
-    boolean update_F3_PU(String);
-    boolean update_F3_VE(String);
-    boolean update_F3_ST(String);
+    boolean update_F3_HR(const String&);
+    boolean update_F3_Time(const String&);
+    boolean update_F3_ER(const String&);
+    boolean update_F3_I(const String&);
+    boolean update_F3_V(const String&);
+    boolean update_F3_PT(const String&);
+    boolean update_F3_HT(const String&);
+    boolean update_F3_CT(const String&);
+    boolean update_F3_PU(const String&);
+    boolean update_F3_VE(const String&);
+    boolean update_F3_ST(const String&);
 #pragma endregion
 #pragma region RC
     // Outlet_Heater.update_Value(String);
@@ -822,10 +824,10 @@ protected:
     // Outlet_Pump2.update_Value(String);
     // Outlet_Pump4.update_Value(String);
     // Outlet_Pump5.update_Value(String);
-    boolean update_Outlet_Blower(String);
+    boolean update_Outlet_Blower(const String&);
 #pragma endregion
 #pragma region RE
-    boolean update_HP_Present(String);
+    boolean update_HP_Present(const String&);
     // HP_FlowSwitch.update_Value(String);
     // HP_HighSwitch.update_Value(String);
     // HP_LowSwitch.update_Value(String);
@@ -834,44 +836,44 @@ protected:
     // HP_D1.update_Value(String);
     // HP_D2.update_Value(String);
     // HP_D3.update_Value(String);
-    boolean update_HP_Ambient(String);
-    boolean update_HP_Condensor(String);
-    boolean update_HP_Compressor_State(String);
-    boolean update_HP_Fan_State(String);
-    boolean update_HP_4W_Valve(String);
-    boolean update_HP_Heater_State(String);
-    boolean update_HP_State(String);
-    boolean update_HP_Mode(String);
-    boolean update_HP_Defrost_Timer(String);
-    boolean update_HP_Comp_Run_Timer(String);
-    boolean update_HP_Low_Temp_Timer(String);
-    boolean update_HP_Heat_Accum_Timer(String);
-    boolean update_HP_Sequence_Timer(String);
-    boolean update_HP_Warning(String);
-    boolean update_FrezTmr(String);
-    boolean update_DBGN(String);
-    boolean update_DEND(String);
-    boolean update_DCMP(String);
-    boolean update_DMAX(String);
-    boolean update_DELE(String);
-    boolean update_DPMP(String);
+    boolean update_HP_Ambient(const String&);
+    boolean update_HP_Condensor(const String&);
+    boolean update_HP_Compressor_State(const String&);
+    boolean update_HP_Fan_State(const String&);
+    boolean update_HP_4W_Valve(const String&);
+    boolean update_HP_Heater_State(const String&);
+    boolean update_HP_State(const String&);
+    boolean update_HP_Mode(const String&);
+    boolean update_HP_Defrost_Timer(const String&);
+    boolean update_HP_Comp_Run_Timer(const String&);
+    boolean update_HP_Low_Temp_Timer(const String&);
+    boolean update_HP_Heat_Accum_Timer(const String&);
+    boolean update_HP_Sequence_Timer(const String&);
+    boolean update_HP_Warning(const String&);
+    boolean update_FrezTmr(const String&);
+    boolean update_DBGN(const String&);
+    boolean update_DEND(const String&);
+    boolean update_DCMP(const String&);
+    boolean update_DMAX(const String&);
+    boolean update_DELE(const String&);
+    boolean update_DPMP(const String&);
 // CMAX.update_Value(String);
 // HP_Compressor.update_Value(String);
 // HP_Pump_State.update_Value(String);
 // HP_Status.update_Value(String);
 #pragma endregion
 #pragma region RG
-    boolean update_Pump1InstallState(String);
-    boolean update_Pump2InstallState(String);
-    boolean update_Pump3InstallState(String);
-    boolean update_Pump4InstallState(String);
-    boolean update_Pump5InstallState(String);
-    boolean update_Pump1OkToRun(String);
-    boolean update_Pump2OkToRun(String);
-    boolean update_Pump3OkToRun(String);
-    boolean update_Pump4OkToRun(String);
-    boolean update_Pump5OkToRun(String);
-    boolean update_LockMode(String);
+    boolean update_Pump1InstallState(const String&);
+    boolean update_Pump2InstallState(const String&);
+    boolean update_Pump3InstallState(const String&);
+    boolean update_Pump4InstallState(const String&);
+    boolean update_Pump5InstallState(const String&);
+    boolean update_Pump1OkToRun(const String&);
+    boolean update_Pump2OkToRun(const String&);
+    boolean update_Pump3OkToRun(const String&);
+    boolean update_Pump4OkToRun(const String&);
+    boolean update_Pump5OkToRun(const String&);
+    boolean update_LockMode(const String&);
 #pragma endregion
 
 
@@ -1585,3 +1587,4 @@ public:
 };
 
 #endif
+
