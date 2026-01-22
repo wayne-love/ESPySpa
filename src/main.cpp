@@ -426,12 +426,15 @@ void mqttHaAutoDiscovery() {
   generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.FiltBlockHrsSelect);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
+  // Simply used to populate the select options for filtration hours 1 to 24
+  const std::array<String, 24> FiltHrsSelect = {"1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24"};  
+
   ADConf.displayName = "Filtration Hours";
   ADConf.valueTemplate = "{{ value_json.filtration.hours }}";
   ADConf.propertyId = "filtration_hours";
   ADConf.deviceClass = "";
   ADConf.entityCategory = "config";
-  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.FiltHrsSelect);
+  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, FiltHrsSelect);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
 }

@@ -1200,16 +1200,14 @@ public:
 
     int getFiltHrs() { return FiltSetHrs.getValue(); }
     void setFiltHrsCallback(void (*callback)(int)) { FiltSetHrs.setCallback(callback); }
-    // Using the below to leverage existing code, yes we could rewrite this as just a int between 1 and 24.
-    const std::array<String, 24> FiltHrsSelect = {"1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24"};
+    // This is used to generated the select 
+    
 
     int getFiltBlockHrs() { return FiltBlockHrs.getValue(); }
     void setFiltBlockHrsCallback(void (*callback)(int)) { FiltBlockHrs.setCallback(callback); }
     // According to the docs only certain values are valid here.  Using a select to ensure only valid values are used.
     const std::array <String, 8> FiltBlockHrsSelect = {"24","12","8","6","4","3","2","1"};
 
-    /// @brief Get water temperature setpoint divide by 10 to get actual temp (384 = 38.4 )
-    /// @return 
     int getSTMP() { return STMP.getValue(); }
     void setSTMPCallback(void (*callback)(int)) { STMP.setCallback(callback); }
 

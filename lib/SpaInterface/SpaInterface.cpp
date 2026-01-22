@@ -515,14 +515,14 @@ bool SpaInterface::setFiltBlockHrs(String duration){
 
 bool SpaInterface::setFiltHrs(String duration){
     debugD("setFiltHrs - %s", duration);
-    for (int i = 0; i < FiltHrsSelect.size(); i++) {
-        if (FiltHrsSelect[i] == duration) {
-            if (sendCommandCheckResult("W60:"+FiltHrsSelect[i],FiltHrsSelect[i])) {
-                update_FiltHrs(FiltHrsSelect[i]);
-                return true;
-            }
-            return false;
-        }
+    int hrs = duration.toInt();
+    if (hrs<1 or hrs>24) {
+        debugE("FiltHrs out of range - %s", duration.c_str());
+        return false;
+    }
+    if (sendCommandCheckResult("W60:" + String(hrs), String(hrs))) {
+        update_FiltHrs(duration);
+        return true;
     }
     return false;
 }
