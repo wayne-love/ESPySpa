@@ -2,6 +2,14 @@
 
 #define BAUD_RATE 38400
 
+namespace {
+    SpaInterface spaInstance;
+}
+
+SpaInterface& spa() {
+    return spaInstance;
+}
+
 SpaInterface::SpaInterface() : port(SPA_SERIAL) {
     SPA_SERIAL.setRxBufferSize(1024);  //required for unit testing
     SPA_SERIAL.setTxBufferSize(1024);  //required for unit testing
