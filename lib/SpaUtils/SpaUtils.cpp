@@ -162,6 +162,8 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
   json["filtration"]["blockDuration"] = si.getFiltBlockHrs();
   json["filtration"]["hours"] = si.getFiltHrs();
 
+  json["lockmode"] = si.lockModeMap[si.getLockMode()];
+
   JsonObject pumps = json["pumps"].to<JsonObject>();
   // Add pump data by calling the function for each pump
   for (int i = 1; i <= 5; i++) {

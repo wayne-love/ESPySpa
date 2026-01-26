@@ -527,6 +527,25 @@ bool SpaInterface::setFiltHrs(String duration){
     return false;
 }
 
+bool SpaInterface::setLockMode(int mode){
+    debugD("setLockMode - %i", mode);
+    if (mode == getLockMode()) {
+        debugD("No LockMode change detected - current %i, new %i", getLockMode(), mode);
+        return true;
+    }
+
+    if (mode < 0 || mode > 2) {
+        debugE("LockMode out of range - %i", mode);
+        return false;
+    }
+
+    if (sendCommandCheckResult("S21:"+String(mode),String(mode))) {
+        update_LockMode(String(mode));
+        return true;
+    }
+    return false;
+}
+
 bool SpaInterface::readStatus() {
 
     // We could just do a port.readString but this will always impose a

@@ -437,6 +437,14 @@ void mqttHaAutoDiscovery() {
   generateSelectAdJSON(output, ADConf, spa, discoveryTopic, FiltHrsSelect);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
+  ADConf.displayName = "Lock Mode";
+  ADConf.valueTemplate = "{{ value_json.lock.mode }}";
+  ADConf.propertyId = "lock_mode";
+  ADConf.deviceClass = "";
+  ADConf.entityCategory = "config";
+  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.lockModeMap);
+  mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
+
 }
 
 #pragma region MQTT Publish / Subscribe
@@ -547,6 +555,13 @@ void setSpaProperty(String property, String p) {
     si.setFiltBlockHrs(p);
   } else if (property == "filtration_hours") {
     si.setFiltHrs(p);
+  } else if (property == "lock_mode") {
+    for (int i = 0; i < si.lockModeMap.size(); i++) {
+      if (si.lockModeMap[i] == p) {
+        si.setLockMode(i);
+        break;
+      }
+    }
   } else {
     debugE("Unhandled property - %s",property.c_str());
   }

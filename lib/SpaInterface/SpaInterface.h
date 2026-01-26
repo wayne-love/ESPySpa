@@ -256,6 +256,8 @@ class SpaInterface : public SpaProperties {
         /// @brief Set filtration hours (1 to 24 hours)
         /// @param duration
         bool setFiltHrs(String duration);
+
+        bool setLockMode(int mode);
 };
 
 

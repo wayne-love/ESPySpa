@@ -1582,6 +1582,7 @@ public:
 
     int getLockMode() { return LockMode.getValue(); }
     void setLockModeCallback(void (*callback)(int)) { LockMode.setCallback(callback); }
+    const std::array <String, 3> lockModeMap = {"Unlocked", "Partially Locked", "Locked"};
 };
 
 #endif
