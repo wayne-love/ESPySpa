@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.0.16]
+- Add control panel lock mode
+- Optomise code to reduce size
+
 ## [1.0.15]
 - Fixed setMode 
 
