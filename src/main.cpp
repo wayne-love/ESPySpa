@@ -438,7 +438,7 @@ void mqttHaAutoDiscovery() {
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
   ADConf.displayName = "Lock Mode";
-  ADConf.valueTemplate = "{{ value_json.lock.mode }}";
+  ADConf.valueTemplate = "{{ value_json.lockmode }}";
   ADConf.propertyId = "lock_mode";
   ADConf.deviceClass = "";
   ADConf.entityCategory = "config";
