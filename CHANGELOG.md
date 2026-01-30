@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.0.17]
+- Fix typo in Lock Mode autodiscovery
+
 ## [1.0.16]
 - Add control panel lock mode
 - Optomise code to reduce size
