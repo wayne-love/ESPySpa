@@ -129,7 +129,7 @@ int getPumpSpeedMin(String pumpInstallState) {
 bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String &output, bool prettyJson) {
   JsonDocument json;
 
-  json["temperatures"]["setPoint"] = si.getSTMP() / 10.0;
+  json["temperatures"]["setPoint"] = si.STMP.get() / 10.0;
   json["temperatures"]["water"] = si.getWTMP() / 10.0;
   json["temperatures"]["heater"] = si.getHeaterTemperature() / 10.0;
   json["temperatures"]["case"] = si.getCaseTemperature(); 
@@ -137,7 +137,7 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
   json["temperatures"]["heatpumpCondensor"] = si.getHP_Condensor();
 
   json["power"]["voltage"] = si.getMainsVoltage();
-  json["power"]["current"]= si.getMainsCurrent() / 10.0; // convert value to A
+  json["power"]["current"]= si.MainsCurrent.get() / 10.0; // convert value to A
   json["power"]["power"] = si.getPower() / 10.0; // convert value to W
   json["power"]["totalenergy"]= si.getPower_kWh() / 100.0; // convert value to kWh.
 

@@ -40,10 +40,6 @@ static boolean updateTriStateProperty(Property<int>& prop, const String& s) {
     return true;
 }
 
-boolean SpaProperties::update_MainsCurrent(const String& s){
-    return updateIntProperty(MainsCurrent, s);
-}
-
 boolean SpaProperties::update_SpaDayOfWeek(const String& s){
     return updateIntProperty(SpaDayOfWeek, s);
 }
@@ -419,10 +415,6 @@ boolean SpaProperties::update_FiltBlockHrs(const String& s){
     return updateIntProperty(FiltBlockHrs, s);
 }
 
-boolean SpaProperties::update_STMP(const String& s){
-    return updateIntProperty(STMP, s);
-}
-
 boolean SpaProperties::update_L_24HOURS(const String& s){
     return updateIntProperty(L_24HOURS, s);
 }
@@ -437,10 +429,6 @@ boolean SpaProperties::update_PSAV_BGN(const String& s){
 
 boolean SpaProperties::update_PSAV_END(const String& s){
     return updateIntProperty(PSAV_END, s);
-}
-
-boolean SpaProperties::update_L_1SNZ_DAY(const String& s){
-    return updateIntProperty(L_1SNZ_DAY, s);
 }
 
 boolean SpaProperties::update_L_2SNZ_DAY(const String& s){

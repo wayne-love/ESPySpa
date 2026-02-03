@@ -13,7 +13,6 @@ extern RemoteDebug Debug;
 
 class SpaInterface : public SpaProperties {
     private:
-
         /// @brief How often to pole the spa for updates in seconds.
         int _updateFrequency = 60;
 
@@ -66,7 +65,8 @@ class SpaInterface : public SpaProperties {
 
         void updateMeasures();
 
-
+        static bool validateSTMP(int value);
+        static bool validateL_1SNZ_DAY(int value);
 
         /// @brief Sends command to SpaNet controller.  Result must be read by some other method.
         /// Used for the 'RF' command so that we can do a optomised read of the return array.
@@ -106,35 +106,6 @@ class SpaInterface : public SpaProperties {
 
         u_long _lastWaitMessage = millis();
 
-
-
-    public:
-        /// @brief Init SpaInterface.
-        SpaInterface();
-
-        ~SpaInterface();
-
-        /// @brief configure how often the spa is polled in seconds.
-        /// @param SpaPollFrequency
-        void setSpaPollFrequency(int updateFrequency);
-
-        /// @brief Complete RF command response in a single string
-        Property<String> statusResponse;
-
-        /// @brief To be called by loop function of main sketch.  Does regular updates, etc.
-        void loop();
-
-        /// @brief Have we sucessfuly read the registers from the SpaNet controller.
-        /// @return 
-        bool isInitialised();
-
-        /// @brief Set the function to be called when properties have been updated.
-        /// @param f 
-        void setUpdateCallback(void (*f)());
-
-        /// @brief Clear the call back function.
-        void clearUpdateCallback();
-
         /// @brief Set the desired water temperature
         /// @param temp Between 5 and 40 in 0.5 increments
         /// @return Returns True if succesful
@@ -144,6 +115,113 @@ class SpaInterface : public SpaProperties {
         /// @param mode
         /// @return Returns True if succesful
         bool setL_1SNZ_DAY(int mode);
+
+    public:
+        /// @brief Init SpaInterface.
+        SpaInterface();
+
+        ~SpaInterface();
+
+        // Read-only value holder synced from the spa; external code can only read.
+        template <typename T>
+        class ROProperty {
+        public:
+            ROProperty() = default;
+
+            T get() const { return _value; }
+            operator T() const { return _value; }
+
+        protected:
+            T _value{};
+            bool _hasValue = false;
+
+            // Called by SpaInterface when a fresh value is received from the spa.
+            void update(T newValue) {
+                _value = newValue;
+                _hasValue = true;
+            }
+
+            friend class SpaInterface;
+        };
+
+        // Read/write property that sends commands before updating the cached value.
+        template <typename T>
+        class RWProperty : public ROProperty<T> {
+        public:
+            using WriteFunction = bool (SpaInterface::*)(T);
+            using ValidateFunction = bool (*)(T);
+
+            RWProperty() = default;
+            RWProperty(SpaInterface* owner, WriteFunction writer)
+                : _owner(owner), _writer(writer) {}
+            RWProperty(SpaInterface* owner, WriteFunction writer, ValidateFunction validator)
+                : _owner(owner), _writer(writer), _validator(validator) {}
+
+            // Sends the value to the spa first; caches it only on success.
+            bool set(T newValue) {
+                if (this->_hasValue && newValue == this->_value) {
+                    return true;
+                }
+
+                if (!_owner || !_writer) {
+                    throw std::invalid_argument("RWProperty has no owner/writer");
+                }
+
+                if (_validator && !_validator(newValue)) {
+                    throw std::out_of_range("RWProperty value out of range");
+                }
+
+                if (!(_owner->*_writer)(newValue)) {
+                    throw std::runtime_error("RWProperty write failed");
+                }
+
+                this->update(newValue);
+                return true;
+            }
+
+            RWProperty& operator=(T newValue) {
+                set(newValue);
+                return *this;
+            }
+
+        private:
+            // Owner + writer are required to commit changes to the spa.
+            SpaInterface* _owner = nullptr;
+            WriteFunction _writer = nullptr;
+            ValidateFunction _validator = nullptr;
+        };
+
+        /// @brief configure how often the spa is polled in seconds.
+        /// @param SpaPollFrequency
+        void setSpaPollFrequency(int updateFrequency);
+
+        /// @brief Complete RF command response in a single string
+        Property<String> statusResponse;
+
+        /// @brief Mains current draw multiplied by 10 (77 = 7.7 actual)
+        ROProperty<int> MainsCurrent;
+        /// @brief Water temperature set point ('C) multiplied by 10
+        RWProperty<int> STMP{this, &SpaInterface::setSTMP, &SpaInterface::validateSTMP};
+        /// @brief Sleep timer 1 day bitmap (128 = off, 127 = every day, 96 = weekends, 31 = weekdays)
+        RWProperty<int> L_1SNZ_DAY{this, &SpaInterface::setL_1SNZ_DAY, &SpaInterface::validateL_1SNZ_DAY};
+
+        /// @brief To be called by loop function of main sketch.  Does regular updates, etc.
+        void loop();
+
+        /// @brief Have we sucessfuly read the registers from the SpaNet controller.
+        /// @return 
+        bool isInitialised();
+
+        /// @brief Water temperature set point multiplied by 10 (380 = 38.0 actual)
+        /// @return
+        int getSTMP() { return STMP.get(); }
+
+        /// @brief Set the function to be called when properties have been updated.
+        /// @param f 
+        void setUpdateCallback(void (*f)());
+
+        /// @brief Clear the call back function.
+        void clearUpdateCallback();
 
         /// @brief Set snooze time (provide an integer that uses this calculation HH:mm > HH*265+mm. e.g. 13:47 = 13*256+47 = 3375)
         /// @param mode

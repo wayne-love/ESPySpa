@@ -39,8 +39,6 @@ class SpaProperties
 private:
 
 #pragma region R2
-    /// @brief Mains current draw (A)
-    Property<int> MainsCurrent;
     /// @brief Mains voltage (V)
     Property<int> MainsVoltage;
     /// @brief Internal case temperature ('C)
@@ -283,7 +281,6 @@ Property<bool> HV_2;
     /// @brief Filter block duration (hours)
     Property<int> FiltBlockHrs;
     /// @brief Water temperature set point ('C)
-    Property<int> STMP;
     // 1 = 12 hrs
     Property<int> L_24HOURS;
     /// @brief Power save level
@@ -298,10 +295,6 @@ Property<bool> HV_2;
     ///
     /// Formula h*256+m (ie: for 20:00, integer will be 20*256+0 = 5120; for 13:47, integer will be 13*256+47 = 3375)
     Property<int> PSAV_END;
-    /// @brief Sleep timer 1
-    ///
-    /// 128 = off, 127 = every day, 96 = weekends, 31 = weekdays
-    Property<int> L_1SNZ_DAY;
     /// @brief Sleep timer 2
     ///
     /// 128 = off, 127 = every day, 96 = weekends, 31 = weekdays
@@ -621,7 +614,6 @@ Property<bool> HV_2;
 
 protected:
 #pragma region R2
-    boolean update_MainsCurrent(const String&);
     boolean update_SpaDayOfWeek(const String&);
     boolean update_SpaTime(const String& year, const String& month, const String& day, const String& hour, const String& minute, const String& second);
     boolean update_MainsVoltage(const String&);
@@ -726,12 +718,10 @@ protected:
     boolean update_LSPDValue(const String&);
     boolean update_FiltHrs(const String&);
     boolean update_FiltBlockHrs(const String&);
-    boolean update_STMP(const String&);
     boolean update_L_24HOURS(const String&);
     boolean update_PSAV_LVL(const String&);
     boolean update_PSAV_BGN(const String&);
     boolean update_PSAV_END(const String&);
-    boolean update_L_1SNZ_DAY(const String&);
     boolean update_L_2SNZ_DAY(const String&);
     boolean update_L_1SNZ_BGN(const String&);
     boolean update_L_2SNZ_BGN(const String&);
@@ -878,11 +868,6 @@ protected:
 
 
 public:
-    /// @brief Gets the mains current multiplied by 10 (77 = 7.7 actual)
-    /// @return 
-    int getMainsCurrent() { return MainsCurrent.getValue(); }
-    void setMainsCurrentCallback(void (*callback)(int)) { MainsCurrent.setCallback(callback); }
-
     int getMainsVoltage() { return MainsVoltage.getValue(); }
     void setMainsVoltageCallback(void (*callback)(int)) { MainsVoltage.setCallback(callback); }
 
@@ -1208,9 +1193,6 @@ public:
     // According to the docs only certain values are valid here.  Using a select to ensure only valid values are used.
     const std::array <String, 8> FiltBlockHrsSelect = {"24","12","8","6","4","3","2","1"};
 
-    int getSTMP() { return STMP.getValue(); }
-    void setSTMPCallback(void (*callback)(int)) { STMP.setCallback(callback); }
-
     int getL_24HOURS() { return L_24HOURS.getValue(); }
     void setL_24HOURSCallback(void (*callback)(int)) { L_24HOURS.setCallback(callback); }
 
@@ -1223,8 +1205,6 @@ public:
     int getPSAV_END() { return PSAV_END.getValue(); }
     void setPSAV_ENDCallback(void (*callback)(int)) { PSAV_END.setCallback(callback); }
 
-    int getL_1SNZ_DAY() { return L_1SNZ_DAY.getValue(); }
-    void setL_1SNZ_DAYCallback(void (*callback)(int)) { L_1SNZ_DAY.setCallback(callback); }
     const std::array <String, 11> sleepSelection = {"Off", "Everyday", "Weekends", "Weekdays", "Monday", "Tuesday", "Wednesday", "Thuesday", "Friday", "Saturday", "Sunday"};
     const std::array <byte, 11> sleepBitmap = {128, 127, 96, 31, 16, 8, 4, 2, 1, 64, 32}; 
 

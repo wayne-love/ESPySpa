@@ -179,16 +179,11 @@ bool SpaInterface::setHELE(int mode){
 bool SpaInterface::setSTMP(int temp){
     debugD("setSTMP - %i", temp);
 
-    if (temp==getSTMP()) {
-        debugD("No STMP change detected - current %i, new %i", getSTMP(), temp);
+    if (temp==STMP.get()) {  // todo: does this ever evaluate to true?
+        debugD("No STMP change detected - current %i, new %i", STMP.get(), temp);
         return true; // No change needed
     }
 
-    // check the temperate is within the valid range
-    if (temp < 50 || temp > 410) {
-        debugE("STMP out of range - %i", temp);
-        return false;
-    }
     if (temp % 2 != 0) {
         temp++;
     }
@@ -196,21 +191,44 @@ bool SpaInterface::setSTMP(int temp){
     String stemp = String(temp);
 
     if (sendCommandCheckResult("W40:" + stemp, stemp)) {
-        update_STMP(stemp);
+        STMP.update(temp);
         return true;
     }
     return false;
 }
 
+bool SpaInterface::validateSTMP(int value) {
+    return value >= 50 && value <= 410;
+}
+
+bool SpaInterface::validateL_1SNZ_DAY(int value) {
+    switch (value) {
+        case 128: // Off
+        case 127: // Everyday
+        case 96:  // Weekends
+        case 31:  // Weekdays
+        case 16:  // Monday
+        case 8:   // Tuesday
+        case 4:   // Wednesday
+        case 2:   // Thursday
+        case 1:   // Friday
+        case 64:  // Saturday
+        case 32:  // Sunday
+            return true;
+        default:
+            return false;
+    }
+}
+
 bool SpaInterface::setL_1SNZ_DAY(int mode){
     debugD("setL_1SNZ_DAY - %i",mode);
-    if (mode == getL_1SNZ_DAY()) {
-        debugD("No L_1SNZ_DAY change detected - current %i, new %i", getL_1SNZ_DAY(), mode);
+    if (mode == L_1SNZ_DAY.get()) {
+        debugD("No L_1SNZ_DAY change detected - current %i, new %i", L_1SNZ_DAY.get(), mode);
         return true;
     }
 
     if (sendCommandCheckResult(String("W67:")+mode,String(mode))) {
-        update_L_1SNZ_DAY(String(mode));
+        L_1SNZ_DAY.update(mode);
         return true;
     }
     return false;
@@ -753,7 +771,7 @@ void SpaInterface::clearUpdateCallback() {
 
 void SpaInterface::updateMeasures() {
     #pragma region R2
-    update_MainsCurrent(statusResponseRaw[R2+1]);
+    MainsCurrent.update(statusResponseRaw[R2+1].toInt());
     update_MainsVoltage(statusResponseRaw[R2+2]);
     update_CaseTemperature(statusResponseRaw[R2+3]);
     update_PortCurrent(statusResponseRaw[R2+4]);
@@ -857,12 +875,12 @@ void SpaInterface::updateMeasures() {
     update_LSPDValue(statusResponseRaw[R6 + 5]);
     update_FiltHrs(statusResponseRaw[R6 + 6]);
     update_FiltBlockHrs(statusResponseRaw[R6 + 7]);
-    update_STMP(statusResponseRaw[R6 + 8]);
+    STMP.update(statusResponseRaw[R6 + 8].toInt());
     update_L_24HOURS(statusResponseRaw[R6 + 9]);
     update_PSAV_LVL(statusResponseRaw[R6 + 10]);
     update_PSAV_BGN(statusResponseRaw[R6 + 11]);
     update_PSAV_END(statusResponseRaw[R6 + 12]);
-    update_L_1SNZ_DAY(statusResponseRaw[R6 + 13]);
+    L_1SNZ_DAY.update(statusResponseRaw[R6 + 13].toInt());
     update_L_2SNZ_DAY(statusResponseRaw[R6 + 14]);
     update_L_1SNZ_BGN(statusResponseRaw[R6 + 15]);
     update_L_2SNZ_BGN(statusResponseRaw[R6 + 16]);

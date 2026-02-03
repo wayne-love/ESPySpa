@@ -2,6 +2,7 @@
 #include <WebServer.h>
 
 #include <WiFiClient.h>
+#include <exception>
 #include <RemoteDebug.h>
 #include <WiFiManager.h>
 #include <ESPmDNS.h>
@@ -469,7 +470,11 @@ void setSpaProperty(String property, String p) {
   debugI("Received update for %s to %s",property.c_str(),p.c_str());
 
   if (property == "temperatures_setPoint") {
-    si.setSTMP(int(p.toFloat()*10));
+    try {
+      si.STMP = int(p.toFloat()*10);
+    } catch (const std::exception& ex) {
+      debugE("Failed to set STMP: %s", ex.what());
+    }
   } else if (property == "heatpump_mode") {
     si.setHPMP(p);
   // note single speed pumps should never trigger a mode or speed events
@@ -534,7 +539,11 @@ void setSpaProperty(String property, String p) {
     for (const auto& i : si.sleepSelection) {
       if (i == p) {
         if (property == "sleepTimers_1_state")
-          si.setL_1SNZ_DAY(si.sleepBitmap[member]);
+          try {
+            si.L_1SNZ_DAY = si.sleepBitmap[member];
+          } catch (const std::exception& ex) {
+            debugE("Failed to set L_1SNZ_DAY: %s", ex.what());
+          }
         else if (property == "sleepTimers_2_state")
           si.setL_2SNZ_DAY(si.sleepBitmap[member]);
         break;
