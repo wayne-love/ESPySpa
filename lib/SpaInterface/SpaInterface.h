@@ -10,6 +10,8 @@
 extern RemoteDebug Debug;
 #define FAILEDREADFREQUENCY 1000 //(ms) Frequency to retry on a failed read of the status registers.
 #define V2FIRMWARE_STRING "SW V2" // String to identify V2 firmware
+template <typename T, size_t N>
+constexpr size_t array_count(const T (&)[N]) { return N; }
 
 class SpaInterface : public SpaProperties {
     private:
@@ -126,14 +128,37 @@ class SpaInterface : public SpaProperties {
         template <typename T>
         class ROProperty {
         public:
+            // Optional label/value mapping for human-readable access.
+            struct LabelValue {
+                const char* label;
+                T value;
+            };
+
             ROProperty() = default;
+            // Provide a label/value map to enable getLabel().
+            ROProperty(const LabelValue* map, size_t mapSize)
+                : _map(map), _mapSize(mapSize) {}
 
             T get() const { return _value; }
             operator T() const { return _value; }
+            // Returns the matching label for the current value, or fallback if not found.
+            const char* getLabel(const char* fallback = "Unknown") const {
+                if (!_map || _mapSize == 0) {
+                    return fallback;
+                }
+                for (size_t i = 0; i < _mapSize; i++) {
+                    if (_map[i].value == _value) {
+                        return _map[i].label;
+                    }
+                }
+                return fallback;
+            }
 
         protected:
             T _value{};
             bool _hasValue = false;
+            const LabelValue* _map = nullptr;
+            size_t _mapSize = 0;
 
             // Called by SpaInterface when a fresh value is received from the spa.
             void update(T newValue) {
@@ -150,17 +175,27 @@ class SpaInterface : public SpaProperties {
         public:
             using WriteFunction = bool (SpaInterface::*)(T);
             using ValidateFunction = bool (*)(T);
+            using LabelValue = typename ROProperty<T>::LabelValue;
 
             RWProperty() = default;
+            // Basic RW property with owner/writer only.
             RWProperty(SpaInterface* owner, WriteFunction writer)
                 : _owner(owner), _writer(writer) {}
+            // RW property with optional validator.
             RWProperty(SpaInterface* owner, WriteFunction writer, ValidateFunction validator)
                 : _owner(owner), _writer(writer), _validator(validator) {}
+            // RW property with label/value map for setLabel/getLabel.
+            RWProperty(SpaInterface* owner, WriteFunction writer, ValidateFunction validator,
+                       const LabelValue* map, size_t mapSize)
+                : ROProperty<T>(map, mapSize),
+                  _owner(owner),
+                  _writer(writer),
+                  _validator(validator) {}
 
             // Sends the value to the spa first; caches it only on success.
-            bool set(T newValue) {
+            void set(T newValue) {
                 if (this->_hasValue && newValue == this->_value) {
-                    return true;
+                    return;
                 }
 
                 if (!_owner || !_writer) {
@@ -176,12 +211,25 @@ class SpaInterface : public SpaProperties {
                 }
 
                 this->update(newValue);
-                return true;
             }
 
             RWProperty& operator=(T newValue) {
                 set(newValue);
                 return *this;
+            }
+
+            // Set by label, throws if map is not configured or label is unknown.
+            void setLabel(const char* label) {
+                if (!label || !this->_map || this->_mapSize == 0) {
+                    throw std::invalid_argument("RWProperty label map not configured");
+                }
+                for (size_t i = 0; i < this->_mapSize; i++) {
+                    if (strcmp(this->_map[i].label, label) == 0) {
+                        set(this->_map[i].value);
+                        return;
+                    }
+                }
+                throw std::out_of_range("RWProperty label not found");
             }
 
         private:
@@ -203,7 +251,21 @@ class SpaInterface : public SpaProperties {
         /// @brief Water temperature set point ('C) multiplied by 10
         RWProperty<int> STMP{this, &SpaInterface::setSTMP, &SpaInterface::validateSTMP};
         /// @brief Sleep timer 1 day bitmap (128 = off, 127 = every day, 96 = weekends, 31 = weekdays)
-        RWProperty<int> L_1SNZ_DAY{this, &SpaInterface::setL_1SNZ_DAY, &SpaInterface::validateL_1SNZ_DAY};
+        static constexpr ROProperty<int>::LabelValue L_1SNZ_DAY_Map[] = {
+            {"Off", 128},
+            {"Everyday", 127},
+            {"Weekends", 96},
+            {"Weekdays", 31},
+            {"Monday", 16},
+            {"Tuesday", 8},
+            {"Wednesday", 4},
+            {"Thuesday", 2},
+            {"Friday", 1},
+            {"Saturday", 64},
+            {"Sunday", 32},
+        };
+        RWProperty<int> L_1SNZ_DAY{this, &SpaInterface::setL_1SNZ_DAY, &SpaInterface::validateL_1SNZ_DAY,
+                                  L_1SNZ_DAY_Map, array_count(L_1SNZ_DAY_Map)};
 
         /// @brief To be called by loop function of main sketch.  Does regular updates, etc.
         void loop();

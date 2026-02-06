@@ -202,22 +202,12 @@ bool SpaInterface::validateSTMP(int value) {
 }
 
 bool SpaInterface::validateL_1SNZ_DAY(int value) {
-    switch (value) {
-        case 128: // Off
-        case 127: // Everyday
-        case 96:  // Weekends
-        case 31:  // Weekdays
-        case 16:  // Monday
-        case 8:   // Tuesday
-        case 4:   // Wednesday
-        case 2:   // Thursday
-        case 1:   // Friday
-        case 64:  // Saturday
-        case 32:  // Sunday
+    for (size_t i = 0; i < array_count(L_1SNZ_DAY_Map); i++) {
+        if (L_1SNZ_DAY_Map[i].value == value) {
             return true;
-        default:
-            return false;
+        }
     }
+    return false;
 }
 
 bool SpaInterface::setL_1SNZ_DAY(int mode){
