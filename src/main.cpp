@@ -23,7 +23,9 @@ RemoteDebug Debug;
 SpaInterface si;
 Config config;
 
-#if defined(ESPA_V1) || defined(ESPA_V2)
+#if defined(ESPA_V2) && defined(RGB_LED_PIN)
+  MultiBlinker blinker(RGB_LED_PIN);
+#elif defined(ESPA_V1)
   MultiBlinker blinker(PCB_LED1, PCB_LED2, PCB_LED3, PCB_LED4);
 #elif defined(LED_PIN)
   MultiBlinker blinker(LED_PIN);
@@ -104,7 +106,15 @@ void startWiFiManager(){
   ESP.restart(); // Restart the ESP to apply the new settings
 }
 
-// We check the EN_PIN every loop, to allow people to configure the system
+/**
+ * @brief Check hardware buttons and handle their actions.
+ * 
+ * Button assignments by hardware variant:
+ * - EN_PIN: "Enable" button - hold to start WiFi Manager config portal
+ * - GP_PIN: General purpose button (ESPA_V2 only, GPIO21) - reserved for future use
+ * 
+ * @note Both buttons use INPUT_PULLUP, so pressed = LOW, released = HIGH.
+ */
 void checkButton(){
 #if defined(EN_PIN)
   if(digitalRead(EN_PIN) == LOW) {
@@ -114,6 +124,17 @@ void checkButton(){
       debugI("Button press detected. Starting Portal");
       startWiFiManager();
     }
+  }
+#endif
+#if defined(GP_PIN)
+  // GP_PIN (GPIO21 on ESPA_V2) - general purpose button for future functionality
+  // Currently just logs button presses for debugging
+  static bool gpButtonPressed = false;
+  if(digitalRead(GP_PIN) == LOW && !gpButtonPressed) {
+    gpButtonPressed = true;
+    debugI("GP Button pressed");
+  } else if(digitalRead(GP_PIN) == HIGH) {
+    gpButtonPressed = false;
   }
 #endif
 }
@@ -621,10 +642,25 @@ void setup() {
   #if defined(EN_PIN)
     pinMode(EN_PIN, INPUT_PULLUP);
   #endif
+  #if defined(GP_PIN)
+    pinMode(GP_PIN, INPUT_PULLUP);
+  #endif
 
   Serial.begin(115200);
+  
+  #if defined(ESPA_V2)
+    // ESP32-C6: Wait for USB CDC to connect (with timeout)
+    unsigned long startWait = millis();
+    while (!Serial && millis() - startWait < 3000) {
+      delay(10);
+    }
+    delay(100);  // Extra settling time for USB
+  #endif
+  
   Serial.setDebugOutput(true);
   Debug.setSerialEnabled(true);
+
+  si.begin();  // Initialize SpaInterface serial communication
 
   blinker.setState(STATE_NONE); // start with all LEDs off
   blinker.start();

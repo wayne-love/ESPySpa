@@ -112,6 +112,17 @@ class SpaInterface : public SpaProperties {
         /// @brief Init SpaInterface.
         SpaInterface();
 
+        /// @brief Initialize serial communication with the spa controller.
+        /// 
+        /// This method MUST be called from setup() after the Arduino framework
+        /// is initialized. On ESP32-C6 (ESPA_V2), serial initialization in
+        /// global constructors causes crashes, so this deferred initialization
+        /// pattern is required. It is safe to use on all platforms.
+        /// 
+        /// @note Called automatically by legacy code, but explicit call in
+        ///       setup() is now required for ESP32-C6 compatibility.
+        void begin();
+
         ~SpaInterface();
 
         /// @brief configure how often the spa is polled in seconds.
