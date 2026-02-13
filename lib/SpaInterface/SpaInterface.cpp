@@ -2,7 +2,26 @@
 
 #define BAUD_RATE 38400
 
+/**
+ * @brief Constructor - intentionally does NOT initialize serial.
+ * 
+ * On ESP32-C6 (ESPA_V2), global object constructors run before the Arduino
+ * framework is fully initialized. Serial initialization in constructors causes
+ * crashes. The begin() method must be called from setup() instead.
+ */
 SpaInterface::SpaInterface() : port(SPA_SERIAL) {
+}
+
+/**
+ * @brief Initialize serial communication with the spa controller.
+ * 
+ * This method MUST be called from setup() after the Arduino framework is
+ * initialized. This deferred initialization pattern is required for ESP32-C6
+ * compatibility but is safe to use on all platforms.
+ * 
+ * @note On ESP32-C6, SPA_SERIAL is Serial1 (UART1). On ESP32-S3, it's Serial2.
+ */
+void SpaInterface::begin() {
     SPA_SERIAL.setRxBufferSize(1024);  //required for unit testing
     SPA_SERIAL.setTxBufferSize(1024);  //required for unit testing
     SPA_SERIAL.begin(BAUD_RATE, SERIAL_8N1, RX_PIN, TX_PIN);
