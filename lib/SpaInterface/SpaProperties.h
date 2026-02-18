@@ -295,10 +295,7 @@ Property<bool> HV_2;
     ///
     /// Formula h*256+m (ie: for 20:00, integer will be 20*256+0 = 5120; for 13:47, integer will be 13*256+47 = 3375)
     Property<int> PSAV_END;
-    /// @brief Sleep timer 2
-    ///
-    /// 128 = off, 127 = every day, 96 = weekends, 31 = weekdays
-    Property<int> L_2SNZ_DAY;
+
     /// @brief Sleep time 1 start time
     ///
     /// Formula h*256+m (ie: for 20:00, integer will be 20*256+0 = 5120; for 13:47, integer will be 13*256+47 = 3375)
@@ -722,7 +719,6 @@ protected:
     boolean update_PSAV_LVL(const String&);
     boolean update_PSAV_BGN(const String&);
     boolean update_PSAV_END(const String&);
-    boolean update_L_2SNZ_DAY(const String&);
     boolean update_L_1SNZ_BGN(const String&);
     boolean update_L_2SNZ_BGN(const String&);
     boolean update_L_1SNZ_END(const String&);
@@ -1204,12 +1200,6 @@ public:
 
     int getPSAV_END() { return PSAV_END.getValue(); }
     void setPSAV_ENDCallback(void (*callback)(int)) { PSAV_END.setCallback(callback); }
-
-    const std::array <String, 11> sleepSelection = {"Off", "Everyday", "Weekends", "Weekdays", "Monday", "Tuesday", "Wednesday", "Thuesday", "Friday", "Saturday", "Sunday"};
-    const std::array <byte, 11> sleepBitmap = {128, 127, 96, 31, 16, 8, 4, 2, 1, 64, 32}; 
-
-    int getL_2SNZ_DAY() { return L_2SNZ_DAY.getValue(); }
-    void setL_2SNZ_DAYCallback(void (*callback)(int)) { L_2SNZ_DAY.setCallback(callback); }
 
     int getL_1SNZ_BGN() { return L_1SNZ_BGN.getValue(); }
     void setL_1SNZ_BGNCallback(void (*callback)(int)) { L_1SNZ_BGN.setCallback(callback); }

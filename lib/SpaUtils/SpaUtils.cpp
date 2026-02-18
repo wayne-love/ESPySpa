@@ -192,15 +192,7 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
   json["blower"]["speed"] = si.getOutlet_Blower() ==2? "0" : String(si.getVARIValue());
 
   json["sleepTimers"]["timer1"]["state"] = si.L_1SNZ_DAY.getLabel();
-
-  int member = 0;
-  for (const auto& pair : si.sleepBitmap) {
-      if (pair == si.getL_2SNZ_DAY()) {
-        json["sleepTimers"]["timer2"]["state"]=si.sleepSelection[member];
-        break;
-      }
-      member++;
-  }
+  json["sleepTimers"]["timer2"]["state"] = si.L_2SNZ_DAY.getLabel();
   json["sleepTimers"]["timer1"]["begin"]=convertToTime(si.getL_1SNZ_BGN());
   json["sleepTimers"]["timer1"]["end"]=convertToTime(si.getL_1SNZ_END());
   json["sleepTimers"]["timer2"]["begin"]=convertToTime(si.getL_2SNZ_BGN());

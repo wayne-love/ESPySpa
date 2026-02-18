@@ -68,7 +68,7 @@ class SpaInterface : public SpaProperties {
         void updateMeasures();
 
         static bool validateSTMP(int value);
-        static bool validateL_1SNZ_DAY(int value);
+        static bool validate_SNZ_DAY(int value);
 
         /// @brief Sends command to SpaNet controller.  Result must be read by some other method.
         /// Used for the 'RF' command so that we can do a optomised read of the return array.
@@ -117,6 +117,7 @@ class SpaInterface : public SpaProperties {
         /// @param mode
         /// @return Returns True if succesful
         bool setL_1SNZ_DAY(int mode);
+        bool setL_2SNZ_DAY(int mode);
 
     public:
         /// @brief Init SpaInterface.
@@ -135,9 +136,10 @@ class SpaInterface : public SpaProperties {
             };
 
             ROProperty() = default;
-            // Provide a label/value map to enable getLabel().
-            ROProperty(const LabelValue* map, size_t mapSize)
-                : _map(map), _mapSize(mapSize) {}
+            // Provide a label/value map; array size is deduced.
+            template <size_t N>
+            ROProperty(const LabelValue (&map)[N])
+                : _map(map), _mapSize(N) {}
 
             T get() const { return _value; }
             operator T() const { return _value; }
@@ -152,6 +154,18 @@ class SpaInterface : public SpaProperties {
                     }
                 }
                 return fallback;
+            }
+            // Expose label/value map for building UI dropdowns.
+            const LabelValue* getLabelMap(size_t& count) const {
+                count = _mapSize;
+                return _map;
+            }
+            size_t getLabelCount() const { return _mapSize; }
+            const char* getLabelAt(size_t index, const char* fallback = "Unknown") const {
+                if (!_map || index >= _mapSize) {
+                    return fallback;
+                }
+                return _map[index].label;
             }
 
         protected:
@@ -185,9 +199,10 @@ class SpaInterface : public SpaProperties {
             RWProperty(SpaInterface* owner, WriteFunction writer, ValidateFunction validator)
                 : _owner(owner), _writer(writer), _validator(validator) {}
             // RW property with label/value map for setLabel/getLabel.
+            template <size_t N>
             RWProperty(SpaInterface* owner, WriteFunction writer, ValidateFunction validator,
-                       const LabelValue* map, size_t mapSize)
-                : ROProperty<T>(map, mapSize),
+                       const LabelValue (&map)[N])
+                : ROProperty<T>(map),
                   _owner(owner),
                   _writer(writer),
                   _validator(validator) {}
@@ -251,7 +266,7 @@ class SpaInterface : public SpaProperties {
         /// @brief Water temperature set point ('C) multiplied by 10
         RWProperty<int> STMP{this, &SpaInterface::setSTMP, &SpaInterface::validateSTMP};
         /// @brief Sleep timer 1 day bitmap (128 = off, 127 = every day, 96 = weekends, 31 = weekdays)
-        static constexpr ROProperty<int>::LabelValue L_1SNZ_DAY_Map[] = {
+        static constexpr ROProperty<int>::LabelValue SNZ_DAY_Map[] = {
             {"Off", 128},
             {"Everyday", 127},
             {"Weekends", 96},
@@ -264,8 +279,10 @@ class SpaInterface : public SpaProperties {
             {"Saturday", 64},
             {"Sunday", 32},
         };
-        RWProperty<int> L_1SNZ_DAY{this, &SpaInterface::setL_1SNZ_DAY, &SpaInterface::validateL_1SNZ_DAY,
-                                  L_1SNZ_DAY_Map, array_count(L_1SNZ_DAY_Map)};
+        RWProperty<int> L_1SNZ_DAY{this, &SpaInterface::setL_1SNZ_DAY, &SpaInterface::validate_SNZ_DAY,
+                                  SNZ_DAY_Map};
+        RWProperty<int> L_2SNZ_DAY{this, &SpaInterface::setL_2SNZ_DAY, &SpaInterface::validate_SNZ_DAY,
+                                  SNZ_DAY_Map};
 
         /// @brief To be called by loop function of main sketch.  Does regular updates, etc.
         void loop();
@@ -290,11 +307,6 @@ class SpaInterface : public SpaProperties {
         /// @return Returns True if succesful
         bool setL_1SNZ_BGN(int mode);
         bool setL_1SNZ_END(int mode);
-
-        /// @brief Set snooze day ({128,127,96,31} -> {"Off","Everyday","Weekends","Weekdays"};)
-        /// @param mode
-        /// @return Returns True if succesful
-        bool setL_2SNZ_DAY(int mode);
 
         /// @brief Set snooze time (provide an integer that uses this calculation HH:mm > HH*265+mm. e.g. 13:47 = 13*256+47 = 3375)
         /// @param mode

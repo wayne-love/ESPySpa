@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include "SpaInterface.h"
 
 
 /// @brief Configuration structure for the data elements for the Spa.
@@ -48,6 +49,21 @@ void generateSelectAdJSON(String& output, const AutoDiscoveryInformationTemplate
    json["command_topic"] = spa.commandTopic + "/" + config.propertyId;
    JsonArray opts = json["options"].to<JsonArray>();
    for (const auto& o : options) opts.add(o);
+
+   serializeJson(json, output);
+}
+
+template <typename T>
+void generateSelectAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, const SpaInterface::ROProperty<T>& prop) {
+   JsonDocument json;
+   generateCommonAdJSON(json, config, spa, discoveryTopic, "select");
+
+   json["command_topic"] = spa.commandTopic + "/" + config.propertyId;
+   JsonArray opts = json["options"].to<JsonArray>();
+   const size_t count = prop.getLabelCount();
+   for (size_t i = 0; i < count; i++) {
+      opts.add(prop.getLabelAt(i));
+   }
 
    serializeJson(json, output);
 }

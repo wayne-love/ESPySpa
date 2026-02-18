@@ -431,10 +431,6 @@ boolean SpaProperties::update_PSAV_END(const String& s){
     return updateIntProperty(PSAV_END, s);
 }
 
-boolean SpaProperties::update_L_2SNZ_DAY(const String& s){
-    return updateIntProperty(L_2SNZ_DAY, s);
-}
-
 boolean SpaProperties::update_L_1SNZ_BGN(const String& s){
     return updateIntProperty(L_1SNZ_BGN, s);
 }
