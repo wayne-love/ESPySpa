@@ -534,24 +534,17 @@ void setSpaProperty(String property, String p) {
     else si.setVARIValue(p.toInt());
   } else if (property == "blower_mode") {
     si.setOutlet_Blower(p=="Variable"?0:1);
-  } else if (property == "sleepTimers_1_state" || property == "sleepTimers_2_state") {
-    for (const auto& entry : SpaInterface::SNZ_DAY_Map) {
-      if (p == entry.label) {
-        if (property == "sleepTimers_1_state") {
-          try {
-            si.L_1SNZ_DAY = entry.value;
-          } catch (const std::exception& ex) {
-            debugE("Failed to set L_1SNZ_DAY: %s", ex.what());
-          }
-        } else if (property == "sleepTimers_2_state") {
-          try {
-            si.L_2SNZ_DAY = entry.value;
-          } catch (const std::exception& ex) {
-            debugE("Failed to set L_2SNZ_DAY: %s", ex.what());
-          }
-        }
-        break;
-      }
+  } else if (property == "sleepTimers_1_state") {
+    try {
+      si.L_1SNZ_DAY.setLabel(p.c_str());
+    } catch (const std::exception& ex) {
+      debugE("Failed to set L_1SNZ_DAY from label '%s': %s", p.c_str(), ex.what());
+    }
+  } else if (property == "sleepTimers_2_state") {
+    try {
+      si.L_2SNZ_DAY.setLabel(p.c_str());
+    } catch (const std::exception& ex) {
+      debugE("Failed to set L_2SNZ_DAY from label '%s': %s", p.c_str(), ex.what());
     }
   } else if (property == "sleepTimers_1_begin") {
     try {

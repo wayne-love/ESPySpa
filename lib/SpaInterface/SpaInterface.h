@@ -296,12 +296,10 @@ class SpaInterface : public SpaProperties {
         };
         /// @brief Sleep timer 1 day mode bitmap.
         /// @details Read/write. Typical values: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays. Uses command W67.
-        RWProperty<int> L_1SNZ_DAY{this, &SpaInterface::setL_1SNZ_DAY, &SpaInterface::validate_SNZ_DAY,
-                                  SNZ_DAY_Map};
+        RWProperty<int> L_1SNZ_DAY{this, &SpaInterface::setL_1SNZ_DAY, &SpaInterface::validate_SNZ_DAY, SNZ_DAY_Map};
         /// @brief Sleep timer 2 day mode bitmap.
         /// @details Read/write. Typical values: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays. Uses command W70.
-        RWProperty<int> L_2SNZ_DAY{this, &SpaInterface::setL_2SNZ_DAY, &SpaInterface::validate_SNZ_DAY,
-                                  SNZ_DAY_Map};
+        RWProperty<int> L_2SNZ_DAY{this, &SpaInterface::setL_2SNZ_DAY, &SpaInterface::validate_SNZ_DAY, SNZ_DAY_Map};
         
         /// @brief Sleep timer 1 start time.
         /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock). Uses command W68.
