@@ -554,13 +554,29 @@ void setSpaProperty(String property, String p) {
       }
     }
   } else if (property == "sleepTimers_1_begin") {
-    si.setL_1SNZ_BGN(convertToInteger(p));
+    try {
+      si.L_1SNZ_BGN = convertToInteger(p);
+    } catch (const std::exception& ex) {
+      debugE("Failed to set L_1SNZ_BGN: %s", ex.what());
+    }
   } else if (property == "sleepTimers_1_end") {
-    si.setL_1SNZ_END(convertToInteger(p));
+    try {
+      si.L_1SNZ_END = convertToInteger(p);
+    } catch (const std::exception& ex) {
+      debugE("Failed to set L_1SNZ_END: %s", ex.what());
+    }
   } else if (property == "sleepTimers_2_begin") {
-    si.setL_2SNZ_BGN(convertToInteger(p));
+    try {
+      si.L_2SNZ_BGN = convertToInteger(p);
+    } catch (const std::exception& ex) {
+      debugE("Failed to set L_2SNZ_BGN: %s", ex.what());
+    }
   } else if (property == "sleepTimers_2_end") {
-    si.setL_2SNZ_END(convertToInteger(p));
+    try {
+      si.L_2SNZ_END = convertToInteger(p);
+    } catch (const std::exception& ex) {
+      debugE("Failed to set L_2SNZ_END: %s", ex.what());
+    }
   } else if (property == "status_spaMode") {
     si.setMode(p);
   } else if (property == "filtration_blockDuration") {

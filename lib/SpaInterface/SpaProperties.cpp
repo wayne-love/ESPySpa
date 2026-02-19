@@ -431,22 +431,6 @@ boolean SpaProperties::update_PSAV_END(const String& s){
     return updateIntProperty(PSAV_END, s);
 }
 
-boolean SpaProperties::update_L_1SNZ_BGN(const String& s){
-    return updateIntProperty(L_1SNZ_BGN, s);
-}
-
-boolean SpaProperties::update_L_2SNZ_BGN(const String& s){
-    return updateIntProperty(L_2SNZ_BGN, s);
-}
-
-boolean SpaProperties::update_L_1SNZ_END(const String& s){
-    return updateIntProperty(L_1SNZ_END, s);
-}
-
-boolean SpaProperties::update_L_2SNZ_END(const String& s){
-    return updateIntProperty(L_2SNZ_END, s);
-}
-
 boolean SpaProperties::update_DefaultScrn(const String& s){
     return updateIntProperty(DefaultScrn, s);
 }

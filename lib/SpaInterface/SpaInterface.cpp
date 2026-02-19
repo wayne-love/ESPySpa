@@ -210,6 +210,17 @@ bool SpaInterface::validate_SNZ_DAY(int value) {
     return false;
 }
 
+bool SpaInterface::validate_SNZ_TIME(int value) {
+    if (value < 0) {
+        return false;
+    }
+
+    int hour = value / 256;
+    int minute = value % 256;
+
+    return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59;
+}
+
 bool SpaInterface::setL_1SNZ_DAY(int mode){
     debugD("setL_1SNZ_DAY - %i",mode);
     if (mode == L_1SNZ_DAY.get()) {
@@ -226,13 +237,12 @@ bool SpaInterface::setL_1SNZ_DAY(int mode){
 
 bool SpaInterface::setL_1SNZ_BGN(int mode){
     debugD("setL_1SNZ_BGN - %i",mode);
-    if (mode == getL_1SNZ_BGN()) {
-        debugD("No L_1SNZ_BGN change detected - current %i, new %i", getL_1SNZ_BGN(), mode);
+    if (mode == L_1SNZ_BGN.get()) {
+        debugD("No L_1SNZ_BGN change detected - current %i, new %i", L_1SNZ_BGN.get(), mode);
         return true;
     }
 
     if (sendCommandCheckResult(String("W68:")+mode,String(mode))) {
-        update_L_1SNZ_BGN(String(mode));
         return true;
     }
     return false;
@@ -240,13 +250,12 @@ bool SpaInterface::setL_1SNZ_BGN(int mode){
 
 bool SpaInterface::setL_1SNZ_END(int mode){
     debugD("setL_1SNZ_END - %i",mode);
-    if (mode == getL_1SNZ_END()) {
-        debugD("No L_1SNZ_END change detected - current %i, new %i", getL_1SNZ_END(), mode);
+    if (mode == L_1SNZ_END.get()) {
+        debugD("No L_1SNZ_END change detected - current %i, new %i", L_1SNZ_END.get(), mode);
         return true;
     }
     
     if (sendCommandCheckResult(String("W69:")+mode,String(mode))) {
-        update_L_1SNZ_END(String(mode));
         return true;
     }
     return false;
@@ -268,13 +277,12 @@ bool SpaInterface::setL_2SNZ_DAY(int mode){
 
 bool SpaInterface::setL_2SNZ_BGN(int mode){
     debugD("setL_2SNZ_BGN - %i",mode);
-    if (mode == getL_2SNZ_BGN()) {
-        debugD("No L_2SNZ_BGN change detected - current %i, new %i", getL_2SNZ_BGN(), mode);
+    if (mode == L_2SNZ_BGN.get()) {
+        debugD("No L_2SNZ_BGN change detected - current %i, new %i", L_2SNZ_BGN.get(), mode);
         return true;
     }
 
     if (sendCommandCheckResult(String("W71:")+mode,String(mode))) {
-        update_L_2SNZ_BGN(String(mode));
         return true;
     }
     return false;
@@ -282,13 +290,12 @@ bool SpaInterface::setL_2SNZ_BGN(int mode){
 
 bool SpaInterface::setL_2SNZ_END(int mode){
     debugD("setL_2SNZ_END - %i",mode);
-    if (mode == getL_2SNZ_END()) {
-        debugD("No L_2SNZ_END change detected - current %i, new %i", getL_2SNZ_END(), mode);
+    if (mode == L_2SNZ_END.get()) {
+        debugD("No L_2SNZ_END change detected - current %i, new %i", L_2SNZ_END.get(), mode);
         return true;
     }
 
     if (sendCommandCheckResult(String("W72:")+mode,String(mode))) {
-        update_L_2SNZ_END(String(mode));
         return true;
     }
     return false;
@@ -872,10 +879,10 @@ void SpaInterface::updateMeasures() {
     update_PSAV_END(statusResponseRaw[R6 + 12]);
     L_1SNZ_DAY.update(statusResponseRaw[R6 + 13].toInt());
     L_2SNZ_DAY.update(statusResponseRaw[R6 + 14].toInt());
-    update_L_1SNZ_BGN(statusResponseRaw[R6 + 15]);
-    update_L_2SNZ_BGN(statusResponseRaw[R6 + 16]);
-    update_L_1SNZ_END(statusResponseRaw[R6 + 17]);
-    update_L_2SNZ_END(statusResponseRaw[R6 + 18]);
+    L_1SNZ_BGN.update(statusResponseRaw[R6 + 15].toInt());
+    L_2SNZ_BGN.update(statusResponseRaw[R6 + 16].toInt());
+    L_1SNZ_END.update(statusResponseRaw[R6 + 17].toInt());
+    L_2SNZ_END.update(statusResponseRaw[R6 + 18].toInt());
     update_DefaultScrn(statusResponseRaw[R6 + 19]);
     update_TOUT(statusResponseRaw[R6 + 20]);
     update_VPMP(statusResponseRaw[R6 + 21]);

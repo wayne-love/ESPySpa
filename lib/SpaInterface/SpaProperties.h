@@ -719,10 +719,6 @@ protected:
     boolean update_PSAV_LVL(const String&);
     boolean update_PSAV_BGN(const String&);
     boolean update_PSAV_END(const String&);
-    boolean update_L_1SNZ_BGN(const String&);
-    boolean update_L_2SNZ_BGN(const String&);
-    boolean update_L_1SNZ_END(const String&);
-    boolean update_L_2SNZ_END(const String&);
     boolean update_DefaultScrn(const String&);
     boolean update_TOUT(const String&);
     boolean update_VPMP(const String&);
@@ -1201,17 +1197,17 @@ public:
     int getPSAV_END() { return PSAV_END.getValue(); }
     void setPSAV_ENDCallback(void (*callback)(int)) { PSAV_END.setCallback(callback); }
 
-    int getL_1SNZ_BGN() { return L_1SNZ_BGN.getValue(); }
-    void setL_1SNZ_BGNCallback(void (*callback)(int)) { L_1SNZ_BGN.setCallback(callback); }
+    //int getL_1SNZ_BGN() { return L_1SNZ_BGN.getValue(); }
+    //void setL_1SNZ_BGNCallback(void (*callback)(int)) { L_1SNZ_BGN.setCallback(callback); }
 
-    int getL_2SNZ_BGN() { return L_2SNZ_BGN.getValue(); }
-    void setL_2SNZ_BGNCallback(void (*callback)(int)) { L_2SNZ_BGN.setCallback(callback); }
+    //int getL_2SNZ_BGN() { return L_2SNZ_BGN.getValue(); }
+    //void setL_2SNZ_BGNCallback(void (*callback)(int)) { L_2SNZ_BGN.setCallback(callback); }
 
-    int getL_1SNZ_END() { return L_1SNZ_END.getValue(); }
-    void setL_1SNZ_ENDCallback(void (*callback)(int)) { L_1SNZ_END.setCallback(callback); }
+    //int getL_1SNZ_END() { return L_1SNZ_END.getValue(); }
+    //void setL_1SNZ_ENDCallback(void (*callback)(int)) { L_1SNZ_END.setCallback(callback); }
 
-    int getL_2SNZ_END() { return L_2SNZ_END.getValue(); }
-    void setL_2SNZ_ENDCallback(void (*callback)(int)) { L_2SNZ_END.setCallback(callback); }
+    //int getL_2SNZ_END() { return L_2SNZ_END.getValue(); }
+    //void setL_2SNZ_ENDCallback(void (*callback)(int)) { L_2SNZ_END.setCallback(callback); }
 
     int getDefaultScrn() { return DefaultScrn.getValue(); }
     void setDefaultScrnCallback(void (*callback)(int)) { DefaultScrn.setCallback(callback); }

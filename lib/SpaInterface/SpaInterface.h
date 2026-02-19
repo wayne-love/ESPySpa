@@ -69,6 +69,7 @@ class SpaInterface : public SpaProperties {
 
         static bool validateSTMP(int value);
         static bool validate_SNZ_DAY(int value);
+        static bool validate_SNZ_TIME(int value);
 
         /// @brief Sends command to SpaNet controller.  Result must be read by some other method.
         /// Used for the 'RF' command so that we can do a optomised read of the return array.
@@ -117,7 +118,16 @@ class SpaInterface : public SpaProperties {
         /// @param mode
         /// @return Returns True if succesful
         bool setL_1SNZ_DAY(int mode);
+
+        /// @brief Set snooze day ({128,127,96,31} -> {"Off","Everyday","Weekends","Weekdays"};)
+        /// @param mode
+        /// @return Returns True if succesful
         bool setL_2SNZ_DAY(int mode);
+
+        bool setL_1SNZ_BGN(int mode);
+        bool setL_1SNZ_END(int mode);
+        bool setL_2SNZ_BGN(int mode);
+        bool setL_2SNZ_END(int mode);
 
     public:
         /// @brief Init SpaInterface.
@@ -261,11 +271,16 @@ class SpaInterface : public SpaProperties {
         /// @brief Complete RF command response in a single string
         Property<String> statusResponse;
 
-        /// @brief Mains current draw multiplied by 10 (77 = 7.7 actual)
+        /// @brief Mains current draw x10.
+        /// @details Read-only; value 77 represents 7.7A.
         ROProperty<int> MainsCurrent;
-        /// @brief Water temperature set point ('C) multiplied by 10
+
+        /// @brief Water temperature set point x10.
+        /// @details Read/write. Valid range 50..410 (5.0C..41.0C). Uses command W40.
         RWProperty<int> STMP{this, &SpaInterface::setSTMP, &SpaInterface::validateSTMP};
-        /// @brief Sleep timer 1 day bitmap (128 = off, 127 = every day, 96 = weekends, 31 = weekdays)
+
+        /// @brief Sleep timer day mode values.
+        /// @details Shared label/value map for both timers: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays.
         static constexpr ROProperty<int>::LabelValue SNZ_DAY_Map[] = {
             {"Off", 128},
             {"Everyday", 127},
@@ -279,10 +294,27 @@ class SpaInterface : public SpaProperties {
             {"Saturday", 64},
             {"Sunday", 32},
         };
+        /// @brief Sleep timer 1 day mode bitmap.
+        /// @details Read/write. Typical values: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays. Uses command W67.
         RWProperty<int> L_1SNZ_DAY{this, &SpaInterface::setL_1SNZ_DAY, &SpaInterface::validate_SNZ_DAY,
                                   SNZ_DAY_Map};
+        /// @brief Sleep timer 2 day mode bitmap.
+        /// @details Read/write. Typical values: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays. Uses command W70.
         RWProperty<int> L_2SNZ_DAY{this, &SpaInterface::setL_2SNZ_DAY, &SpaInterface::validate_SNZ_DAY,
                                   SNZ_DAY_Map};
+        
+        /// @brief Sleep timer 1 start time.
+        /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock). Uses command W68.
+        RWProperty<int> L_1SNZ_BGN{this, &SpaInterface::setL_1SNZ_BGN, &SpaInterface::validate_SNZ_TIME};
+        /// @brief Sleep timer 1 finish time.
+        /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock). Uses command W69.
+        RWProperty<int> L_1SNZ_END{this, &SpaInterface::setL_1SNZ_END, &SpaInterface::validate_SNZ_TIME};
+        /// @brief Sleep timer 2 start time.
+        /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock). Uses command W71.
+        RWProperty<int> L_2SNZ_BGN{this, &SpaInterface::setL_2SNZ_BGN, &SpaInterface::validate_SNZ_TIME};
+        /// @brief Sleep timer 2 finish time.
+        /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock). Uses command W72.
+        RWProperty<int> L_2SNZ_END{this, &SpaInterface::setL_2SNZ_END, &SpaInterface::validate_SNZ_TIME};
 
         /// @brief To be called by loop function of main sketch.  Does regular updates, etc.
         void loop();
@@ -301,18 +333,6 @@ class SpaInterface : public SpaProperties {
 
         /// @brief Clear the call back function.
         void clearUpdateCallback();
-
-        /// @brief Set snooze time (provide an integer that uses this calculation HH:mm > HH*265+mm. e.g. 13:47 = 13*256+47 = 3375)
-        /// @param mode
-        /// @return Returns True if succesful
-        bool setL_1SNZ_BGN(int mode);
-        bool setL_1SNZ_END(int mode);
-
-        /// @brief Set snooze time (provide an integer that uses this calculation HH:mm > HH*265+mm. e.g. 13:47 = 13*256+47 = 3375)
-        /// @param mode
-        /// @return Returns True if succesful
-        bool setL_2SNZ_BGN(int mode);
-        bool setL_2SNZ_END(int mode);
 
         /// @brief Set Heat pump operating mode (0 --> 3, {auto, heat, cool, off})
         /// @param mode 
