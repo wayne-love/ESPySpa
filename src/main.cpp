@@ -309,7 +309,7 @@ void mqttHaAutoDiscovery() {
     ADConf.propertyId = "heatpump_mode";
     ADConf.deviceClass = "";
     ADConf.entityCategory = "";
-    generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.HPMPStrings);
+    generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.HPMP);
     mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
     ADConf.displayName = "Aux Heat Element";
@@ -326,7 +326,7 @@ void mqttHaAutoDiscovery() {
   ADConf.propertyId = "lights";
   ADConf.deviceClass = "";
   ADConf.entityCategory = "";
-  generateLightAdJSON(output, ADConf, spa, discoveryTopic, si.colorModeStrings);
+  generateLightAdJSON(output, ADConf, spa, discoveryTopic, si.ColorMode);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
   ADConf.displayName = "Lights Speed";
@@ -476,7 +476,11 @@ void setSpaProperty(String property, String p) {
       debugE("Failed to set STMP: %s", ex.what());
     }
   } else if (property == "heatpump_mode") {
-    si.setHPMP(p);
+    try {
+      si.HPMP.setLabel(p.c_str());
+    } catch (const std::exception& ex) {
+      debugE("Failed to set HPMP label: %s", ex.what());
+    }
   // note single speed pumps should never trigger a mode or speed events
   } else if (property.startsWith("pump") && property.endsWith("_speed")) {
     int pumpNum = property.charAt(4) - '0';
@@ -516,7 +520,11 @@ void setSpaProperty(String property, String p) {
   } else if (property == "lights_state") {
     si.setRB_TP_Light(p=="ON"?1:0);
   } else if (property == "lights_effect") {
-    si.setColorMode(p);
+    try {
+      si.ColorMode.setLabel(p.c_str());
+    } catch (const std::exception& ex) {
+      debugE("Failed to set ColorMode label: %s", ex.what());
+    }
   } else if (property == "lights_brightness") {
     si.setLBRTValue(p.toInt());
   } else if (property == "lights_color") {

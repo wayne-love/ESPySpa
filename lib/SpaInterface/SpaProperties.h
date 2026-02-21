@@ -268,10 +268,6 @@ Property<bool> HV_2;
     ///
     /// min 0, max 31
     Property<int> CurrClr;
-    /// @brief Lights mode
-    ///
-    /// 0 = white, 1 = colour, 2 = step, 3 = fade, 4 = party
-    Property<int> ColorMode;
     /// @brief Light effect speed
     ///
     /// min 1, max 5
@@ -399,10 +395,6 @@ Property<bool> HV_2;
     /// If false then when spa is in use then heat pump will not run to reduce noise levels
     /// See SV-Series-OEM-Install-Manual.pdf page 19.
     Property<bool> HELE;
-    /// @brief Heatpump mode
-    ///
-    /// 0 = Auto, 1 = Heat, 2 = Cool, 3 = disabled
-    Property<int> HPMP;
     /// @brief Varible pump minimum speed setting
     ///
     /// Min 20%, Max 100%
@@ -711,7 +703,6 @@ protected:
     boolean update_VARIValue(const String&);
     boolean update_LBRTValue(const String&);
     boolean update_CurrClr(const String&);
-    boolean update_ColorMode(const String&);
     boolean update_LSPDValue(const String&);
     boolean update_FiltHrs(const String&);
     boolean update_FiltBlockHrs(const String&);
@@ -753,7 +744,6 @@ protected:
     boolean update_AHYS(const String&);
     boolean update_HUSE(const String&);
     boolean update_HELE(const String&);
-    boolean update_HPMP(const String&);
     boolean update_PMIN(const String&);
     boolean update_PFLT(const String&);
     boolean update_PHTR(const String&);
@@ -1167,10 +1157,6 @@ public:
     void setCurrClrCallback(void (*callback)(int)) { CurrClr.setCallback(callback); }
     const std::array <int, 25> colorMap = {0, 4, 4, 19, 13, 25, 25, 16, 10, 7, 2, 8, 5, 3, 6, 6, 21, 21, 21, 18, 18, 9, 9, 1, 1};
 
-    int getColorMode() { return ColorMode.getValue(); }
-    void setColorModeCallback(void (*callback)(int)) { ColorMode.setCallback(callback); }
-    const std::array <String, 5> colorModeStrings = {"White","Color","Fade","Step","Party"};
-
     int getLSPDValue() { return LSPDValue.getValue(); }
     void setLSPDValueCallback(void (*callback)(int)) { LSPDValue.setCallback(callback); }
     const std::array <String, 5> lightSpeedMap = {"1","2","3","4","5"};
@@ -1301,10 +1287,6 @@ public:
 
     bool getHELE() { return HELE.getValue(); }
     void setHELECallback(void (*callback)(bool)) { HELE.setCallback(callback); }
-
-    int getHPMP() { return HPMP.getValue(); }
-    void setHPMPCallback(void (*callback)(int)) { HPMP.setCallback(callback); }
-    const std::array <String, 4> HPMPStrings = {"Auto","Heat","Cool","Off"};
 
     int getPMIN() { return PMIN.getValue(); }
     void setPMINCallback(void (*callback)(int)) { PMIN.setCallback(callback); }

@@ -399,10 +399,6 @@ boolean SpaProperties::update_CurrClr(const String& s){
     return updateIntProperty(CurrClr, s);
 }
 
-boolean SpaProperties::update_ColorMode(const String& s){
-    return updateIntProperty(ColorMode, s);
-}
-
 boolean SpaProperties::update_LSPDValue(const String& s){
     return updateIntProperty(LSPDValue, s);
 }
@@ -550,10 +546,6 @@ boolean SpaProperties::update_HUSE(const String& s){
 
 boolean SpaProperties::update_HELE(const String& s) {
     return updateBool01Property(HELE, s);
-}
-
-boolean SpaProperties::update_HPMP(const String& s){
-    return updateIntProperty(HPMP, s);
 }
 
 boolean SpaProperties::update_PMIN(const String& s){

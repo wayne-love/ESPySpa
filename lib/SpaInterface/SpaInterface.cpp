@@ -201,6 +201,14 @@ bool SpaInterface::validateSTMP(int value) {
     return value >= 50 && value <= 410;
 }
 
+bool SpaInterface::validateHPMP(int value) {
+    return value >= 0 && value <= 3;
+}
+
+bool SpaInterface::validateColorMode(int value) {
+    return value >= 0 && value <= 4;
+}
+
 bool SpaInterface::validate_SNZ_DAY(int value) {
     for (size_t i = 0; i < array_count(SNZ_DAY_Map); i++) {
         if (SNZ_DAY_Map[i].value == value) {
@@ -302,52 +310,42 @@ bool SpaInterface::setL_2SNZ_END(int mode){
 }
 
 bool SpaInterface::setHPMP(int mode){
+    // Internal writer for HPMP RWProperty.
     debugD("setHPMP - %i", mode);
-    if (mode == getHPMP()) {
-        debugD("No HPMP change detected - current %i, new %i", getHPMP(), mode);
+    if (mode == HPMP.get()) {
+        debugD("No HPMP change detected - current %i, new %i", HPMP.get(), mode);
         return true;
+    }
+
+    if (!validateHPMP(mode)) {
+        debugD("Invalid HPMP mode %i", mode);
+        return false;
     }
 
     String smode = String(mode);
     if (sendCommandCheckResult("W99:"+smode,smode)) {
-        update_HPMP(smode);
+        HPMP.update(mode);
         return true;
-    }
-    return false;
-}
-
-bool SpaInterface::setHPMP(String mode){
-    debugD("setHPMP - %s", mode.c_str());
-
-    for (uint x=0; x<HPMPStrings.size(); x++) {
-        if (HPMPStrings[x] == mode) {
-            return setHPMP(x);
-        }
     }
     return false;
 }
 
 bool SpaInterface::setColorMode(int mode){
     debugD("setColorMode - %i", mode);
-    if (mode == getColorMode()) {
-        debugD("No ColorMode change detected - current %i, new %i", getColorMode(), mode);
+    if (mode == ColorMode.get()) {
+        debugD("No ColorMode change detected - current %i, new %i", ColorMode.get(), mode);
         return true;
+    }
+
+    if (!validateColorMode(mode)) {
+        debugD("Invalid ColorMode %i", mode);
+        return false;
     }
 
     String smode = String(mode);
     if (sendCommandCheckResult("S07:"+smode,smode)) {
-        update_ColorMode(smode);
+        ColorMode.update(mode);
         return true;
-    }
-    return false;
-}
-
-bool SpaInterface::setColorMode(String mode){
-    debugD("setColorMode - %s", mode.c_str());
-    for (uint x=0; x<colorModeStrings.size(); x++) {
-        if (colorModeStrings[x] == mode) {
-            return setColorMode(x);
-        }
     }
     return false;
 }
@@ -868,7 +866,7 @@ void SpaInterface::updateMeasures() {
     update_VARIValue(statusResponseRaw[R6 + 1]);
     update_LBRTValue(statusResponseRaw[R6 + 2]);
     update_CurrClr(statusResponseRaw[R6 + 3]);
-    update_ColorMode(statusResponseRaw[R6 + 4]);
+    ColorMode.update(statusResponseRaw[R6 + 4].toInt());
     update_LSPDValue(statusResponseRaw[R6 + 5]);
     update_FiltHrs(statusResponseRaw[R6 + 6]);
     update_FiltBlockHrs(statusResponseRaw[R6 + 7]);
@@ -924,7 +922,7 @@ void SpaInterface::updateMeasures() {
     update_AHYS(statusResponseRaw[R7 + 23]);
     update_HUSE(statusResponseRaw[R7 + 24]);
     update_HELE(statusResponseRaw[R7 + 25]);
-    update_HPMP(statusResponseRaw[R7 + 26]);
+    HPMP.update(statusResponseRaw[R7 + 26].toInt());
     update_PMIN(statusResponseRaw[R7 + 27]);
     update_PFLT(statusResponseRaw[R7 + 28]);
     update_PHTR(statusResponseRaw[R7 + 29]);

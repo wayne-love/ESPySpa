@@ -156,7 +156,7 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
   json["eSpa"]["model"] = xstr(PIOENV);
   json["eSpa"]["update"]["installed_version"] = xstr(BUILD_INFO);
 
-  json["heatpump"]["mode"] = si.HPMPStrings[si.getHPMP()];
+  json["heatpump"]["mode"] = si.HPMP.getLabel();
   json["heatpump"]["auxheat"] = si.getHELE()==0? "OFF" : "ON";
 
   json["filtration"]["blockDuration"] = si.getFiltBlockHrs();
@@ -200,11 +200,11 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
 
   json["lights"]["speed"] = si.getLSPDValue();
   json["lights"]["state"] = si.getRB_TP_Light()? "ON": "OFF";
-  json["lights"]["effect"] = si.colorModeStrings[si.getColorMode()];
+  json["lights"]["effect"] = si.ColorMode.getLabel();
   json["lights"]["brightness"] = si.getLBRTValue();
 
   // 0 = white, if white, then set the hue and saturation to white so the light displays correctly in HA.
-  if (si.getColorMode() == 0) {
+  if (si.ColorMode.get() == 0) {
     json["lights"]["color"]["h"] = 0;
     json["lights"]["color"]["s"] = 0;
   } else {

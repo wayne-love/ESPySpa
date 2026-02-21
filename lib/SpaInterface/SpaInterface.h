@@ -68,6 +68,8 @@ class SpaInterface : public SpaProperties {
         void updateMeasures();
 
         static bool validateSTMP(int value);
+        static bool validateHPMP(int value);
+        static bool validateColorMode(int value);
         static bool validate_SNZ_DAY(int value);
         static bool validate_SNZ_TIME(int value);
 
@@ -113,6 +115,17 @@ class SpaInterface : public SpaProperties {
         /// @param temp Between 5 and 40 in 0.5 increments
         /// @return Returns True if succesful
         bool setSTMP(int temp);
+        
+        /// @brief Internal writer used by `HPMP` RWProperty.
+        /// @details Sends `W99:<mode>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        /// Valid range is enforced by `validateHPMP` (0..3).
+        bool setHPMP(int mode);
+        /// @brief Internal writer used by `ColorMode` RWProperty.
+        /// @details Sends `S07:<mode>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        /// Valid range is enforced by `validateColorMode` (0..4).
+        bool setColorMode(int mode);
 
         /// @brief Set snooze day ({128,127,96,31} -> {"Off","Everyday","Weekends","Weekdays"};)
         /// @param mode
@@ -279,6 +292,33 @@ class SpaInterface : public SpaProperties {
         /// @details Read/write. Valid range 50..410 (5.0C..41.0C). Uses command W40.
         RWProperty<int> STMP{this, &SpaInterface::setSTMP, &SpaInterface::validateSTMP};
 
+        /// @brief Heatpump operating mode values.
+        /// @details 0=Auto, 1=Heat, 2=Cool, 3=Off.
+        static constexpr ROProperty<int>::LabelValue HPMP_Map[] = {
+            {"Auto", 0},
+            {"Heat", 1},
+            {"Cool", 2},
+            {"Off", 3},
+        };
+        /// @brief Heatpump operating mode.
+        /// @details Read/write wrapper around the private `setHPMP` writer.
+        /// Valid range 0..3. Uses command W99.
+        RWProperty<int> HPMP{this, &SpaInterface::setHPMP, &SpaInterface::validateHPMP, HPMP_Map};
+
+        /// @brief Light effect/mode values.
+        /// @details 0=White, 1=Color, 2=Fade, 3=Step, 4=Party.
+        static constexpr ROProperty<int>::LabelValue ColorMode_Map[] = {
+            {"White", 0},
+            {"Color", 1},
+            {"Fade", 2},
+            {"Step", 3},
+            {"Party", 4},
+        };
+        /// @brief Light effect/mode.
+        /// @details Read/write wrapper around the private `setColorMode` writer.
+        /// Valid range 0..4. Uses command S07.
+        RWProperty<int> ColorMode{this, &SpaInterface::setColorMode, &SpaInterface::validateColorMode, ColorMode_Map};
+
         /// @brief Sleep timer day mode values.
         /// @details Shared label/value map for both timers: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays.
         static constexpr ROProperty<int>::LabelValue SNZ_DAY_Map[] = {
@@ -331,18 +371,6 @@ class SpaInterface : public SpaProperties {
 
         /// @brief Clear the call back function.
         void clearUpdateCallback();
-
-        /// @brief Set Heat pump operating mode (0 --> 3, {auto, heat, cool, off})
-        /// @param mode 
-        /// @return Returns True if succesful
-        bool setHPMP(int mode);
-        bool setHPMP(String mode);
-
-        /// @brief Set light mode (0 = white, 1 = colour, 2 = step, 3 = fade, 4 = party)
-        /// @param mode
-        /// @return Returns True if succesful
-        bool setColorMode(int mode);
-        bool setColorMode(String mode);
 
         /// @brief Set light brightness (min 1, max 5)
         /// @param mode
