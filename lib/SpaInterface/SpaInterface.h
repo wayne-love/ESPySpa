@@ -67,12 +67,6 @@ class SpaInterface : public SpaProperties {
 
         void updateMeasures();
 
-        static bool validateSTMP(int value);
-        static bool validateHPMP(int value);
-        static bool validateColorMode(int value);
-        static bool validate_SNZ_DAY(int value);
-        static bool validate_SNZ_TIME(int value);
-
         /// @brief Sends command to SpaNet controller.  Result must be read by some other method.
         /// Used for the 'RF' command so that we can do a optomised read of the return array.
         /// @param cmd - cmd to be executed.
@@ -119,12 +113,12 @@ class SpaInterface : public SpaProperties {
         /// @brief Internal writer used by `HPMP` RWProperty.
         /// @details Sends `W99:<mode>` to the controller and only updates
         /// the cached property value when the command succeeds.
-        /// Valid range is enforced by `validateHPMP` (0..3).
+        /// Throws std::out_of_range for invalid values (0..3).
         bool setHPMP(int mode);
         /// @brief Internal writer used by `ColorMode` RWProperty.
         /// @details Sends `S07:<mode>` to the controller and only updates
         /// the cached property value when the command succeeds.
-        /// Valid range is enforced by `validateColorMode` (0..4).
+        /// Throws std::out_of_range for invalid values (0..4).
         bool setColorMode(int mode);
 
         /// @brief Set snooze day ({128,127,96,31} -> {"Off","Everyday","Weekends","Weekdays"};)
@@ -211,26 +205,22 @@ class SpaInterface : public SpaProperties {
         class RWProperty : public ROProperty<T> {
         public:
             using WriteFunction = bool (SpaInterface::*)(T);
-            using ValidateFunction = bool (*)(T);
             using LabelValue = typename ROProperty<T>::LabelValue;
 
             RWProperty() = default;
             // Basic RW property with owner/writer only.
             RWProperty(SpaInterface* owner, WriteFunction writer)
                 : _owner(owner), _writer(writer) {}
-            // RW property with optional validator.
-            RWProperty(SpaInterface* owner, WriteFunction writer, ValidateFunction validator)
-                : _owner(owner), _writer(writer), _validator(validator) {}
             // RW property with label/value map for setLabel/getLabel.
             template <size_t N>
-            RWProperty(SpaInterface* owner, WriteFunction writer, ValidateFunction validator,
+            RWProperty(SpaInterface* owner, WriteFunction writer,
                        const LabelValue (&map)[N])
                 : ROProperty<T>(map),
                   _owner(owner),
-                  _writer(writer),
-                  _validator(validator) {}
+                  _writer(writer) {}
 
             // Sends the value to the spa first; caches it only on success.
+            // Validation is performed by the writer and any exception is propagated.
             void set(T newValue) {
                 if (this->_hasValue && newValue == this->_value) {
                     return;
@@ -238,10 +228,6 @@ class SpaInterface : public SpaProperties {
 
                 if (!_owner || !_writer) {
                     throw std::invalid_argument("RWProperty has no owner/writer");
-                }
-
-                if (_validator && !_validator(newValue)) {
-                    throw std::out_of_range("RWProperty value out of range");
                 }
 
                 if (!(_owner->*_writer)(newValue)) {
@@ -274,7 +260,6 @@ class SpaInterface : public SpaProperties {
             // Owner + writer are required to commit changes to the spa.
             SpaInterface* _owner = nullptr;
             WriteFunction _writer = nullptr;
-            ValidateFunction _validator = nullptr;
         };
 
         /// @brief configure how often the spa is polled in seconds.
@@ -290,7 +275,7 @@ class SpaInterface : public SpaProperties {
 
         /// @brief Water temperature set point x10.
         /// @details Read/write. Valid range 50..410 (5.0C..41.0C). Uses command W40.
-        RWProperty<int> STMP{this, &SpaInterface::setSTMP, &SpaInterface::validateSTMP};
+        RWProperty<int> STMP{this, &SpaInterface::setSTMP};
 
         /// @brief Heatpump operating mode values.
         /// @details 0=Auto, 1=Heat, 2=Cool, 3=Off.
@@ -303,7 +288,7 @@ class SpaInterface : public SpaProperties {
         /// @brief Heatpump operating mode.
         /// @details Read/write wrapper around the private `setHPMP` writer.
         /// Valid range 0..3. Uses command W99.
-        RWProperty<int> HPMP{this, &SpaInterface::setHPMP, &SpaInterface::validateHPMP, HPMP_Map};
+        RWProperty<int> HPMP{this, &SpaInterface::setHPMP, HPMP_Map};
 
         /// @brief Light effect/mode values.
         /// @details 0=White, 1=Color, 2=Fade, 3=Step, 4=Party.
@@ -317,7 +302,7 @@ class SpaInterface : public SpaProperties {
         /// @brief Light effect/mode.
         /// @details Read/write wrapper around the private `setColorMode` writer.
         /// Valid range 0..4. Uses command S07.
-        RWProperty<int> ColorMode{this, &SpaInterface::setColorMode, &SpaInterface::validateColorMode, ColorMode_Map};
+        RWProperty<int> ColorMode{this, &SpaInterface::setColorMode, ColorMode_Map};
 
         /// @brief Sleep timer day mode values.
         /// @details Shared label/value map for both timers: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays.
@@ -336,23 +321,23 @@ class SpaInterface : public SpaProperties {
         };
         /// @brief Sleep timer 1 day mode bitmap.
         /// @details Read/write. Typical values: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays. Uses command W67.
-        RWProperty<int> L_1SNZ_DAY{this, &SpaInterface::setL_1SNZ_DAY, &SpaInterface::validate_SNZ_DAY, SNZ_DAY_Map};
+        RWProperty<int> L_1SNZ_DAY{this, &SpaInterface::setL_1SNZ_DAY, SNZ_DAY_Map};
         /// @brief Sleep timer 2 day mode bitmap.
         /// @details Read/write. Typical values: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays. Uses command W70.
-        RWProperty<int> L_2SNZ_DAY{this, &SpaInterface::setL_2SNZ_DAY, &SpaInterface::validate_SNZ_DAY, SNZ_DAY_Map};
+        RWProperty<int> L_2SNZ_DAY{this, &SpaInterface::setL_2SNZ_DAY, SNZ_DAY_Map};
         
         /// @brief Sleep timer 1 start time.
         /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock). Uses command W68.
-        RWProperty<int> L_1SNZ_BGN{this, &SpaInterface::setL_1SNZ_BGN, &SpaInterface::validate_SNZ_TIME};
+        RWProperty<int> L_1SNZ_BGN{this, &SpaInterface::setL_1SNZ_BGN};
         /// @brief Sleep timer 1 finish time.
         /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock). Uses command W69.
-        RWProperty<int> L_1SNZ_END{this, &SpaInterface::setL_1SNZ_END, &SpaInterface::validate_SNZ_TIME};
+        RWProperty<int> L_1SNZ_END{this, &SpaInterface::setL_1SNZ_END};
         /// @brief Sleep timer 2 start time.
         /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock). Uses command W71.
-        RWProperty<int> L_2SNZ_BGN{this, &SpaInterface::setL_2SNZ_BGN, &SpaInterface::validate_SNZ_TIME};
+        RWProperty<int> L_2SNZ_BGN{this, &SpaInterface::setL_2SNZ_BGN};
         /// @brief Sleep timer 2 finish time.
         /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock). Uses command W72.
-        RWProperty<int> L_2SNZ_END{this, &SpaInterface::setL_2SNZ_END, &SpaInterface::validate_SNZ_TIME};
+        RWProperty<int> L_2SNZ_END{this, &SpaInterface::setL_2SNZ_END};
 
         /// @brief To be called by loop function of main sketch.  Does regular updates, etc.
         void loop();

@@ -179,6 +179,10 @@ bool SpaInterface::setHELE(int mode){
 bool SpaInterface::setSTMP(int temp){
     debugD("setSTMP - %i", temp);
 
+    if (temp < 50 || temp > 410) {
+        throw std::out_of_range("STMP value out of range (50..410)");
+    }
+
     if (temp==STMP.get()) {  // todo: does this ever evaluate to true?
         debugD("No STMP change detected - current %i, new %i", STMP.get(), temp);
         return true; // No change needed
@@ -197,40 +201,19 @@ bool SpaInterface::setSTMP(int temp){
     return false;
 }
 
-bool SpaInterface::validateSTMP(int value) {
-    return value >= 50 && value <= 410;
-}
-
-bool SpaInterface::validateHPMP(int value) {
-    return value >= 0 && value <= 3;
-}
-
-bool SpaInterface::validateColorMode(int value) {
-    return value >= 0 && value <= 4;
-}
-
-bool SpaInterface::validate_SNZ_DAY(int value) {
-    for (size_t i = 0; i < array_count(SNZ_DAY_Map); i++) {
-        if (SNZ_DAY_Map[i].value == value) {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool SpaInterface::validate_SNZ_TIME(int value) {
-    if (value < 0) {
-        return false;
-    }
-
-    int hour = value / 256;
-    int minute = value % 256;
-
-    return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59;
-}
-
 bool SpaInterface::setL_1SNZ_DAY(int mode){
     debugD("setL_1SNZ_DAY - %i",mode);
+    bool validMode = false;
+    for (size_t i = 0; i < array_count(SNZ_DAY_Map); i++) {
+        if (SNZ_DAY_Map[i].value == mode) {
+            validMode = true;
+            break;
+        }
+    }
+    if (!validMode) {
+        throw std::out_of_range("L_1SNZ_DAY value out of range");
+    }
+
     if (mode == L_1SNZ_DAY.get()) {
         debugD("No L_1SNZ_DAY change detected - current %i, new %i", L_1SNZ_DAY.get(), mode);
         return true;
@@ -245,6 +228,15 @@ bool SpaInterface::setL_1SNZ_DAY(int mode){
 
 bool SpaInterface::setL_1SNZ_BGN(int mode){
     debugD("setL_1SNZ_BGN - %i",mode);
+    if (mode < 0) {
+        throw std::out_of_range("L_1SNZ_BGN value out of range");
+    }
+    int hour = mode / 256;
+    int minute = mode % 256;
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+        throw std::out_of_range("L_1SNZ_BGN value out of range");
+    }
+
     if (mode == L_1SNZ_BGN.get()) {
         debugD("No L_1SNZ_BGN change detected - current %i, new %i", L_1SNZ_BGN.get(), mode);
         return true;
@@ -258,6 +250,15 @@ bool SpaInterface::setL_1SNZ_BGN(int mode){
 
 bool SpaInterface::setL_1SNZ_END(int mode){
     debugD("setL_1SNZ_END - %i",mode);
+    if (mode < 0) {
+        throw std::out_of_range("L_1SNZ_END value out of range");
+    }
+    int hour = mode / 256;
+    int minute = mode % 256;
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+        throw std::out_of_range("L_1SNZ_END value out of range");
+    }
+
     if (mode == L_1SNZ_END.get()) {
         debugD("No L_1SNZ_END change detected - current %i, new %i", L_1SNZ_END.get(), mode);
         return true;
@@ -271,6 +272,17 @@ bool SpaInterface::setL_1SNZ_END(int mode){
 
 bool SpaInterface::setL_2SNZ_DAY(int mode){
     debugD("setL_2SNZ_DAY - %i",mode);
+    bool validMode = false;
+    for (size_t i = 0; i < array_count(SNZ_DAY_Map); i++) {
+        if (SNZ_DAY_Map[i].value == mode) {
+            validMode = true;
+            break;
+        }
+    }
+    if (!validMode) {
+        throw std::out_of_range("L_2SNZ_DAY value out of range");
+    }
+
     if (mode == L_2SNZ_DAY.get()) {
         debugD("No L_2SNZ_DAY change detected - current %i, new %i", L_2SNZ_DAY.get(), mode);
         return true;
@@ -285,6 +297,15 @@ bool SpaInterface::setL_2SNZ_DAY(int mode){
 
 bool SpaInterface::setL_2SNZ_BGN(int mode){
     debugD("setL_2SNZ_BGN - %i",mode);
+    if (mode < 0) {
+        throw std::out_of_range("L_2SNZ_BGN value out of range");
+    }
+    int hour = mode / 256;
+    int minute = mode % 256;
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+        throw std::out_of_range("L_2SNZ_BGN value out of range");
+    }
+
     if (mode == L_2SNZ_BGN.get()) {
         debugD("No L_2SNZ_BGN change detected - current %i, new %i", L_2SNZ_BGN.get(), mode);
         return true;
@@ -298,6 +319,15 @@ bool SpaInterface::setL_2SNZ_BGN(int mode){
 
 bool SpaInterface::setL_2SNZ_END(int mode){
     debugD("setL_2SNZ_END - %i",mode);
+    if (mode < 0) {
+        throw std::out_of_range("L_2SNZ_END value out of range");
+    }
+    int hour = mode / 256;
+    int minute = mode % 256;
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+        throw std::out_of_range("L_2SNZ_END value out of range");
+    }
+
     if (mode == L_2SNZ_END.get()) {
         debugD("No L_2SNZ_END change detected - current %i, new %i", L_2SNZ_END.get(), mode);
         return true;
@@ -312,14 +342,13 @@ bool SpaInterface::setL_2SNZ_END(int mode){
 bool SpaInterface::setHPMP(int mode){
     // Internal writer for HPMP RWProperty.
     debugD("setHPMP - %i", mode);
+    if (mode < 0 || mode > 3) {
+        throw std::out_of_range("HPMP value out of range (0..3)");
+    }
+
     if (mode == HPMP.get()) {
         debugD("No HPMP change detected - current %i, new %i", HPMP.get(), mode);
         return true;
-    }
-
-    if (!validateHPMP(mode)) {
-        debugD("Invalid HPMP mode %i", mode);
-        return false;
     }
 
     String smode = String(mode);
@@ -332,14 +361,13 @@ bool SpaInterface::setHPMP(int mode){
 
 bool SpaInterface::setColorMode(int mode){
     debugD("setColorMode - %i", mode);
+    if (mode < 0 || mode > 4) {
+        throw std::out_of_range("ColorMode value out of range (0..4)");
+    }
+
     if (mode == ColorMode.get()) {
         debugD("No ColorMode change detected - current %i, new %i", ColorMode.get(), mode);
         return true;
-    }
-
-    if (!validateColorMode(mode)) {
-        debugD("Invalid ColorMode %i", mode);
-        return false;
     }
 
     String smode = String(mode);
