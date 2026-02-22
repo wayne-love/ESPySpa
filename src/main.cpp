@@ -526,7 +526,11 @@ void setSpaProperty(String property, String p) {
       debugE("Failed to set ColorMode label: %s", ex.what());
     }
   } else if (property == "lights_brightness") {
-    si.setLBRTValue(p.toInt());
+    try {
+      si.LBRTValue = p.toInt();
+    } catch (const std::exception& ex) {
+      debugE("Failed to set LBRTValue: %s", ex.what());
+    }
   } else if (property == "lights_color") {
     int pos = p.indexOf(',');
     if ( pos > 0) {

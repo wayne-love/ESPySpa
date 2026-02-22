@@ -120,6 +120,11 @@ class SpaInterface : public SpaProperties {
         /// the cached property value when the command succeeds.
         /// Throws std::out_of_range for invalid values (0..4).
         bool setColorMode(int mode);
+        /// @brief Internal writer used by `LBRTValue` RWProperty.
+        /// @details Sends `S08:<mode>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        /// Throws std::out_of_range for invalid values (1..5).
+        bool setLBRTValue(int mode);
 
         /// @brief Set snooze day ({128,127,96,31} -> {"Off","Everyday","Weekends","Weekdays"};)
         /// @param mode
@@ -274,7 +279,7 @@ class SpaInterface : public SpaProperties {
         ROProperty<int> MainsCurrent;
 
         /// @brief Water temperature set point x10.
-        /// @details Read/write. Valid range 50..410 (5.0C..41.0C). Uses command W40.
+        /// @details Read/write. Valid range 50..410 (5.0C..41.0C). 
         RWProperty<int> STMP{this, &SpaInterface::setSTMP};
 
         /// @brief Heatpump operating mode values.
@@ -287,7 +292,7 @@ class SpaInterface : public SpaProperties {
         };
         /// @brief Heatpump operating mode.
         /// @details Read/write wrapper around the private `setHPMP` writer.
-        /// Valid range 0..3. Uses command W99.
+        /// Valid range 0..3.
         RWProperty<int> HPMP{this, &SpaInterface::setHPMP, HPMP_Map};
 
         /// @brief Light effect/mode values.
@@ -301,8 +306,12 @@ class SpaInterface : public SpaProperties {
         };
         /// @brief Light effect/mode.
         /// @details Read/write wrapper around the private `setColorMode` writer.
-        /// Valid range 0..4. Uses command S07.
+        /// Valid range 0..4.
         RWProperty<int> ColorMode{this, &SpaInterface::setColorMode, ColorMode_Map};
+
+        /// @brief Light brightness.
+        /// @details Read/write. Valid range 1..5.
+        RWProperty<int> LBRTValue{this, &SpaInterface::setLBRTValue};
 
         /// @brief Sleep timer day mode values.
         /// @details Shared label/value map for both timers: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays.
@@ -320,23 +329,23 @@ class SpaInterface : public SpaProperties {
             {"Sunday", 32},
         };
         /// @brief Sleep timer 1 day mode bitmap.
-        /// @details Read/write. Typical values: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays. Uses command W67.
+        /// @details Read/write. Typical values: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays.
         RWProperty<int> L_1SNZ_DAY{this, &SpaInterface::setL_1SNZ_DAY, SNZ_DAY_Map};
         /// @brief Sleep timer 2 day mode bitmap.
-        /// @details Read/write. Typical values: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays. Uses command W70.
+        /// @details Read/write. Typical values: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays.
         RWProperty<int> L_2SNZ_DAY{this, &SpaInterface::setL_2SNZ_DAY, SNZ_DAY_Map};
         
         /// @brief Sleep timer 1 start time.
-        /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock). Uses command W68.
+        /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock).
         RWProperty<int> L_1SNZ_BGN{this, &SpaInterface::setL_1SNZ_BGN};
         /// @brief Sleep timer 1 finish time.
-        /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock). Uses command W69.
+        /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock).
         RWProperty<int> L_1SNZ_END{this, &SpaInterface::setL_1SNZ_END};
         /// @brief Sleep timer 2 start time.
-        /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock). Uses command W71.
+        /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock).
         RWProperty<int> L_2SNZ_BGN{this, &SpaInterface::setL_2SNZ_BGN};
         /// @brief Sleep timer 2 finish time.
-        /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock). Uses command W72.
+        /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock).
         RWProperty<int> L_2SNZ_END{this, &SpaInterface::setL_2SNZ_END};
 
         /// @brief To be called by loop function of main sketch.  Does regular updates, etc.
@@ -356,11 +365,6 @@ class SpaInterface : public SpaProperties {
 
         /// @brief Clear the call back function.
         void clearUpdateCallback();
-
-        /// @brief Set light brightness (min 1, max 5)
-        /// @param mode
-        /// @return Returns True if succesful
-        bool setLBRTValue(int mode);
 
         /// @brief Set light effect speed (min 1, max 5)
         /// @param mode

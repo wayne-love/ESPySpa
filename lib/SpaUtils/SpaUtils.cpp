@@ -201,7 +201,7 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
   json["lights"]["speed"] = si.getLSPDValue();
   json["lights"]["state"] = si.getRB_TP_Light()? "ON": "OFF";
   json["lights"]["effect"] = si.ColorMode.getLabel();
-  json["lights"]["brightness"] = si.getLBRTValue();
+  json["lights"]["brightness"] = si.LBRTValue;
 
   // 0 = white, if white, then set the hue and saturation to white so the light displays correctly in HA.
   if (si.ColorMode.get() == 0) {

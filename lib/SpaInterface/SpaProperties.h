@@ -260,10 +260,6 @@ Property<bool> HV_2;
     ///
     /// min 1, max 5
     Property<int> VARIValue;
-    /// @brief Lights brightness
-    ///
-    /// min 1, max 5
-    Property<int> LBRTValue;
     /// @brief Light colour
     ///
     /// min 0, max 31
@@ -701,7 +697,6 @@ protected:
 #pragma endregion
 #pragma region R6
     boolean update_VARIValue(const String&);
-    boolean update_LBRTValue(const String&);
     boolean update_CurrClr(const String&);
     boolean update_LSPDValue(const String&);
     boolean update_FiltHrs(const String&);
@@ -1149,9 +1144,6 @@ public:
 
     int getVARIValue() { return VARIValue.getValue(); }
     void setVARIValueCallback(void (*callback)(int)) { VARIValue.setCallback(callback); }
-
-    int getLBRTValue() { return LBRTValue.getValue(); }
-    void setLBRTValueCallback(void (*callback)(int)) { LBRTValue.setCallback(callback); }
 
     int getCurrClr() { return CurrClr.getValue(); }
     void setCurrClrCallback(void (*callback)(int)) { CurrClr.setCallback(callback); }

@@ -391,10 +391,6 @@ boolean SpaProperties::update_VARIValue(const String& s){
     return updateIntProperty(VARIValue, s);
 }
 
-boolean SpaProperties::update_LBRTValue(const String& s){
-    return updateIntProperty(LBRTValue, s);
-}
-
 boolean SpaProperties::update_CurrClr(const String& s){
     return updateIntProperty(CurrClr, s);
 }

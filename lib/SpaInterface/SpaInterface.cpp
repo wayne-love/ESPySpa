@@ -380,14 +380,18 @@ bool SpaInterface::setColorMode(int mode){
 
 bool SpaInterface::setLBRTValue(int mode){
     debugD("setLBRTValue - %i", mode);
-    if (mode == getLBRTValue()) {
-        debugD("No LBRTValue change detected - current %i, new %i", getLBRTValue(), mode);
+    if (mode < 1 || mode > 5) {
+        throw std::out_of_range("LBRTValue value out of range (1..5)");
+    }
+
+    if (mode == LBRTValue.get()) {
+        debugD("No LBRTValue change detected - current %i, new %i", LBRTValue.get(), mode);
         return true;
     }
 
     String smode = String(mode);
     if (sendCommandCheckResult("S08:"+smode,smode)) {
-        update_LBRTValue(smode);
+        LBRTValue.update(mode);
         return true;
     }
     return false;
@@ -892,7 +896,7 @@ void SpaInterface::updateMeasures() {
     #pragma endregion
     #pragma region R6
     update_VARIValue(statusResponseRaw[R6 + 1]);
-    update_LBRTValue(statusResponseRaw[R6 + 2]);
+    LBRTValue.update(statusResponseRaw[R6 + 2].toInt());
     update_CurrClr(statusResponseRaw[R6 + 3]);
     ColorMode.update(statusResponseRaw[R6 + 4].toInt());
     update_LSPDValue(statusResponseRaw[R6 + 5]);
