@@ -198,10 +198,10 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
   json["sleepTimers"]["timer2"]["begin"]=convertToTime(si.L_2SNZ_BGN.get());
   json["sleepTimers"]["timer2"]["end"]=convertToTime(si.L_2SNZ_END.get());
 
-  json["lights"]["speed"] = si.getLSPDValue();
+  json["lights"]["speed"] = si.LSPDValue.get();
   json["lights"]["state"] = si.getRB_TP_Light()? "ON": "OFF";
   json["lights"]["effect"] = si.ColorMode.getLabel();
-  json["lights"]["brightness"] = si.LBRTValue;
+  json["lights"]["brightness"] = si.LBRTValue.get();
 
   // 0 = white, if white, then set the hue and saturation to white so the light displays correctly in HA.
   if (si.ColorMode.get() == 0) {

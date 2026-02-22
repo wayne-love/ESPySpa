@@ -334,7 +334,7 @@ void mqttHaAutoDiscovery() {
   ADConf.propertyId = "lights_speed";
   ADConf.deviceClass = "";
   ADConf.entityCategory = "";
-  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.lightSpeedMap );
+  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.LSPDValue);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
   ADConf.displayName = "Sleep Timer 1";
@@ -538,7 +538,11 @@ void setSpaProperty(String property, String p) {
       si.setCurrClr(si.colorMap[value/15]);
     }
   } else if (property == "lights_speed") {
-    si.setLSPDValue(p);
+    try {
+      si.LSPDValue = p.toInt();
+    } catch (const std::exception& ex) {
+      debugE("Failed to set LSPDValue: %s", ex.what());
+    }
   } else if (property == "blower_state") {
     si.setOutlet_Blower(p=="OFF"?2:0);
   } else if (property == "blower_speed") {

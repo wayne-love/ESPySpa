@@ -399,24 +399,19 @@ bool SpaInterface::setLBRTValue(int mode){
 
 bool SpaInterface::setLSPDValue(int mode){
     debugD("setLSPDValue - %i", mode);
-    if (mode == getLSPDValue()) {
-        debugD("No LSPDValue change detected - current %i, new %i", getLSPDValue(), mode);
+    if (mode < 1 || mode > 5) {
+        throw std::out_of_range("LSPDValue value out of range (1..5)");
+    }
+
+    if (mode == LSPDValue.get()) {
+        debugD("No LSPDValue change detected - current %i, new %i", LSPDValue.get(), mode);
         return true;
     }
 
     String smode = String(mode);
     if (sendCommandCheckResult("S09:"+smode,smode)) {
-        update_LSPDValue(smode);
+        LSPDValue.update(mode);
         return true;
-    }
-    return false;
-}
-
-bool SpaInterface::setLSPDValue(String mode){
-    debugD("setLSPDValue - %s", mode.c_str());
-    int x = atoi(mode.c_str());
-    if (x > 0 && x < 6) {
-        return setLSPDValue(x);
     }
     return false;
 }
@@ -899,7 +894,7 @@ void SpaInterface::updateMeasures() {
     LBRTValue.update(statusResponseRaw[R6 + 2].toInt());
     update_CurrClr(statusResponseRaw[R6 + 3]);
     ColorMode.update(statusResponseRaw[R6 + 4].toInt());
-    update_LSPDValue(statusResponseRaw[R6 + 5]);
+    LSPDValue.update(statusResponseRaw[R6 + 5].toInt());
     update_FiltHrs(statusResponseRaw[R6 + 6]);
     update_FiltBlockHrs(statusResponseRaw[R6 + 7]);
     STMP.update(statusResponseRaw[R6 + 8].toInt());

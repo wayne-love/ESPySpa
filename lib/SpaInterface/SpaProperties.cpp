@@ -395,10 +395,6 @@ boolean SpaProperties::update_CurrClr(const String& s){
     return updateIntProperty(CurrClr, s);
 }
 
-boolean SpaProperties::update_LSPDValue(const String& s){
-    return updateIntProperty(LSPDValue, s);
-}
-
 boolean SpaProperties::update_FiltHrs(const String& s){
     return updateIntProperty(FiltSetHrs, s);
 }

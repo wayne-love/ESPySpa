@@ -264,10 +264,6 @@ Property<bool> HV_2;
     ///
     /// min 0, max 31
     Property<int> CurrClr;
-    /// @brief Light effect speed
-    ///
-    /// min 1, max 5
-    Property<int> LSPDValue;
     /// @brief Filter run time (in hours) per block
     Property<int> FiltSetHrs;
     /// @brief Filter block duration (hours)
@@ -698,7 +694,6 @@ protected:
 #pragma region R6
     boolean update_VARIValue(const String&);
     boolean update_CurrClr(const String&);
-    boolean update_LSPDValue(const String&);
     boolean update_FiltHrs(const String&);
     boolean update_FiltBlockHrs(const String&);
     boolean update_L_24HOURS(const String&);
@@ -1148,10 +1143,6 @@ public:
     int getCurrClr() { return CurrClr.getValue(); }
     void setCurrClrCallback(void (*callback)(int)) { CurrClr.setCallback(callback); }
     const std::array <int, 25> colorMap = {0, 4, 4, 19, 13, 25, 25, 16, 10, 7, 2, 8, 5, 3, 6, 6, 21, 21, 21, 18, 18, 9, 9, 1, 1};
-
-    int getLSPDValue() { return LSPDValue.getValue(); }
-    void setLSPDValueCallback(void (*callback)(int)) { LSPDValue.setCallback(callback); }
-    const std::array <String, 5> lightSpeedMap = {"1","2","3","4","5"};
 
     int getFiltHrs() { return FiltSetHrs.getValue(); }
     void setFiltHrsCallback(void (*callback)(int)) { FiltSetHrs.setCallback(callback); }

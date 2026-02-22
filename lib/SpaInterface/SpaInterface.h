@@ -125,6 +125,11 @@ class SpaInterface : public SpaProperties {
         /// the cached property value when the command succeeds.
         /// Throws std::out_of_range for invalid values (1..5).
         bool setLBRTValue(int mode);
+        /// @brief Internal writer used by `LSPDValue` RWProperty.
+        /// @details Sends `S09:<mode>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        /// Throws std::out_of_range for invalid values (1..5).
+        bool setLSPDValue(int mode);
 
         /// @brief Set snooze day ({128,127,96,31} -> {"Off","Everyday","Weekends","Weekdays"};)
         /// @param mode
@@ -313,6 +318,19 @@ class SpaInterface : public SpaProperties {
         /// @details Read/write. Valid range 1..5.
         RWProperty<int> LBRTValue{this, &SpaInterface::setLBRTValue};
 
+        /// @brief Light effect speed values.  This seems dumb but it is used to build the UI dropdowns as we
+        /// present light effect speed as a select.
+        static constexpr ROProperty<int>::LabelValue LSPDValue_Map[] = {
+            {"1", 1},
+            {"2", 2},
+            {"3", 3},
+            {"4", 4},
+            {"5", 5},
+        };
+        /// @brief Light effect speed.
+        /// @details Read/write. Valid range 1..5.
+        RWProperty<int> LSPDValue{this, &SpaInterface::setLSPDValue, LSPDValue_Map};
+
         /// @brief Sleep timer day mode values.
         /// @details Shared label/value map for both timers: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays.
         static constexpr ROProperty<int>::LabelValue SNZ_DAY_Map[] = {
@@ -365,12 +383,6 @@ class SpaInterface : public SpaProperties {
 
         /// @brief Clear the call back function.
         void clearUpdateCallback();
-
-        /// @brief Set light effect speed (min 1, max 5)
-        /// @param mode
-        /// @return Returns True if succesful
-        bool setLSPDValue(int mode);
-        bool setLSPDValue(String mode);
 
         /// @brief Set light colour (min 0, max 31)
         /// @param mode
