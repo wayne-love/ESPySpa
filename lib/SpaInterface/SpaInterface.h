@@ -130,6 +130,11 @@ class SpaInterface : public SpaProperties {
         /// the cached property value when the command succeeds.
         /// Throws std::out_of_range for invalid values (1..5).
         bool setLSPDValue(int mode);
+        /// @brief Internal writer used by `CurrClr` RWProperty.
+        /// @details Sends `S10:<mode>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        /// Throws std::out_of_range for invalid values (0..31).
+        bool setCurrClr(int mode);
 
         /// @brief Set snooze day ({128,127,96,31} -> {"Off","Everyday","Weekends","Weekdays"};)
         /// @param mode
@@ -331,6 +336,39 @@ class SpaInterface : public SpaProperties {
         /// @details Read/write. Valid range 1..5.
         RWProperty<int> LSPDValue{this, &SpaInterface::setLSPDValue, LSPDValue_Map};
 
+        /// @brief Maps hue values in 15-degree buckets to spa color indices.
+        /// @details Reverse lookup is ambiguous and returns the first matching hue label.
+        static constexpr ROProperty<int>::LabelValue CurrClr_Map[] = {
+            {"0", 0},
+            {"15", 4},
+            {"30", 4},
+            {"45", 19},
+            {"60", 13},
+            {"75", 25},
+            {"90", 25},
+            {"105", 16},
+            {"120", 10},
+            {"135", 7},
+            {"150", 2},
+            {"165", 8},
+            {"180", 5},
+            {"195", 3},
+            {"210", 6},
+            {"225", 6},
+            {"240", 21},
+            {"255", 21},
+            {"270", 21},
+            {"285", 18},
+            {"300", 18},
+            {"315", 9},
+            {"330", 9},
+            {"345", 1},
+            {"360", 1},
+        };
+        /// @brief Light color index.
+        /// @details Read/write. Valid range 0..31.
+        RWProperty<int> CurrClr{this, &SpaInterface::setCurrClr, CurrClr_Map};
+
         /// @brief Sleep timer day mode values.
         /// @details Shared label/value map for both timers: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays.
         static constexpr ROProperty<int>::LabelValue SNZ_DAY_Map[] = {
@@ -383,11 +421,6 @@ class SpaInterface : public SpaProperties {
 
         /// @brief Clear the call back function.
         void clearUpdateCallback();
-
-        /// @brief Set light colour (min 0, max 31)
-        /// @param mode
-        /// @return Returns True if succesful
-        bool setCurrClr(int mode);
 
         /// @brief Set the operating mode for pump 1
         /// @param mode 0 = off, 1 = on, 4 = auto (if supported)

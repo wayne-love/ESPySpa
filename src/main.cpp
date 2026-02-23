@@ -535,7 +535,15 @@ void setSpaProperty(String property, String p) {
     int pos = p.indexOf(',');
     if ( pos > 0) {
       int value = p.substring(0, pos).toInt();
-      si.setCurrClr(si.colorMap[value/15]);
+      int hue = (value / 15) * 15;
+      if (hue < 0) hue = 0;
+      if (hue > 360) hue = 360;
+      String hueLabel = String(hue);
+      try {
+        si.CurrClr.setLabel(hueLabel.c_str());
+      } catch (const std::exception& ex) {
+        debugE("Failed to set CurrClr: %s", ex.what());
+      }
     }
   } else if (property == "lights_speed") {
     try {

@@ -208,12 +208,7 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
     json["lights"]["color"]["h"] = 0;
     json["lights"]["color"]["s"] = 0;
   } else {
-    int hue = 4;
-    for (uint count = 0; count < sizeof(si.colorMap); count++){
-      if (si.colorMap[count] == si.getCurrClr()) {
-        hue = count * 15;
-      }
-    }
+    int hue = atoi(si.CurrClr.getLabel("0"));
     json["lights"]["color"]["h"] = hue;
     json["lights"]["color"]["s"] = 100;
   }
