@@ -646,8 +646,10 @@ void setup() {
     pinMode(GP_PIN, INPUT_PULLUP);
   #endif
 
-  Serial.begin(115200);
-  
+  #if !defined(ESP32_C3)
+    Serial.begin(115200);
+  #endif
+
   #if defined(ESPA_V2)
     // ESP32-C6: Wait for USB CDC to connect (with timeout)
     unsigned long startWait = millis();
@@ -657,8 +659,12 @@ void setup() {
     delay(100);  // Extra settling time for USB
   #endif
   
-  Serial.setDebugOutput(true);
-  Debug.setSerialEnabled(true);
+  #if defined(ESP32_C3) // ESP32-C3 can not support serial output since it only has 1 uart
+    Debug.setSerialEnabled(false);
+  #else
+    Serial.setDebugOutput(true);
+    Debug.setSerialEnabled(true);
+  #endif
 
   si.begin();  // Initialize SpaInterface serial communication
 
