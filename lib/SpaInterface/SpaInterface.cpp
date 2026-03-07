@@ -180,15 +180,16 @@ bool SpaInterface::setRB_TP_Light(int mode){
     return false;
 }
 
-bool SpaInterface::setHELE(int mode){
+bool SpaInterface::setHELE(bool mode){
     debugD("setHELE - %i", mode);
-    if (mode == getHELE()) {
-        debugD("No HELE change detected - current %i, new %i", getHELE(), mode);
+    if (mode == HELE.get()) {
+        debugD("No HELE change detected - current %i, new %i", HELE.get(), mode);
         return true;
     }
 
-    if (sendCommandCheckResult("W98:"+String(mode),String(mode))) {
-        update_HELE(String(mode));
+    int v = mode ? 1 : 0;
+    if (sendCommandCheckResult("W98:"+String(v),String(v))) {
+        HELE.update(mode);
         return true;
     }
     return false;
@@ -974,7 +975,7 @@ void SpaInterface::updateMeasures() {
     update_VMAX(statusResponseRaw[R7 + 22]);
     update_AHYS(statusResponseRaw[R7 + 23]);
     update_HUSE(statusResponseRaw[R7 + 24]);
-    update_HELE(statusResponseRaw[R7 + 25]);
+    HELE.update(statusResponseRaw[R7 + 25] == "1");
     HPMP.update(statusResponseRaw[R7 + 26].toInt());
     update_PMIN(statusResponseRaw[R7 + 27]);
     update_PFLT(statusResponseRaw[R7 + 28]);

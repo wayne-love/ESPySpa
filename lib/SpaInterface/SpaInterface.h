@@ -176,6 +176,10 @@ class SpaInterface : public SpaProperties {
         /// the cached property value when the command succeeds.
         /// Throws std::out_of_range for invalid values (0..4).
         bool setRB_TP_Pump5(int mode);
+        /// @brief Internal writer used by `HELE` RWProperty.
+        /// @details Sends `W98:<mode>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        bool setHELE(bool mode);
 
     public:
         /// @brief Init SpaInterface.
@@ -445,6 +449,9 @@ class SpaInterface : public SpaProperties {
         /// @brief Pump 5 operating state.
         /// @details Read/write. 0=Off, 1=On, 4=Auto (if supported).
         RWProperty<int> RB_TP_Pump5{this, &SpaInterface::setRB_TP_Pump5};
+        /// @brief Aux element (booster) state.
+        /// @details Read/write. false=Off, true=On.
+        RWProperty<bool> HELE{this, &SpaInterface::setHELE};
 
         /// @brief To be called by loop function of main sketch.  Does regular updates, etc.
         void loop();
@@ -466,10 +473,6 @@ class SpaInterface : public SpaProperties {
 
         bool setRB_TP_Light(int mode);
 
-        /// @brief Set aux element operating mode
-        /// @param mode 0 = off, 1 = on
-        /// @return True if successful
-        bool setHELE(int mode);
 
         /// @brief Sets the day of week on the spa
         /// @param d Day of week (0 = Monday - 6 = Sunday)

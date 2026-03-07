@@ -158,7 +158,7 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
   json["eSpa"]["update"]["installed_version"] = xstr(BUILD_INFO);
 
   json["heatpump"]["mode"] = si.HPMP.getLabel();
-  json["heatpump"]["auxheat"] = si.getHELE()==0? "OFF" : "ON";
+  json["heatpump"]["auxheat"] = si.HELE ? "ON" : "OFF";
 
   json["filtration"]["blockDuration"] = si.getFiltBlockHrs();
   json["filtration"]["hours"] = si.getFiltHrs();

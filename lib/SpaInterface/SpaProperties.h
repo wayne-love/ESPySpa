@@ -358,11 +358,6 @@ Property<bool> HV_2;
     ///
     /// 1 = Off
     Property<bool> HUSE;
-    /// @brief Heat pump active whilst spa is in use
-    ///
-    /// If false then when spa is in use then heat pump will not run to reduce noise levels
-    /// See SV-Series-OEM-Install-Manual.pdf page 19.
-    Property<bool> HELE;
     /// @brief Varible pump minimum speed setting
     ///
     /// Min 20%, Max 100%
@@ -703,7 +698,6 @@ protected:
     boolean update_VMAX(const String&);
     boolean update_AHYS(const String&);
     boolean update_HUSE(const String&);
-    boolean update_HELE(const String&);
     boolean update_PMIN(const String&);
     boolean update_PFLT(const String&);
     boolean update_PHTR(const String&);
@@ -1220,8 +1214,6 @@ public:
     bool getHUSE() { return HUSE.getValue(); }
     void setHUSECallback(void (*callback)(bool)) { HUSE.setCallback(callback); }
 
-    bool getHELE() { return HELE.getValue(); }
-    void setHELECallback(void (*callback)(bool)) { HELE.setCallback(callback); }
 
     int getPMIN() { return PMIN.getValue(); }
     void setPMINCallback(void (*callback)(int)) { PMIN.setCallback(callback); }

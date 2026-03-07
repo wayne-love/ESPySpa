@@ -517,7 +517,11 @@ void setSpaProperty(String property, String p) {
       }
     }
   } else if (property == "heatpump_auxheat") {
-    si.setHELE(p=="OFF"?0:1);
+    try {
+      si.HELE.set(p != "OFF");
+    } catch (const std::exception& ex) {
+      debugE("Failed to set HELE: %s", ex.what());
+    }
   } else if (property == "status_datetime") {
     tmElements_t tm;
     tm.Year=CalendarYrToTm(p.substring(0,4).toInt());

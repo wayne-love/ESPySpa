@@ -512,10 +512,6 @@ boolean SpaProperties::update_HUSE(const String& s){
     return updateBool01Property(HUSE, s);
 }
 
-boolean SpaProperties::update_HELE(const String& s) {
-    return updateBool01Property(HELE, s);
-}
-
 boolean SpaProperties::update_PMIN(const String& s){
     return updateIntProperty(PMIN, s);
 }
