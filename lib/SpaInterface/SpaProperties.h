@@ -209,26 +209,6 @@ Property<bool> HV_2;
     // R5
     //  Unknown encoding - Attribute<int> TouchPad2;
     //  Unknown encoding - Attribute<int> TouchPad1;
-    /// @brief Pump 1 state
-    ///
-    /// 0 = off, 1 = running, 4 = auto
-    Property<int> RB_TP_Pump1;
-    /// @brief Pump 2 state
-    ///
-    /// 0 = off, 1 = running, 4 = auto
-    Property<int> RB_TP_Pump2;
-    /// @brief Pump 3 state
-    ///
-    /// 0 = off, 1 = running, 4 = auto
-    Property<int> RB_TP_Pump3;
-    /// @brief Pump 4 state
-    ///
-    /// 0 = off, 1 = running, 4 = auto
-    Property<int> RB_TP_Pump4;
-    /// @brief Pump 5 state
-    ///
-    /// 0 = off, 1 = running, 4 = auto
-    Property<int> RB_TP_Pump5;
     Property<int> RB_TP_Blower;
     Property<int> RB_TP_Light;
     /// @brief Auto enabled
@@ -673,11 +653,6 @@ protected:
     // R5
     //  Unknown encoding - TouchPad2.update_Value();
     //  Unknown encoding - TouchPad1.update_Value();
-    boolean update_RB_TP_Pump1(const String&);
-    boolean update_RB_TP_Pump2(const String&);
-    boolean update_RB_TP_Pump3(const String&);
-    boolean update_RB_TP_Pump4(const String&);
-    boolean update_RB_TP_Pump5(const String&);
     boolean update_RB_TP_Blower(const String&);
     boolean update_RB_TP_Light(const String&);
     boolean update_RB_TP_Auto(const String&);
@@ -1089,20 +1064,6 @@ public:
     int getVari_Mode() { return Vari_Mode.getValue(); }
     void setVari_ModeCallback(void (*callback)(int)) { Vari_Mode.setCallback(callback); }
 
-    int getRB_TP_Pump1() { return RB_TP_Pump1.getValue(); }
-    void setRB_TP_Pump1Callback(void (*callback)(int)) { RB_TP_Pump1.setCallback(callback); }
-
-    int getRB_TP_Pump2() { return RB_TP_Pump2.getValue(); }
-    void setRB_TP_Pump2Callback(void (*callback)(int)) { RB_TP_Pump2.setCallback(callback); }
-
-    int getRB_TP_Pump3() { return RB_TP_Pump3.getValue(); }
-    void setRB_TP_Pump3Callback(void (*callback)(int)) { RB_TP_Pump3.setCallback(callback); }
-
-    int getRB_TP_Pump4() { return RB_TP_Pump4.getValue(); }
-    void setRB_TP_Pump4Callback(void (*callback)(int)) { RB_TP_Pump4.setCallback(callback); }
-
-    int getRB_TP_Pump5() { return RB_TP_Pump5.getValue(); }
-    void setRB_TP_Pump5Callback(void (*callback)(int)) { RB_TP_Pump5.setCallback(callback); }
     const std::array<String, 2> autoPumpOptions = {"Manual", "Auto"};
 
     int getRB_TP_Blower() { return RB_TP_Blower.getValue(); }

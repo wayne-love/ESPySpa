@@ -78,7 +78,8 @@ bool getPumpModesJson(SpaInterface &si, int pumpNumber, JsonObject pumps) {
     }
   }
 
-  int pumpState = (si.*(pumpStateFunctions[pumpNumber - 1]))();
+  int pumpState = (pumpNumber - 1 < SpaInterface::pumpStatusesCount)
+      ? (si.*(SpaInterface::pumpStatuses[pumpNumber - 1])).get() : 0;
   if (pumpInstallState.endsWith("4") && possibleStates.length() > 1) {
     if (pumpState == 4) pumps[pumpKey]["mode"] = "Auto";
     else pumps[pumpKey]["mode"] = "Manual";

@@ -489,16 +489,33 @@ void setSpaProperty(String property, String p) {
     if (p == "1") p = "0";
     else if (p == "2") p = "3";
     else if (p == "3") p = "2";
-    (si.*(setPumpFunctions[pumpNum-1]))(p.toInt());
+    if (pumpNum - 1 < SpaInterface::pumpStatusesCount)
+      try {
+        (si.*(SpaInterface::pumpStatuses[pumpNum-1])).set(p.toInt());
+      } catch (const std::exception& ex) {
+        debugE("Failed to set pump%d speed: %s", pumpNum, ex.what());
+      }
   } else if (property.startsWith("pump") && property.endsWith("_mode")) {
     int pumpNum = property.charAt(4) - '0';
-    if (p == "Auto") (si.*(setPumpFunctions[pumpNum-1]))(4);
-    else (si.*(setPumpFunctions[pumpNum-1]))(3); // When we change mode to manual set speed to low, as this matches the auto display speed
+    if (pumpNum - 1 < SpaInterface::pumpStatusesCount) {
+      try {
+        if (p == "Auto") (si.*(SpaInterface::pumpStatuses[pumpNum-1])).set(4);
+        else (si.*(SpaInterface::pumpStatuses[pumpNum-1])).set(3); // When we change mode to manual set speed to low, as this matches the auto display speed
+      } catch (const std::exception& ex) {
+        debugE("Failed to set pump%d mode: %s", pumpNum, ex.what());
+      }
+    }
   } else if (property.startsWith("pump") && property.endsWith("_state")) {
     int pumpNum = property.charAt(4) - '0';
     String pumpState = (si.*(pumpInstallStateFunctions[pumpNum-1]))();
-    if (getPumpSpeedType(pumpState) == "2") (si.*(setPumpFunctions[pumpNum-1]))(p=="OFF"?0:2); // When we turn on the pump use speed high
-    else (si.*(setPumpFunctions[pumpNum-1]))(p=="OFF"?0:1);
+    if (pumpNum - 1 < SpaInterface::pumpStatusesCount) {
+      try {
+        if (getPumpSpeedType(pumpState) == "2") (si.*(SpaInterface::pumpStatuses[pumpNum-1])).set(p=="OFF"?0:2); // When we turn on the pump use speed high
+        else (si.*(SpaInterface::pumpStatuses[pumpNum-1])).set(p=="OFF"?0:1);
+      } catch (const std::exception& ex) {
+        debugE("Failed to set pump%d state: %s", pumpNum, ex.what());
+      }
+    }
   } else if (property == "heatpump_auxheat") {
     si.setHELE(p=="OFF"?0:1);
   } else if (property == "status_datetime") {

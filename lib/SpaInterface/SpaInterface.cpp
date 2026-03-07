@@ -11,6 +11,13 @@ SpaInterface::SpaInterface() : port(SPA_SERIAL) {
 
 SpaInterface::~SpaInterface() {}
 
+SpaInterface::PumpStatus SpaInterface::pumpStatuses[] = {
+    &SpaInterface::RB_TP_Pump1,
+    &SpaInterface::RB_TP_Pump2,
+    &SpaInterface::RB_TP_Pump3,
+    &SpaInterface::RB_TP_Pump4,
+    &SpaInterface::RB_TP_Pump5,
+};
 
 void SpaInterface::setSpaPollFrequency(int updateFrequency) {
     _updateFrequency = updateFrequency;
@@ -75,70 +82,85 @@ bool SpaInterface::sendCommandCheckResult(String cmd, String expected){
 }
 
 bool SpaInterface::setRB_TP_Pump1(int mode){
-    debugD("setRB_TP_Pump1 - %i",mode);
-    if (mode == getRB_TP_Pump1()) {
-        debugD("No Pump1 change detected - current %i, new %i", getRB_TP_Pump1(), mode);
+    debugD("setRB_TP_Pump1 - %i", mode);
+    if (mode < 0 || mode > 4) {
+        throw std::out_of_range("RB_TP_Pump1 value out of range (0..4)");
+    }
+    if (mode == RB_TP_Pump1.get()) {
+        debugD("No Pump1 change detected - current %i, new %i", RB_TP_Pump1.get(), mode);
         return true;
     }
 
     if (sendCommandCheckResult("S22:"+String(mode),"S22-OK")) {
-        update_RB_TP_Pump1(String(mode));
+        RB_TP_Pump1.update(mode);
         return true;
     }
     return false;
 }
 
 bool SpaInterface::setRB_TP_Pump2(int mode){
-    debugD("setRB_TP_Pump2 - %i",mode);
-    if (mode == getRB_TP_Pump2()) {
-        debugD("No Pump2 change detected - current %i, new %i", getRB_TP_Pump2(), mode);
+    debugD("setRB_TP_Pump2 - %i", mode);
+    if (mode < 0 || mode > 4) {
+        throw std::out_of_range("RB_TP_Pump2 value out of range (0..4)");
+    }
+    if (mode == RB_TP_Pump2.get()) {
+        debugD("No Pump2 change detected - current %i, new %i", RB_TP_Pump2.get(), mode);
         return true;
     }
 
     if (sendCommandCheckResult("S23:"+String(mode),"S23-OK")) {
-        update_RB_TP_Pump2(String(mode));
+        RB_TP_Pump2.update(mode);
         return true;
     }
     return false;
 }
 
 bool SpaInterface::setRB_TP_Pump3(int mode){
-    debugD("setRB_TP_Pump3 - %i",mode);
-    if (mode == getRB_TP_Pump3()) {
-        debugD("No Pump3 change detected - current %i, new %i", getRB_TP_Pump3(), mode);
+    debugD("setRB_TP_Pump3 - %i", mode);
+    if (mode < 0 || mode > 4) {
+        throw std::out_of_range("RB_TP_Pump3 value out of range (0..4)");
+    }
+    if (mode == RB_TP_Pump3.get()) {
+        debugD("No Pump3 change detected - current %i, new %i", RB_TP_Pump3.get(), mode);
         return true;
     }
 
     if (sendCommandCheckResult("S24:"+String(mode),"S24-OK")) {
-        update_RB_TP_Pump3(String(mode));
+        RB_TP_Pump3.update(mode);
         return true;
     }
     return false;
 }
 
 bool SpaInterface::setRB_TP_Pump4(int mode){
-    debugD("setRB_TP_Pump4 - %i",mode);
-    if (mode == getRB_TP_Pump4()) {
-        debugD("No Pump4 change detected - current %i, new %i", getRB_TP_Pump4(), mode);
+    debugD("setRB_TP_Pump4 - %i", mode);
+    if (mode < 0 || mode > 4) {
+        throw std::out_of_range("RB_TP_Pump4 value out of range (0..4)");
+    }
+    if (mode == RB_TP_Pump4.get()) {
+        debugD("No Pump4 change detected - current %i, new %i", RB_TP_Pump4.get(), mode);
         return true;
     }
 
     if (sendCommandCheckResult("S25:"+String(mode),"S25-OK")) {
-        update_RB_TP_Pump4(String(mode));
+        RB_TP_Pump4.update(mode);
         return true;
     }
     return false;
 }
 
 bool SpaInterface::setRB_TP_Pump5(int mode){
-    debugD("setRB_TP_Pump5 - %i",mode);
-    if (mode == getRB_TP_Pump5()) {
-        debugD("No Pump5 change detected - current %i, new %i", getRB_TP_Pump5(), mode);
+    debugD("setRB_TP_Pump5 - %i", mode);
+    if (mode < 0 || mode > 4) {
+        throw std::out_of_range("RB_TP_Pump5 value out of range (0..4)");
+    }
+    if (mode == RB_TP_Pump5.get()) {
+        debugD("No Pump5 change detected - current %i, new %i", RB_TP_Pump5.get(), mode);
         return true;
     }
 
     if (sendCommandCheckResult("S26:"+String(mode),"S26-OK")) {
-        update_RB_TP_Pump5(String(mode));
+        RB_TP_Pump5.update(mode);
         return true;
     }
     return false;
@@ -887,11 +909,11 @@ void SpaInterface::updateMeasures() {
     update_RB_TP_Light(statusResponseRaw[R5 + 14]);
     update_WTMP(statusResponseRaw[R5 + 15]);
     update_CleanCycle(statusResponseRaw[R5 + 16]);
-    update_RB_TP_Pump1(statusResponseRaw[R5 + 18]);
-    update_RB_TP_Pump2(statusResponseRaw[R5 + 19]);
-    update_RB_TP_Pump3(statusResponseRaw[R5 + 20]);
-    update_RB_TP_Pump4(statusResponseRaw[R5 + 21]);
-    update_RB_TP_Pump5(statusResponseRaw[R5 + 22]);
+    RB_TP_Pump1.update(statusResponseRaw[R5 + 18].toInt());
+    RB_TP_Pump2.update(statusResponseRaw[R5 + 19].toInt());
+    RB_TP_Pump3.update(statusResponseRaw[R5 + 20].toInt());
+    RB_TP_Pump4.update(statusResponseRaw[R5 + 21].toInt());
+    RB_TP_Pump5.update(statusResponseRaw[R5 + 22].toInt());
     #pragma endregion
     #pragma region R6
     update_VARIValue(statusResponseRaw[R6 + 1]);

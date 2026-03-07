@@ -335,26 +335,6 @@ boolean SpaProperties::update_Vari_Mode(const String& s){
     return updateIntProperty(Vari_Mode, s);
 }
 
-boolean SpaProperties::update_RB_TP_Pump1(const String& s){
-    return updateIntProperty(RB_TP_Pump1, s);
-}
-
-boolean SpaProperties::update_RB_TP_Pump2(const String& s){
-    return updateIntProperty(RB_TP_Pump2, s);
-}
-
-boolean SpaProperties::update_RB_TP_Pump3(const String& s){
-    return updateIntProperty(RB_TP_Pump3, s);
-}
-
-boolean SpaProperties::update_RB_TP_Pump4(const String& s){
-    return updateIntProperty(RB_TP_Pump4, s);
-}
-
-boolean SpaProperties::update_RB_TP_Pump5(const String& s){
-    return updateIntProperty(RB_TP_Pump5, s);
-}
-
 boolean SpaProperties::update_RB_TP_Blower(const String& s){
     return updateIntProperty(RB_TP_Blower, s);
 }

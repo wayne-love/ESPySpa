@@ -151,6 +151,32 @@ class SpaInterface : public SpaProperties {
         bool setL_2SNZ_BGN(int mode);
         bool setL_2SNZ_END(int mode);
 
+        /// @brief Internal writer used by `RB_TP_Pump1` RWProperty.
+        /// @details Sends `S22:<mode>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        /// Throws std::out_of_range for invalid values (0..4).
+        bool setRB_TP_Pump1(int mode);
+        /// @brief Internal writer used by `RB_TP_Pump2` RWProperty.
+        /// @details Sends `S23:<mode>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        /// Throws std::out_of_range for invalid values (0..4).
+        bool setRB_TP_Pump2(int mode);
+        /// @brief Internal writer used by `RB_TP_Pump3` RWProperty.
+        /// @details Sends `S24:<mode>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        /// Throws std::out_of_range for invalid values (0..4).
+        bool setRB_TP_Pump3(int mode);
+        /// @brief Internal writer used by `RB_TP_Pump4` RWProperty.
+        /// @details Sends `S25:<mode>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        /// Throws std::out_of_range for invalid values (0..4).
+        bool setRB_TP_Pump4(int mode);
+        /// @brief Internal writer used by `RB_TP_Pump5` RWProperty.
+        /// @details Sends `S26:<mode>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        /// Throws std::out_of_range for invalid values (0..4).
+        bool setRB_TP_Pump5(int mode);
+
     public:
         /// @brief Init SpaInterface.
         SpaInterface();
@@ -404,6 +430,22 @@ class SpaInterface : public SpaProperties {
         /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock).
         RWProperty<int> L_2SNZ_END{this, &SpaInterface::setL_2SNZ_END};
 
+        /// @brief Pump 1 operating state.
+        /// @details Read/write. 0=Off, 1=On, 4=Auto (if supported).
+        RWProperty<int> RB_TP_Pump1{this, &SpaInterface::setRB_TP_Pump1};
+        /// @brief Pump 2 operating state.
+        /// @details Read/write. 0=Off, 1=On, 4=Auto (if supported).
+        RWProperty<int> RB_TP_Pump2{this, &SpaInterface::setRB_TP_Pump2};
+        /// @brief Pump 3 operating state.
+        /// @details Read/write. 0=Off, 1=On, 4=Auto (if supported).
+        RWProperty<int> RB_TP_Pump3{this, &SpaInterface::setRB_TP_Pump3};
+        /// @brief Pump 4 operating state.
+        /// @details Read/write. 0=Off, 1=On, 4=Auto (if supported).
+        RWProperty<int> RB_TP_Pump4{this, &SpaInterface::setRB_TP_Pump4};
+        /// @brief Pump 5 operating state.
+        /// @details Read/write. 0=Off, 1=On, 4=Auto (if supported).
+        RWProperty<int> RB_TP_Pump5{this, &SpaInterface::setRB_TP_Pump5};
+
         /// @brief To be called by loop function of main sketch.  Does regular updates, etc.
         void loop();
 
@@ -421,31 +463,6 @@ class SpaInterface : public SpaProperties {
 
         /// @brief Clear the call back function.
         void clearUpdateCallback();
-
-        /// @brief Set the operating mode for pump 1
-        /// @param mode 0 = off, 1 = on, 4 = auto (if supported)
-        /// @return True if successful
-        bool setRB_TP_Pump1(int mode);
-
-        /// @brief Set the operating mode for pump 2
-        /// @param mode 0 = off, 1 = on, 4 = auto (if supported)
-        /// @return True if successful
-        bool setRB_TP_Pump2(int mode);
-
-        /// @brief Set the operating mode for pump 3
-        /// @param mode 0 = off, 1 = on, 4 = auto (if supported)
-        /// @return True if successful
-        bool setRB_TP_Pump3(int mode);
-
-        /// @brief Set the operating mode for pump 4
-        /// @param mode 0 = off, 1 = on, 4 = auto (if supported)
-        /// @return True if successful
-        bool setRB_TP_Pump4(int mode);
-
-        /// @brief Set the operating mode for pump 5
-        /// @param mode 0 = off, 1 = on, 4 = auto (if supported)
-        /// @return True if successful
-        bool setRB_TP_Pump5(int mode);
 
         bool setRB_TP_Light(int mode);
 
@@ -490,6 +507,12 @@ class SpaInterface : public SpaProperties {
         bool setFiltHrs(String duration);
 
         bool setLockMode(int mode);
+
+        /// @brief Unified array of RWProperty pointers for each migrated pump, used for
+        /// both reading state and sending commands. Grows as pumps are migrated.
+        using PumpStatus = RWProperty<int> SpaInterface::*;
+        static PumpStatus pumpStatuses[];
+        static const int pumpStatusesCount = 5;
 };
 
 
@@ -505,28 +528,5 @@ static GetPumpStateInstallFunction pumpInstallStateFunctions[] = {
   &SpaInterface::getPump5InstallState
 };
 
-// Define the function pointer type for getPumpState functions
-typedef int (SpaInterface::*GetPumpStateFunction)();
-
-// Declare the array of function pointers for each pump's state as static
-static GetPumpStateFunction pumpStateFunctions[] = {
-  &SpaInterface::getRB_TP_Pump1,
-  &SpaInterface::getRB_TP_Pump2,
-  &SpaInterface::getRB_TP_Pump3,
-  &SpaInterface::getRB_TP_Pump4,
-  &SpaInterface::getRB_TP_Pump5
-};
-
-// Define the function pointer type for getPumpState functions
-typedef bool (SpaInterface::*SetPumpFunction)(int);
-
-// Declare the array of function pointers for each pump's state as static
-static SetPumpFunction setPumpFunctions[] = {
-  &SpaInterface::setRB_TP_Pump1,
-  &SpaInterface::setRB_TP_Pump2,
-  &SpaInterface::setRB_TP_Pump3,
-  &SpaInterface::setRB_TP_Pump4,
-  &SpaInterface::setRB_TP_Pump5
-};
 
 #endif
