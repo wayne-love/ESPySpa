@@ -363,10 +363,6 @@ boolean SpaProperties::update_FiltHrs(const String& s){
     return updateIntProperty(FiltSetHrs, s);
 }
 
-boolean SpaProperties::update_FiltBlockHrs(const String& s){
-    return updateIntProperty(FiltBlockHrs, s);
-}
-
 boolean SpaProperties::update_L_24HOURS(const String& s){
     return updateIntProperty(L_24HOURS, s);
 }

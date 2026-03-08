@@ -200,6 +200,11 @@ class SpaInterface : public SpaProperties {
         /// the cached property value when the command succeeds.
         /// Throws std::out_of_range for invalid values (1..5).
         bool setVARIValue(int mode);
+        /// @brief Internal writer used by `FiltBlockHrs` RWProperty.
+        /// @details Sends `W90:<mode>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        /// Throws std::out_of_range for values not in the valid set (1,2,3,4,6,8,12,24).
+        bool setFiltBlockHrs(int mode);
 
     public:
         /// @brief Init SpaInterface.
@@ -526,6 +531,22 @@ class SpaInterface : public SpaProperties {
         /// @details Read/write. Valid range 1..5.
         RWProperty<int> VARIValue{this, &SpaInterface::setVARIValue};
 
+        /// @brief Filtration block duration label map.
+        /// @details Valid durations in hours: 1, 2, 3, 4, 6, 8, 12, 24.
+        static constexpr ROProperty<int>::LabelValue FiltBlockHrs_Map[] = {
+            {"1",  1},
+            {"2",  2},
+            {"3",  3},
+            {"4",  4},
+            {"6",  6},
+            {"8",  8},
+            {"12", 12},
+            {"24", 24},
+        };
+        /// @brief Filtration block duration (hours).
+        /// @details Read/write. Valid values: 1, 2, 3, 4, 6, 8, 12, 24.
+        RWProperty<int> FiltBlockHrs{this, &SpaInterface::setFiltBlockHrs, FiltBlockHrs_Map};
+
         /// @brief To be called by loop function of main sketch.  Does regular updates, etc.
         void loop();
 
@@ -552,12 +573,7 @@ class SpaInterface : public SpaProperties {
         /// @return True if successful
         bool setSpaTime(time_t t);
 
-        /// @brief Set filtration block duration (1,2,3,4,6,8,12,24 hours)
-        /// @param duration 
-        /// @return 
-        bool setFiltBlockHrs(String duration);
-
-        /// @brief Set filtration hours (1 to 24 hours)
+/// @brief Set filtration hours (1 to 24 hours)
         /// @param duration
         bool setFiltHrs(String duration);
 

@@ -566,16 +566,23 @@ bool SpaInterface::setMode(int mode){
     return false;
 }
 
-bool SpaInterface::setFiltBlockHrs(String duration){
-    debugD("setFiltBlockHrs - %s", duration);
-    for (int i = 0; i < FiltBlockHrsSelect.size(); i++) {
-        if (FiltBlockHrsSelect[i] == duration) {
-            if (sendCommandCheckResult("W90:"+FiltBlockHrsSelect[i],FiltBlockHrsSelect[i])) {
-                update_FiltBlockHrs(FiltBlockHrsSelect[i]);
-                return true;
-            }
-            return false;
-        }
+bool SpaInterface::setFiltBlockHrs(int mode){
+    debugD("setFiltBlockHrs - %i", mode);
+    static const int valid[] = {1, 2, 3, 4, 6, 8, 12, 24};
+    bool isValid = false;
+    for (int v : valid) {
+        if (mode == v) { isValid = true; break; }
+    }
+    if (!isValid) {
+        throw std::out_of_range("FiltBlockHrs value not in valid set (1,2,3,4,6,8,12,24)");
+    }
+    if (mode == FiltBlockHrs.get()) {
+        debugD("No FiltBlockHrs change detected - current %i, new %i", FiltBlockHrs.get(), mode);
+        return true;
+    }
+    if (sendCommandCheckResult("W90:"+String(mode), String(mode))) {
+        FiltBlockHrs.update(mode);
+        return true;
     }
     return false;
 }
@@ -923,7 +930,7 @@ void SpaInterface::updateMeasures() {
     ColorMode.update(statusResponseRaw[R6 + 4].toInt());
     LSPDValue.update(statusResponseRaw[R6 + 5].toInt());
     update_FiltHrs(statusResponseRaw[R6 + 6]);
-    update_FiltBlockHrs(statusResponseRaw[R6 + 7]);
+    FiltBlockHrs.update(statusResponseRaw[R6 + 7].toInt());
     STMP.update(statusResponseRaw[R6 + 8].toInt());
     update_L_24HOURS(statusResponseRaw[R6 + 9]);
     update_PSAV_LVL(statusResponseRaw[R6 + 10]);

@@ -231,9 +231,7 @@ Property<bool> HV_2;
     // R6
 /// @brief Filter run time (in hours) per block
     Property<int> FiltSetHrs;
-    /// @brief Filter block duration (hours)
-    Property<int> FiltBlockHrs;
-    /// @brief Water temperature set point ('C)
+/// @brief Water temperature set point ('C)
     // 1 = 12 hrs
     Property<int> L_24HOURS;
     /// @brief Power save level
@@ -642,7 +640,6 @@ protected:
 #pragma endregion
 #pragma region R6
     boolean update_FiltHrs(const String&);
-    boolean update_FiltBlockHrs(const String&);
     boolean update_L_24HOURS(const String&);
     boolean update_PSAV_LVL(const String&);
     boolean update_PSAV_BGN(const String&);
@@ -1055,12 +1052,7 @@ public:
     // This is used to generated the select 
     
 
-    int getFiltBlockHrs() { return FiltBlockHrs.getValue(); }
-    void setFiltBlockHrsCallback(void (*callback)(int)) { FiltBlockHrs.setCallback(callback); }
-    // According to the docs only certain values are valid here.  Using a select to ensure only valid values are used.
-    const std::array <String, 8> FiltBlockHrsSelect = {"24","12","8","6","4","3","2","1"};
-
-    int getL_24HOURS() { return L_24HOURS.getValue(); }
+int getL_24HOURS() { return L_24HOURS.getValue(); }
     void setL_24HOURSCallback(void (*callback)(int)) { L_24HOURS.setCallback(callback); }
 
     int getPSAV_LVL() { return PSAV_LVL.getValue(); }
