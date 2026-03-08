@@ -210,6 +210,11 @@ class SpaInterface : public SpaProperties {
         /// the cached property value when the command succeeds.
         /// Throws std::out_of_range for invalid values (1..24).
         bool setFiltHrs(int hrs);
+        /// @brief Internal writer used by `LockMode` RWProperty.
+        /// @details Sends `S21:<mode>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        /// Throws std::out_of_range for invalid values (0..2).
+        bool setLockMode(int mode);
 
     public:
         /// @brief Init SpaInterface.
@@ -351,36 +356,14 @@ class SpaInterface : public SpaProperties {
             WriteFunction _writer = nullptr;
         };
 
-        /// @brief configure how often the spa is polled in seconds.
-        /// @param SpaPollFrequency
-        void setSpaPollFrequency(int updateFrequency);
-
-        /// @brief Complete RF command response in a single string
-        Property<String> statusResponse;
-
-        /// @brief Mains current draw x10.
-        /// @details Read-only; value 77 represents 7.7A.
-        ROProperty<int> MainsCurrent;
-
-        /// @brief Water temperature set point x10.
-        /// @details Read/write. Valid range 50..410 (5.0C..41.0C). 
-        RWProperty<int> STMP{this, &SpaInterface::setSTMP};
-
-        /// @brief Heatpump operating mode values.
-        /// @details 0=Auto, 1=Heat, 2=Cool, 3=Off.
+    private:
+        // Label maps are private — use getLabelMap() on the property for external access.
         static constexpr ROProperty<int>::LabelValue HPMP_Map[] = {
             {"Auto", 0},
             {"Heat", 1},
             {"Cool", 2},
             {"Off", 3},
         };
-        /// @brief Heatpump operating mode.
-        /// @details Read/write wrapper around the private `setHPMP` writer.
-        /// Valid range 0..3.
-        RWProperty<int> HPMP{this, &SpaInterface::setHPMP, HPMP_Map};
-
-        /// @brief Light effect/mode values.
-        /// @details 0=White, 1=Color, 2=Fade, 3=Step, 4=Party.
         static constexpr ROProperty<int>::LabelValue ColorMode_Map[] = {
             {"White", 0},
             {"Color", 1},
@@ -388,17 +371,6 @@ class SpaInterface : public SpaProperties {
             {"Step", 3},
             {"Party", 4},
         };
-        /// @brief Light effect/mode.
-        /// @details Read/write wrapper around the private `setColorMode` writer.
-        /// Valid range 0..4.
-        RWProperty<int> ColorMode{this, &SpaInterface::setColorMode, ColorMode_Map};
-
-        /// @brief Light brightness.
-        /// @details Read/write. Valid range 1..5.
-        RWProperty<int> LBRTValue{this, &SpaInterface::setLBRTValue};
-
-        /// @brief Light effect speed values.  This seems dumb but it is used to build the UI dropdowns as we
-        /// present light effect speed as a select.
         static constexpr ROProperty<int>::LabelValue LSPDValue_Map[] = {
             {"1", 1},
             {"2", 2},
@@ -406,12 +378,6 @@ class SpaInterface : public SpaProperties {
             {"4", 4},
             {"5", 5},
         };
-        /// @brief Light effect speed.
-        /// @details Read/write. Valid range 1..5.
-        RWProperty<int> LSPDValue{this, &SpaInterface::setLSPDValue, LSPDValue_Map};
-
-        /// @brief Maps hue values in 15-degree buckets to spa color indices.
-        /// @details Reverse lookup is ambiguous and returns the first matching hue label.
         static constexpr ROProperty<int>::LabelValue CurrClr_Map[] = {
             {"0", 0},
             {"15", 4},
@@ -439,12 +405,7 @@ class SpaInterface : public SpaProperties {
             {"345", 1},
             {"360", 1},
         };
-        /// @brief Light color index.
-        /// @details Read/write. Valid range 0..31.
-        RWProperty<int> CurrClr{this, &SpaInterface::setCurrClr, CurrClr_Map};
-
-        /// @brief Sleep timer day mode values.
-        /// @details Shared label/value map for both timers: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays.
+        /// @details Shared label/value map for both sleep timers: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays.
         static constexpr ROProperty<int>::LabelValue SNZ_DAY_Map[] = {
             {"Off", 128},
             {"Everyday", 127},
@@ -458,13 +419,85 @@ class SpaInterface : public SpaProperties {
             {"Saturday", 64},
             {"Sunday", 32},
         };
+        static constexpr ROProperty<int>::LabelValue SpaDayOfWeek_Map[] = {
+            {"Monday",    0},
+            {"Tuesday",   1},
+            {"Wednesday", 2},
+            {"Thursday",  3},
+            {"Friday",    4},
+            {"Saturday",  5},
+            {"Sunday",    6},
+        };
+        static constexpr ROProperty<int>::LabelValue Outlet_Blower_Map[] = {
+            {"Variable", 0},
+            {"Ramp",     1},
+            {"Off",      2},
+        };
+        static constexpr ROProperty<int>::LabelValue Mode_Map[] = {
+            {"NORM", 0},
+            {"ECON", 1},
+            {"AWAY", 2},
+            {"WEEK", 3},
+        };
+        static constexpr ROProperty<int>::LabelValue FiltBlockHrs_Map[] = {
+            {"1",  1},
+            {"2",  2},
+            {"3",  3},
+            {"4",  4},
+            {"6",  6},
+            {"8",  8},
+            {"12", 12},
+            {"24", 24},
+        };
+        static constexpr ROProperty<int>::LabelValue LockMode_Map[] = {
+            {"Unlocked",         0},
+            {"Partially Locked", 1},
+            {"Locked",           2},
+        };
+
+    public:
+        /// @brief configure how often the spa is polled in seconds.
+        /// @param SpaPollFrequency
+        void setSpaPollFrequency(int updateFrequency);
+
+        /// @brief Complete RF command response in a single string
+        Property<String> statusResponse;
+
+        /// @brief Mains current draw x10.
+        /// @details Read-only; value 77 represents 7.7A.
+        ROProperty<int> MainsCurrent;
+
+        /// @brief Water temperature set point x10.
+        /// @details Read/write. Valid range 50..410 (5.0C..41.0C).
+        RWProperty<int> STMP{this, &SpaInterface::setSTMP};
+
+        /// @brief Heatpump operating mode.
+        /// @details Read/write. 0=Auto, 1=Heat, 2=Cool, 3=Off.
+        RWProperty<int> HPMP{this, &SpaInterface::setHPMP, HPMP_Map};
+
+        /// @brief Light effect/mode.
+        /// @details Read/write. 0=White, 1=Color, 2=Fade, 3=Step, 4=Party.
+        RWProperty<int> ColorMode{this, &SpaInterface::setColorMode, ColorMode_Map};
+
+        /// @brief Light brightness.
+        /// @details Read/write. Valid range 1..5.
+        RWProperty<int> LBRTValue{this, &SpaInterface::setLBRTValue};
+
+        /// @brief Light effect speed.
+        /// @details Read/write. Valid range 1..5.
+        RWProperty<int> LSPDValue{this, &SpaInterface::setLSPDValue, LSPDValue_Map};
+
+        /// @brief Light color index.
+        /// @details Read/write. Valid range 0..31.
+        RWProperty<int> CurrClr{this, &SpaInterface::setCurrClr, CurrClr_Map};
+
         /// @brief Sleep timer 1 day mode bitmap.
         /// @details Read/write. Typical values: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays.
         RWProperty<int> L_1SNZ_DAY{this, &SpaInterface::setL_1SNZ_DAY, SNZ_DAY_Map};
         /// @brief Sleep timer 2 day mode bitmap.
         /// @details Read/write. Typical values: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays.
         RWProperty<int> L_2SNZ_DAY{this, &SpaInterface::setL_2SNZ_DAY, SNZ_DAY_Map};
-        
+
         /// @brief Sleep timer 1 start time.
         /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock).
         RWProperty<int> L_1SNZ_BGN{this, &SpaInterface::setL_1SNZ_BGN};
@@ -497,37 +530,14 @@ class SpaInterface : public SpaProperties {
         /// @details Read/write. false=Off, true=On.
         RWProperty<bool> HELE{this, &SpaInterface::setHELE};
 
-        /// @brief Day of week label map. 0=Monday .. 6=Sunday.
-        static constexpr ROProperty<int>::LabelValue SpaDayOfWeek_Map[] = {
-            {"Monday",    0},
-            {"Tuesday",   1},
-            {"Wednesday", 2},
-            {"Thursday",  3},
-            {"Friday",    4},
-            {"Saturday",  5},
-            {"Sunday",    6},
-        };
         /// @brief Current day of week on Spa RTC.
         /// @details Read/write. 0=Monday .. 6=Sunday.
         RWProperty<int> SpaDayOfWeek{this, &SpaInterface::setSpaDayOfWeek, SpaDayOfWeek_Map};
 
-        /// @brief Blower mode label map.
-        static constexpr ROProperty<int>::LabelValue Outlet_Blower_Map[] = {
-            {"Variable", 0},
-            {"Ramp",     1},
-            {"Off",      2},
-        };
         /// @brief Air blower operating mode.
         /// @details Read/write. 0=Variable, 1=Ramp, 2=Off.
         RWProperty<int> Outlet_Blower{this, &SpaInterface::setOutlet_Blower, Outlet_Blower_Map};
 
-        /// @brief Spa operating mode label map.
-        static constexpr ROProperty<int>::LabelValue Mode_Map[] = {
-            {"NORM", 0},
-            {"ECON", 1},
-            {"AWAY", 2},
-            {"WEEK", 3},
-        };
         /// @brief Spa operating mode.
         /// @details Read/write. 0=NORM, 1=ECON, 2=AWAY, 3=WEEK.
         RWProperty<int> Mode{this, &SpaInterface::setMode, Mode_Map};
@@ -536,18 +546,6 @@ class SpaInterface : public SpaProperties {
         /// @details Read/write. Valid range 1..5.
         RWProperty<int> VARIValue{this, &SpaInterface::setVARIValue};
 
-        /// @brief Filtration block duration label map.
-        /// @details Valid durations in hours: 1, 2, 3, 4, 6, 8, 12, 24.
-        static constexpr ROProperty<int>::LabelValue FiltBlockHrs_Map[] = {
-            {"1",  1},
-            {"2",  2},
-            {"3",  3},
-            {"4",  4},
-            {"6",  6},
-            {"8",  8},
-            {"12", 12},
-            {"24", 24},
-        };
         /// @brief Filtration block duration (hours).
         /// @details Read/write. Valid values: 1, 2, 3, 4, 6, 8, 12, 24.
         RWProperty<int> FiltBlockHrs{this, &SpaInterface::setFiltBlockHrs, FiltBlockHrs_Map};
@@ -555,6 +553,10 @@ class SpaInterface : public SpaProperties {
         /// @brief Filtration run time per block (hours).
         /// @details Read/write. Valid range 1..24.
         RWProperty<int> FiltHrs{this, &SpaInterface::setFiltHrs};
+
+        /// @brief Keypad lock mode.
+        /// @details Read/write. 0=Unlocked, 1=Partially Locked, 2=Locked.
+        RWProperty<int> LockMode{this, &SpaInterface::setLockMode, LockMode_Map};
 
         /// @brief To be called by loop function of main sketch.  Does regular updates, etc.
         void loop();
@@ -581,8 +583,6 @@ class SpaInterface : public SpaProperties {
         /// @param t Time
         /// @return True if successful
         bool setSpaTime(time_t t);
-
-        bool setLockMode(int mode);
 
         /// @brief Unified array of RWProperty pointers for each migrated pump, used for
         /// both reading state and sending commands. Grows as pumps are migrated.

@@ -537,10 +537,6 @@ Property<bool> HV_2;
     Property<bool> Pump4OkToRun;
     /// @brief Pump 5 is in safe state to start
     Property<bool> Pump5OkToRun;
-    /// @brief Lock mode
-    ///
-    /// 0 = keypad unlocked, 1 = partial lock, 2 = full lock
-    Property<int> LockMode;
 
 #pragma endregion
 
@@ -774,7 +770,6 @@ protected:
     boolean update_Pump3OkToRun(const String&);
     boolean update_Pump4OkToRun(const String&);
     boolean update_Pump5OkToRun(const String&);
-    boolean update_LockMode(const String&);
 #pragma endregion
 
 
@@ -1397,9 +1392,6 @@ int getL_24HOURS() { return L_24HOURS.getValue(); }
     bool getPump5OkToRun() { return Pump5OkToRun.getValue(); }
     void setPump5OkToRunCallback(void (*callback)(bool)) { Pump5OkToRun.setCallback(callback); }
 
-    int getLockMode() { return LockMode.getValue(); }
-    void setLockModeCallback(void (*callback)(int)) { LockMode.setCallback(callback); }
-    const std::array <String, 3> lockModeMap = {"Unlocked", "Partially Locked", "Locked"};
 };
 
 #endif

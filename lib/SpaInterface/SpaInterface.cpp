@@ -605,18 +605,15 @@ bool SpaInterface::setFiltHrs(int hrs){
 
 bool SpaInterface::setLockMode(int mode){
     debugD("setLockMode - %i", mode);
-    if (mode == getLockMode()) {
-        debugD("No LockMode change detected - current %i, new %i", getLockMode(), mode);
+    if (mode < 0 || mode > 2) {
+        throw std::out_of_range("LockMode value out of range (0..2)");
+    }
+    if (mode == LockMode.get()) {
+        debugD("No LockMode change detected - current %i, new %i", LockMode.get(), mode);
         return true;
     }
-
-    if (mode < 0 || mode > 2) {
-        debugE("LockMode out of range - %i", mode);
-        return false;
-    }
-
-    if (sendCommandCheckResult("S21:"+String(mode),String(mode))) {
-        update_LockMode(String(mode));
+    if (sendCommandCheckResult("S21:"+String(mode), String(mode))) {
+        LockMode.update(mode);
         return true;
     }
     return false;
@@ -1091,7 +1088,7 @@ void SpaInterface::updateMeasures() {
     update_Pump3OkToRun(statusResponseRaw[RG + 3]);
     update_Pump4OkToRun(statusResponseRaw[RG + 4]);
     update_Pump5OkToRun(statusResponseRaw[RG + 5]);
-    update_LockMode(statusResponseRaw[RG + 12]);
+    LockMode.update(statusResponseRaw[RG + 12].toInt());
     #pragma endregion
 
 };

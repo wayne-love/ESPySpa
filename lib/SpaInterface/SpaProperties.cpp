@@ -770,8 +770,4 @@ boolean SpaProperties::update_Pump5OkToRun(const String& s) {
     return updateBool01Property(Pump5OkToRun, s);
 }
 
-boolean SpaProperties::update_LockMode(const String& s) {
-    // LockMode is tri-state: 0 = unlocked, 1 = partial, 2 = full.
-    return updateTriStateProperty(LockMode, s);
-}
 

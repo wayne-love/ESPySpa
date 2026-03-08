@@ -422,7 +422,7 @@ void mqttHaAutoDiscovery() {
   ADConf.propertyId = "status_spaMode";
   ADConf.deviceClass = "";
   ADConf.entityCategory = "";
-  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.spaModeStrings);
+  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.Mode);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
   ADConf.displayName = "Filtration Block Duration";
@@ -430,11 +430,7 @@ void mqttHaAutoDiscovery() {
   ADConf.propertyId = "filtration_blockDuration";
   ADConf.deviceClass = "";
   ADConf.entityCategory = "config";
-  // TODO (future improvement): generateSelectAdJSON takes const std::array<String, N>, but
-  // FiltBlockHrs_Map is LabelValue[]. A local array bridges the type mismatch until
-  // generateSelectAdJSON is updated to accept the label map directly.
-  static const std::array<String, 8> FiltBlockHrsSelect = {"24","12","8","6","4","3","2","1"};
-  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, FiltBlockHrsSelect);
+  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.FiltBlockHrs);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
   // Simply used to populate the select options for filtration hours 1 to 24
@@ -453,7 +449,7 @@ void mqttHaAutoDiscovery() {
   ADConf.propertyId = "lock_mode";
   ADConf.deviceClass = "";
   ADConf.entityCategory = "config";
-  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.lockModeMap);
+  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.LockMode);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
 }
@@ -655,11 +651,10 @@ void setSpaProperty(String property, String p) {
       debugE("Failed to set FiltHrs: %s", ex.what());
     }
   } else if (property == "lock_mode") {
-    for (int i = 0; i < si.lockModeMap.size(); i++) {
-      if (si.lockModeMap[i] == p) {
-        si.setLockMode(i);
-        break;
-      }
+    try {
+      si.LockMode.setLabel(p.c_str());
+    } catch (const std::exception& ex) {
+      debugE("Failed to set LockMode from label '%s': %s", p.c_str(), ex.what());
     }
   } else {
     debugE("Unhandled property - %s",property.c_str());
