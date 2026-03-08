@@ -218,6 +218,9 @@ class SpaInterface : public SpaProperties {
         /// @brief Internal writer used by `SpaTime` RWProperty.
         /// @details Sends S01..S05 + S06 (via setSpaDayOfWeek) to the controller.
         bool setSpaTime(time_t t);
+        /// @brief Internal writer used by `RB_TP_Light` RWProperty.
+        /// @details Sends `W14` to toggle the light; updates cached value to `mode`.
+        bool setRB_TP_Light(int mode);
 
     public:
         /// @brief Init SpaInterface.
@@ -579,8 +582,9 @@ class SpaInterface : public SpaProperties {
         /// @brief Clear the call back function.
         void clearUpdateCallback();
 
-        bool setRB_TP_Light(int mode);
-
+        /// @brief Light on/off state.
+        /// @details Read/write. 0=Off, 1=On.
+        RWProperty<int> RB_TP_Light{this, &SpaInterface::setRB_TP_Light};
 
         /// @brief Unified array of RWProperty pointers for each migrated pump, used for
         /// both reading state and sending commands. Grows as pumps are migrated.

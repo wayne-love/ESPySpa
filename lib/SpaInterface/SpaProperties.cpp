@@ -316,9 +316,6 @@ boolean SpaProperties::update_RB_TP_Blower(const String& s){
     return updateIntProperty(RB_TP_Blower, s);
 }
 
-boolean SpaProperties::update_RB_TP_Light(const String& s){
-    return updateIntProperty(RB_TP_Light, s);
-}
 
 boolean SpaProperties::update_RB_TP_Auto(const String& s) {
     return updateBool01Property(RB_TP_Auto, s);

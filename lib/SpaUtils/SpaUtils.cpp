@@ -200,7 +200,7 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
   json["sleepTimers"]["timer2"]["end"]=convertToTime(si.L_2SNZ_END.get());
 
   json["lights"]["speed"] = si.LSPDValue.get();
-  json["lights"]["state"] = si.getRB_TP_Light()? "ON": "OFF";
+  json["lights"]["state"] = si.RB_TP_Light.get()? "ON": "OFF";
   json["lights"]["effect"] = si.ColorMode.getLabel();
   json["lights"]["brightness"] = si.LBRTValue.get();
 

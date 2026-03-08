@@ -159,14 +159,14 @@ bool SpaInterface::setRB_TP_Pump5(int mode){
 }
 
 bool SpaInterface::setRB_TP_Light(int mode){
-    debugD("setRB_TP_Light - %i",mode);
-    if (mode == getRB_TP_Light()) {
-        debugD("No RB_TP_Light change detected - current %i, new %i", getRB_TP_Light(), mode);
+    debugD("setRB_TP_Light - %i", mode);
+    if (mode < 0 || mode > 1) throw std::out_of_range("RB_TP_Light value out of range (0..1)");
+    if (mode == RB_TP_Light.get()) {
+        debugD("No RB_TP_Light change detected - current %i, new %i", RB_TP_Light.get(), mode);
         return true;
     }
-
-    if (sendCommandCheckResult("W14","W14")) {
-        update_RB_TP_Light(String(mode));
+    if (sendCommandCheckResult("W14", "W14")) {
+        RB_TP_Light.update(mode);
         return true;
     }
     return false;
@@ -914,7 +914,7 @@ void SpaInterface::updateMeasures() {
     update_RB_TP_Ozone(statusResponseRaw[R5 + 11]);
     update_RB_TP_Heater(statusResponseRaw[R5 + 12]);
     update_RB_TP_Auto(statusResponseRaw[R5 + 13]);
-    update_RB_TP_Light(statusResponseRaw[R5 + 14]);
+    RB_TP_Light.update(statusResponseRaw[R5 + 14].toInt());
     update_WTMP(statusResponseRaw[R5 + 15]);
     update_CleanCycle(statusResponseRaw[R5 + 16]);
     RB_TP_Pump1.update(statusResponseRaw[R5 + 18].toInt());

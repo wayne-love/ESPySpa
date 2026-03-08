@@ -548,7 +548,11 @@ void setSpaProperty(String property, String p) {
       debugE("Failed to set SpaDayOfWeek '%s': %s", p.c_str(), ex.what());
     }
   } else if (property == "lights_state") {
-    si.setRB_TP_Light(p=="ON"?1:0);
+    try {
+      si.RB_TP_Light.set(p=="ON"?1:0);
+    } catch (const std::exception& ex) {
+      debugE("Failed to set RB_TP_Light: %s", ex.what());
+    }
   } else if (property == "lights_effect") {
     try {
       si.ColorMode.setLabel(p.c_str());

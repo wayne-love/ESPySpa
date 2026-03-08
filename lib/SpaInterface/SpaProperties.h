@@ -201,7 +201,7 @@ Property<bool> HV_2;
     //  Unknown encoding - Attribute<int> TouchPad2;
     //  Unknown encoding - Attribute<int> TouchPad1;
     Property<int> RB_TP_Blower;
-    Property<int> RB_TP_Light;
+
     /// @brief Auto enabled
     ///
     /// True when auto enabled
@@ -620,7 +620,7 @@ protected:
     //  Unknown encoding - TouchPad2.update_Value();
     //  Unknown encoding - TouchPad1.update_Value();
     boolean update_RB_TP_Blower(const String&);
-    boolean update_RB_TP_Light(const String&);
+
     boolean update_RB_TP_Auto(const String&);
     boolean update_RB_TP_Heater(const String&);
     boolean update_RB_TP_Ozone(const String&);
@@ -780,12 +780,6 @@ public:
 
     int getPortCurrent() { return PortCurrent.getValue(); }
     void setPortCurrentCallback(void (*callback)(int)) { PortCurrent.setCallback(callback); }
-
-    /// @brief Gets the current time from the spa clock
-    /// @return 
-    time_t getSpaTime() { return SpaTime.getValue(); }
-    void setSpaTimeCallback(void (*callback)(time_t)) { SpaTime.setCallback(callback); }
-    
 
     /// @brief Get current heater temperature multiplied by 10 (245 = 24.5 actual)
     /// @return 
@@ -1012,8 +1006,6 @@ public:
     int getRB_TP_Blower() { return RB_TP_Blower.getValue(); }
     void setRB_TP_BlowerCallback(void (*callback)(int)) { RB_TP_Blower.setCallback(callback); }
 
-    int getRB_TP_Light() { return RB_TP_Light.getValue(); }
-    void setRB_TP_LightCallback(void (*callback)(int)) { RB_TP_Light.setCallback(callback); }
 
     bool getRB_TP_Auto() { return RB_TP_Auto.getValue(); }
     void setRB_TP_AutoCallback(void (*callback)(bool)) { RB_TP_Auto.setCallback(callback); }
