@@ -190,7 +190,7 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
 
   json["blower"]["state"] = si.Outlet_Blower==2? "OFF" : "ON";
   json["blower"]["mode"] = si.Outlet_Blower.getLabel();
-  json["blower"]["speed"] = si.Outlet_Blower==2? "0" : String(si.getVARIValue());
+  json["blower"]["speed"] = si.Outlet_Blower==2? "0" : String(si.VARIValue.get());
 
   json["sleepTimers"]["timer1"]["state"] = si.L_1SNZ_DAY.getLabel();
   json["sleepTimers"]["timer2"]["state"] = si.L_2SNZ_DAY.getLabel();

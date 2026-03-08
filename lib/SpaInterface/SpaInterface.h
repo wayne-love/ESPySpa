@@ -195,6 +195,11 @@ class SpaInterface : public SpaProperties {
         /// the cached property value when the command succeeds.
         /// Throws std::out_of_range for invalid values (0..3).
         bool setMode(int mode);
+        /// @brief Internal writer used by `VARIValue` RWProperty.
+        /// @details Sends `S13:<mode>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        /// Throws std::out_of_range for invalid values (1..5).
+        bool setVARIValue(int mode);
 
     public:
         /// @brief Init SpaInterface.
@@ -517,6 +522,10 @@ class SpaInterface : public SpaProperties {
         /// @details Read/write. 0=NORM, 1=ECON, 2=AWAY, 3=WEEK.
         RWProperty<int> Mode{this, &SpaInterface::setMode, Mode_Map};
 
+        /// @brief Variable pump/blower speed.
+        /// @details Read/write. Valid range 1..5.
+        RWProperty<int> VARIValue{this, &SpaInterface::setVARIValue};
+
         /// @brief To be called by loop function of main sketch.  Does regular updates, etc.
         void loop();
 
@@ -542,11 +551,6 @@ class SpaInterface : public SpaProperties {
         /// @param t Time
         /// @return True if successful
         bool setSpaTime(time_t t);
-
-        /// @brief Set the speed of the air blower
-        /// @param mode 1 = low, 5 = high
-        /// @return True if successful
-        bool setVARIValue(int mode);
 
         /// @brief Set filtration block duration (1,2,3,4,6,8,12,24 hours)
         /// @param duration 

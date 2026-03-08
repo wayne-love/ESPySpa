@@ -532,17 +532,18 @@ bool SpaInterface::setOutlet_Blower(int mode){
 
 bool SpaInterface::setVARIValue(int mode){
     debugD("setVARIValue - %i", mode);
-    if (mode == getVARIValue()) {
-        debugD("No VARIValue change detected - current %i, new %i", getVARIValue(), mode);
+    if (mode < 1 || mode > 5) {
+        throw std::out_of_range("VARIValue out of range (1..5)");
+    }
+    if (mode == VARIValue.get()) {
+        debugD("No VARIValue change detected - current %i, new %i", VARIValue.get(), mode);
         return true;
     }
 
-    if (mode > 0 && mode < 6) {
-        String smode = String(mode);
-        if (sendCommandCheckResult("S13:"+smode,smode+"  S13")) {
-            update_VARIValue(smode);
-            return true;
-        }
+    String smode = String(mode);
+    if (sendCommandCheckResult("S13:"+smode,smode+"  S13")) {
+        VARIValue.update(mode);
+        return true;
     }
     return false;
 }
@@ -916,7 +917,7 @@ void SpaInterface::updateMeasures() {
     RB_TP_Pump5.update(statusResponseRaw[R5 + 22].toInt());
     #pragma endregion
     #pragma region R6
-    update_VARIValue(statusResponseRaw[R6 + 1]);
+    VARIValue.update(statusResponseRaw[R6 + 1].toInt());
     LBRTValue.update(statusResponseRaw[R6 + 2].toInt());
     CurrClr.update(statusResponseRaw[R6 + 3].toInt());
     ColorMode.update(statusResponseRaw[R6 + 4].toInt());

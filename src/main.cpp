@@ -586,7 +586,7 @@ void setSpaProperty(String property, String p) {
   } else if (property == "blower_speed") {
     try {
       if (p=="0") si.Outlet_Blower.set(2);
-      else si.setVARIValue(p.toInt());
+      else si.VARIValue.set(p.toInt());
     } catch (const std::exception& ex) {
       debugE("Failed to set blower speed: %s", ex.what());
     }

@@ -229,11 +229,7 @@ Property<bool> HV_2;
 #pragma endregion
 #pragma region R6
     // R6
-    /// @brief Blower variable speed
-    ///
-    /// min 1, max 5
-    Property<int> VARIValue;
-    /// @brief Filter run time (in hours) per block
+/// @brief Filter run time (in hours) per block
     Property<int> FiltSetHrs;
     /// @brief Filter block duration (hours)
     Property<int> FiltBlockHrs;
@@ -645,7 +641,6 @@ protected:
     boolean update_CleanCycle(const String&);
 #pragma endregion
 #pragma region R6
-    boolean update_VARIValue(const String&);
     boolean update_FiltHrs(const String&);
     boolean update_FiltBlockHrs(const String&);
     boolean update_L_24HOURS(const String&);
@@ -1054,9 +1049,6 @@ public:
 
     bool getCleanCycle() { return CleanCycle.getValue(); }
     void setCleanCycleCallback(void (*callback)(bool)) { CleanCycle.setCallback(callback); }
-
-    int getVARIValue() { return VARIValue.getValue(); }
-    void setVARIValueCallback(void (*callback)(int)) { VARIValue.setCallback(callback); }
 
     int getFiltHrs() { return FiltSetHrs.getValue(); }
     void setFiltHrsCallback(void (*callback)(int)) { FiltSetHrs.setCallback(callback); }
