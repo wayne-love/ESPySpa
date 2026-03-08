@@ -152,10 +152,6 @@ Property<bool> HV_2;
 #pragma endregion
 #pragma region R4
     // R4
-    /// @brief Operation mode
-    ///
-    /// One of NORM, ECON, AWAY, WEEK
-    Property<String> Mode;
     /// @brief Service Timer 1 (wks) 0 = off
     Property<int> Ser1_Timer;
     /// @brief Service Timer 2 (wks) 0 = off
@@ -610,7 +606,6 @@ protected:
 //    boolean update_HV_2(const String&);
 #pragma endregion
 #pragma region R4
-    boolean update_Mode(const String&);
     boolean update_Ser1_Timer(const String&);
     boolean update_Ser2_Timer(const String&);
     boolean update_Ser3_Timer(const String&);
@@ -941,17 +936,6 @@ public:
     int getHCON() { return HCON.getValue(); }
     void setHCONCallback(void (*callback)(int)) { HCON.setCallback(callback); }
 
-    String getMode() { return Mode.getValue(); }
-    int getModeIndex(String mode) {
-        for (size_t i = 0; i < spaModeStrings.size(); i++)
-        {
-            if (spaModeStrings[i] == mode)
-                return i;
-        }
-        return -1;
-    }
-    void setModeCallback(void (*callback)(String)) { Mode.setCallback(callback); }
-    const std::array <String, 4> spaModeStrings = {"NORM","ECON", "AWAY","WEEK"};
 
     int getSer1_Timer() { return Ser1_Timer.getValue(); }
     void setSer1_TimerCallback(void (*callback)(int)) { Ser1_Timer.setCallback(callback); }

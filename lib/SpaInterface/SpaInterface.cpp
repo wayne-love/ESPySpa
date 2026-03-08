@@ -549,25 +549,18 @@ bool SpaInterface::setVARIValue(int mode){
 
 bool SpaInterface::setMode(int mode){
     debugD("setMode - %i", mode);
-    if (mode == getModeIndex(getMode())) {
-        debugD("No Mode change detected - current %i, new %i", getModeIndex(getMode()), mode);
+    if (mode < 0 || mode > 3) {
+        throw std::out_of_range("Mode value out of range (0..3)");
+    }
+    if (mode == Mode.get()) {
+        debugD("No Mode change detected - current %i, new %i", Mode.get(), mode);
         return true;
     }
-    
+
     String smode = String(mode);
     if (sendCommandCheckResult("W66:"+smode,smode)) {
-        update_Mode(spaModeStrings[mode]);
+        Mode.update(mode);
         return true;
-    }
-    return false;
-}
-
-bool SpaInterface::setMode(String mode){
-    debugD("setMode - %s", mode.c_str());
-    for (uint x=0; x<spaModeStrings.size(); x++) {
-        if (spaModeStrings[x] == mode) {
-            return setMode(x);
-        }
     }
     return false;
 }
@@ -878,7 +871,7 @@ void SpaInterface::updateMeasures() {
     // update_HV_2(statusResponseRaw[R3+25]);
     #pragma endregion
     #pragma region R4
-    update_Mode(statusResponseRaw[R4+1]);
+    try { Mode.updateFromLabel(statusResponseRaw[R4+1].c_str()); } catch (const std::exception& ex) { debugE("Mode update failed: %s", ex.what()); }
     update_Ser1_Timer(statusResponseRaw[R4+2]);
     update_Ser2_Timer(statusResponseRaw[R4+3]);
     update_Ser3_Timer(statusResponseRaw[R4+4]);

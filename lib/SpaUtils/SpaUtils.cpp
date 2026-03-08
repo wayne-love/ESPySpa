@@ -145,7 +145,7 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
   json["status"]["heatingActive"] = si.getRB_TP_Heater()? "ON": "OFF";
   json["status"]["ozoneActive"] = si.getRB_TP_Ozone()? "ON": "OFF";
   json["status"]["state"] = si.getStatus();
-  json["status"]["spaMode"] = si.getMode();
+  json["status"]["spaMode"] = si.Mode.getLabel();
   json["status"]["controller"] = si.getModel();
   String firmware = si.getSVER().substring(3);
   firmware.replace(' ', '.');

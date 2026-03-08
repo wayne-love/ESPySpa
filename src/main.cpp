@@ -633,7 +633,11 @@ void setSpaProperty(String property, String p) {
       debugE("Failed to set L_2SNZ_END: %s", ex.what());
     }
   } else if (property == "status_spaMode") {
-    si.setMode(p);
+    try {
+      si.Mode.setLabel(p.c_str());
+    } catch (const std::exception& ex) {
+      debugE("Failed to set Mode from label '%s': %s", p.c_str(), ex.what());
+    }
   } else if (property == "filtration_blockDuration") {
     si.setFiltBlockHrs(p);
   } else if (property == "filtration_hours") {

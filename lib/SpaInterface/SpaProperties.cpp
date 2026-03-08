@@ -231,10 +231,6 @@ boolean SpaProperties::update_HCON(const String& s){
     return updateIntProperty(HCON, s);
 }
 
-boolean SpaProperties::update_Mode(const String& s){
-    return updateStringProperty(Mode, s);
-}
-
 boolean SpaProperties::update_Ser1_Timer(const String& s){
     return updateIntProperty(Ser1_Timer, s);
 }

@@ -190,6 +190,11 @@ class SpaInterface : public SpaProperties {
         /// the cached property value when the command succeeds.
         /// Throws std::out_of_range for invalid values (0..2).
         bool setOutlet_Blower(int mode);
+        /// @brief Internal writer used by `Mode` RWProperty.
+        /// @details Sends `W66:<mode>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        /// Throws std::out_of_range for invalid values (0..3).
+        bool setMode(int mode);
 
     public:
         /// @brief Init SpaInterface.
@@ -250,6 +255,20 @@ class SpaInterface : public SpaProperties {
             void update(T newValue) {
                 _value = newValue;
                 _hasValue = true;
+            }
+            // Reverse-lookup by label string; throws std::invalid_argument if the label
+            // is not found in the map or if no map is configured.
+            void updateFromLabel(const char* label) {
+                if (!label || !this->_map || this->_mapSize == 0) {
+                    throw std::invalid_argument("updateFromLabel: no label map configured");
+                }
+                for (size_t i = 0; i < this->_mapSize; i++) {
+                    if (strcmp(this->_map[i].label, label) == 0) {
+                        update(this->_map[i].value);
+                        return;
+                    }
+                }
+                throw std::invalid_argument(String("updateFromLabel: unknown label '") + label + "'");
             }
 
             friend class SpaInterface;
@@ -487,6 +506,17 @@ class SpaInterface : public SpaProperties {
         /// @details Read/write. 0=Variable, 1=Ramp, 2=Off.
         RWProperty<int> Outlet_Blower{this, &SpaInterface::setOutlet_Blower, Outlet_Blower_Map};
 
+        /// @brief Spa operating mode label map.
+        static constexpr ROProperty<int>::LabelValue Mode_Map[] = {
+            {"NORM", 0},
+            {"ECON", 1},
+            {"AWAY", 2},
+            {"WEEK", 3},
+        };
+        /// @brief Spa operating mode.
+        /// @details Read/write. 0=NORM, 1=ECON, 2=AWAY, 3=WEEK.
+        RWProperty<int> Mode{this, &SpaInterface::setMode, Mode_Map};
+
         /// @brief To be called by loop function of main sketch.  Does regular updates, etc.
         void loop();
 
@@ -517,12 +547,6 @@ class SpaInterface : public SpaProperties {
         /// @param mode 1 = low, 5 = high
         /// @return True if successful
         bool setVARIValue(int mode);
-
-        /// @brief Set Spa mode (0 --> 4, {"NORM","ECON","AWAY","WEEK"};)
-        /// @param mode
-        /// @return Returns True if succesful
-        bool setMode(int mode);
-        bool setMode(String mode);
 
         /// @brief Set filtration block duration (1,2,3,4,6,8,12,24 hours)
         /// @param duration 
