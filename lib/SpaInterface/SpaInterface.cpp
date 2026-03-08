@@ -493,23 +493,23 @@ bool SpaInterface::setSpaTime(time_t t){
     tmp = String(day(t));
     outcome = outcome && sendCommandCheckResult("S03:"+tmp,tmp);
     delay(100);
-    
+
     tmp = String(hour(t));
     outcome = outcome && sendCommandCheckResult("S04:"+tmp,tmp);
     delay(100);
-    
+
     tmp = String(minute(t));
     outcome = outcome && sendCommandCheckResult("S05:"+tmp,tmp);
     delay(100);
-    
+
     int weekDay = weekday(t); // day of the week (1-7), Sunday is day 1 (Arduino Time Library)
     // Convert to the format required by Spa: day of the week (0-6), Monday is day 0
     if (weekDay == 1) weekDay = 6;
     else weekDay -= 2;
     outcome = outcome && setSpaDayOfWeek(weekDay);
-    
-    return outcome;
 
+    if (outcome) SpaTime.update(t);
+    return outcome;
 }
 
 bool SpaInterface::setOutlet_Blower(int mode){
@@ -831,7 +831,16 @@ void SpaInterface::updateMeasures() {
     update_CaseTemperature(statusResponseRaw[R2+3]);
     update_PortCurrent(statusResponseRaw[R2+4]);
     SpaDayOfWeek.update(statusResponseRaw[R2+5].toInt());
-    update_SpaTime(statusResponseRaw[R2+11], statusResponseRaw[R2+10], statusResponseRaw[R2+9], statusResponseRaw[R2+6], statusResponseRaw[R2+7], statusResponseRaw[R2+8]);
+    {
+        tmElements_t tm;
+        tm.Year   = CalendarYrToTm(statusResponseRaw[R2+11].toInt());
+        tm.Month  = statusResponseRaw[R2+10].toInt();
+        tm.Day    = statusResponseRaw[R2+9].toInt();
+        tm.Hour   = statusResponseRaw[R2+6].toInt();
+        tm.Minute = statusResponseRaw[R2+7].toInt();
+        tm.Second = statusResponseRaw[R2+8].toInt();
+        SpaTime.update(makeTime(tm));
+    }
     update_HeaterTemperature(statusResponseRaw[R2+12]);
     update_PoolTemperature(statusResponseRaw[R2+13]);
     update_WaterPresent(statusResponseRaw[R2+14]);

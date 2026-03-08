@@ -46,9 +46,7 @@ private:
     /// @brief 12v port current (mA)
     Property<int> PortCurrent;
 
-        /// @brief Current time on Spa RTC
-    Property<time_t> SpaTime;
-    /// @brief Heater temperature ('C)
+        /// @brief Heater temperature ('C)
     Property<int> HeaterTemperature;
     /// @brief Pool temperature ('C). Note this seems to return rubbish most of the time.
     Property<int> PoolTemperature;
@@ -543,11 +541,9 @@ Property<bool> HV_2;
 
 protected:
 #pragma region R2
-    boolean update_SpaTime(const String& year, const String& month, const String& day, const String& hour, const String& minute, const String& second);
     boolean update_MainsVoltage(const String&);
     boolean update_CaseTemperature(const String&);
     boolean update_PortCurrent(const String&);
-    boolean update_SpaTime(const String&);
     boolean update_HeaterTemperature(const String&);
     boolean update_PoolTemperature(const String&);
     boolean update_WaterPresent(const String&);
@@ -784,12 +780,6 @@ public:
 
     int getPortCurrent() { return PortCurrent.getValue(); }
     void setPortCurrentCallback(void (*callback)(int)) { PortCurrent.setCallback(callback); }
-
-    /// @brief Gets the current time from the spa clock
-    /// @return 
-    time_t getSpaTime() { return SpaTime.getValue(); }
-    void setSpaTimeCallback(void (*callback)(time_t)) { SpaTime.setCallback(callback); }
-    
 
     /// @brief Get current heater temperature multiplied by 10 (245 = 24.5 actual)
     /// @return 

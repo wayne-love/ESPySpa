@@ -173,17 +173,17 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
     }
   }
 
-  String y=String(year(si.getSpaTime()));
-  String m=String(month(si.getSpaTime()));
-  if (month(si.getSpaTime())<10) m = "0"+m;
-  String d=String(day(si.getSpaTime()));
-  if (day(si.getSpaTime())<10) d = "0"+d;
-  String h=String(hour(si.getSpaTime()));
-  if (hour(si.getSpaTime())<10) h = "0"+h;
-  String min=String(minute(si.getSpaTime()));
-  if (minute(si.getSpaTime())<10) min = "0"+min;
-  String s=String(second(si.getSpaTime()));
-  if (second(si.getSpaTime())<10) s = "0"+s;
+  String y=String(year(si.SpaTime.get()));
+  String m=String(month(si.SpaTime.get()));
+  if (month(si.SpaTime.get())<10) m = "0"+m;
+  String d=String(day(si.SpaTime.get()));
+  if (day(si.SpaTime.get())<10) d = "0"+d;
+  String h=String(hour(si.SpaTime.get()));
+  if (hour(si.SpaTime.get())<10) h = "0"+h;
+  String min=String(minute(si.SpaTime.get()));
+  if (minute(si.SpaTime.get())<10) min = "0"+min;
+  String s=String(second(si.SpaTime.get()));
+  if (second(si.SpaTime.get())<10) s = "0"+s;
 
   json["status"]["datetime"]=y+"-"+m+"-"+d+" "+h+":"+min+":"+s;
   json["status"]["dayOfWeek"]=si.SpaDayOfWeek.getLabel();

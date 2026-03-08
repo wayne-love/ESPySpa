@@ -40,21 +40,6 @@ static boolean updateTriStateProperty(Property<int>& prop, const String& s) {
     return true;
 }
 
-boolean SpaProperties::update_SpaTime(const String& year, const String& month, const String& day, const String& hour, const String& minute, const String& second){
-
-    tmElements_t tm;
-    tm.Year=CalendarYrToTm(year.toInt());
-    tm.Month=month.toInt();
-    tm.Day=day.toInt();
-    tm.Hour=hour.toInt();
-    tm.Minute=minute.toInt();
-    tm.Second=second.toInt();
-
-    SpaTime.update_Value(makeTime(tm));
-
-    return true;
-}
-
 boolean SpaProperties::update_MainsVoltage(const String& s){
     return updateIntProperty(MainsVoltage, s);
 }

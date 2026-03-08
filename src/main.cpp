@@ -536,7 +536,11 @@ void setSpaProperty(String property, String p) {
     tm.Hour=p.substring(11,13).toInt();
     tm.Minute=p.substring(14,16).toInt();
     tm.Second=p.substring(17).toInt();
-    si.setSpaTime(makeTime(tm));
+    try {
+      si.SpaTime.set(makeTime(tm));
+    } catch (const std::exception& ex) {
+      debugE("Failed to set SpaTime: %s", ex.what());
+    }
   } else if (property == "status_dayOfWeek") {
     try {
       si.SpaDayOfWeek.setLabel(p.c_str());

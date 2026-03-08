@@ -215,6 +215,9 @@ class SpaInterface : public SpaProperties {
         /// the cached property value when the command succeeds.
         /// Throws std::out_of_range for invalid values (0..2).
         bool setLockMode(int mode);
+        /// @brief Internal writer used by `SpaTime` RWProperty.
+        /// @details Sends S01..S05 + S06 (via setSpaDayOfWeek) to the controller.
+        bool setSpaTime(time_t t);
 
     public:
         /// @brief Init SpaInterface.
@@ -558,6 +561,10 @@ class SpaInterface : public SpaProperties {
         /// @details Read/write. 0=Unlocked, 1=Partially Locked, 2=Locked.
         RWProperty<int> LockMode{this, &SpaInterface::setLockMode, LockMode_Map};
 
+        /// @brief Spa RTC clock value.
+        /// @details Read/write. Writing sends S01..S05 + S06 to the controller.
+        RWProperty<time_t> SpaTime{this, &SpaInterface::setSpaTime};
+
         /// @brief To be called by loop function of main sketch.  Does regular updates, etc.
         void loop();
 
@@ -574,11 +581,6 @@ class SpaInterface : public SpaProperties {
 
         bool setRB_TP_Light(int mode);
 
-
-        /// @brief Sets the clock on the spa
-        /// @param t Time
-        /// @return True if successful
-        bool setSpaTime(time_t t);
 
         /// @brief Unified array of RWProperty pointers for each migrated pump, used for
         /// both reading state and sending commands. Grows as pumps are migrated.
