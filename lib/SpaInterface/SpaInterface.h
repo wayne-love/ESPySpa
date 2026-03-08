@@ -565,10 +565,6 @@ class SpaInterface : public SpaProperties {
         /// @return 
         bool isInitialised();
 
-        /// @brief Water temperature set point multiplied by 10 (380 = 38.0 actual)
-        /// @return
-        int getSTMP() { return STMP.get(); }
-
         /// @brief Set the function to be called when properties have been updated.
         /// @param f 
         void setUpdateCallback(void (*f)());
