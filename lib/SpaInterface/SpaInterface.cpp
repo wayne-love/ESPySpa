@@ -158,6 +158,10 @@ bool SpaInterface::setRB_TP_Pump5(int mode){
     return false;
 }
 
+bool SpaInterface::setStatusResponse(String s) {
+    return true;
+}
+
 bool SpaInterface::setRB_TP_Light(int mode){
     debugD("setRB_TP_Light - %i", mode);
     if (mode < 0 || mode > 1) throw std::out_of_range("RB_TP_Light value out of range (0..1)");
@@ -474,7 +478,7 @@ bool SpaInterface::setSpaTime(time_t t){
     String tmp;
     bool outcome;
 
-    tmp = String(year(t));
+    tmp = String(year(t) % 100);
     outcome = sendCommandCheckResult("S01:"+tmp, tmp);
     delay(100);
 
@@ -629,11 +633,11 @@ bool SpaInterface::readStatus() {
     int majorFirmwarwVersion = 0;
 
     if (_initialised) {
-        uint spaceIndex = getSVER().indexOf(' ', 4);
+        uint spaceIndex = SVER.get().indexOf(' ', 4);
         if (spaceIndex != -1) {
-            majorFirmwarwVersion = getSVER().substring(4, spaceIndex).toInt(); // Skip the 'V' character
+            majorFirmwarwVersion = SVER.get().substring(4, spaceIndex).toInt(); // Skip the 'V' character
         }
-        debugV("Firmware: %s, majorFirmwareVersion: %i", getSVER().c_str(), majorFirmwarwVersion);
+        debugV("Firmware: %s, majorFirmwareVersion: %i", SVER.get().c_str(), majorFirmwarwVersion);
     }
 
     // read the first field and validate the response
@@ -742,7 +746,7 @@ bool SpaInterface::readStatus() {
     //Flush the remaining data from the buffer as the last field is meaningless
     statusResponseTmp = statusResponseTmp + flushSerialReadBuffer(true);
 
-    statusResponse.update_Value(statusResponseTmp);
+    statusResponse.update(statusResponseTmp);
 
     if ((majorFirmwarwVersion > 2 && registerCounter < 12) || (majorFirmwarwVersion < 3 && registerCounter < 11)) {
         debugE("Throwing exception - not enough registers, we only read: %i", registerCounter);
@@ -819,9 +823,9 @@ void SpaInterface::clearUpdateCallback() {
 void SpaInterface::updateMeasures() {
     #pragma region R2
     MainsCurrent.update(statusResponseRaw[R2+1].toInt());
-    update_MainsVoltage(statusResponseRaw[R2+2]);
-    update_CaseTemperature(statusResponseRaw[R2+3]);
-    update_PortCurrent(statusResponseRaw[R2+4]);
+    MainsVoltage.update(statusResponseRaw[R2+2].toInt());
+    CaseTemperature.update(statusResponseRaw[R2+3].toInt());
+    PortCurrent.update(statusResponseRaw[R2+4].toInt());
     SpaDayOfWeek.update(statusResponseRaw[R2+5].toInt());
     {
         tmElements_t tm;
@@ -833,90 +837,90 @@ void SpaInterface::updateMeasures() {
         tm.Second = statusResponseRaw[R2+8].toInt();
         SpaTime.update(makeTime(tm));
     }
-    update_HeaterTemperature(statusResponseRaw[R2+12]);
-    update_PoolTemperature(statusResponseRaw[R2+13]);
-    update_WaterPresent(statusResponseRaw[R2+14]);
-    update_AwakeMinutesRemaining(statusResponseRaw[R2+16]);
-    update_FiltPumpRunTimeTotal(statusResponseRaw[R2+17]);
-    update_FiltPumpReqMins(statusResponseRaw[R2+18]);
-    update_LoadTimeOut(statusResponseRaw[R2+19]);
-    update_HourMeter(statusResponseRaw[R2+20]);
-    update_Relay1(statusResponseRaw[R2+21]);
-    update_Relay2(statusResponseRaw[R2+22]);
-    update_Relay3(statusResponseRaw[R2+23]);
-    update_Relay4(statusResponseRaw[R2+24]);
-    update_Relay5(statusResponseRaw[R2+25]);
-    update_Relay6(statusResponseRaw[R2+26]);
-    update_Relay7(statusResponseRaw[R2+27]);
-    update_Relay8(statusResponseRaw[R2+28]);
-    update_Relay9(statusResponseRaw[R2+29]); 
+    HeaterTemperature.update(statusResponseRaw[R2+12].toInt());
+    PoolTemperature.update(statusResponseRaw[R2+13].toInt());
+    WaterPresent.update(statusResponseRaw[R2+14] == "1");
+    AwakeMinutesRemaining.update(statusResponseRaw[R2+16].toInt());
+    FiltPumpRunTimeTotal.update(statusResponseRaw[R2+17].toInt());
+    FiltPumpReqMins.update(statusResponseRaw[R2+18].toInt());
+    LoadTimeOut.update(statusResponseRaw[R2+19].toInt());
+    HourMeter.update(statusResponseRaw[R2+20].toInt());
+    Relay1.update(statusResponseRaw[R2+21].toInt());
+    Relay2.update(statusResponseRaw[R2+22].toInt());
+    Relay3.update(statusResponseRaw[R2+23].toInt());
+    Relay4.update(statusResponseRaw[R2+24].toInt());
+    Relay5.update(statusResponseRaw[R2+25].toInt());
+    Relay6.update(statusResponseRaw[R2+26].toInt());
+    Relay7.update(statusResponseRaw[R2+27].toInt());
+    Relay8.update(statusResponseRaw[R2+28].toInt());
+    Relay9.update(statusResponseRaw[R2+29].toInt());
     #pragma endregion
     #pragma region R3
-    update_CLMT(statusResponseRaw[R3+1]);
-    update_PHSE(statusResponseRaw[R3+2]);
-    update_LLM1(statusResponseRaw[R3+3]);
-    update_LLM2(statusResponseRaw[R3+4]);
-    update_LLM3(statusResponseRaw[R3+5]);
-    update_SVER(statusResponseRaw[R3+6]);
-    update_Model(statusResponseRaw[R3+7]); 
-    update_SerialNo1(statusResponseRaw[R3+8]);
-    update_SerialNo2(statusResponseRaw[R3+9]); 
-    update_D1(statusResponseRaw[R3+10]);
-    update_D2(statusResponseRaw[R3+11]);
-    update_D3(statusResponseRaw[R3+12]);
-    update_D4(statusResponseRaw[R3+13]);
-    update_D5(statusResponseRaw[R3+14]);
-    update_D6(statusResponseRaw[R3+15]);
-    update_Pump(statusResponseRaw[R3+16]);
-    update_LS(statusResponseRaw[R3+17]);
-    update_HV(statusResponseRaw[R3+18]);
-    update_SnpMR(statusResponseRaw[R3+19]);
-    update_Status(statusResponseRaw[R3+20]);
-    update_PrimeCount(statusResponseRaw[R3+21]);
-    update_EC(statusResponseRaw[R3+22]);
-    update_HAMB(statusResponseRaw[R3+23]);
-    update_HCON(statusResponseRaw[R3+24]);
+    CLMT.update(statusResponseRaw[R3+1].toInt());
+    PHSE.update(statusResponseRaw[R3+2].toInt());
+    LLM1.update(statusResponseRaw[R3+3].toInt());
+    LLM2.update(statusResponseRaw[R3+4].toInt());
+    LLM3.update(statusResponseRaw[R3+5].toInt());
+    SVER.update(statusResponseRaw[R3+6]);
+    Model.update(statusResponseRaw[R3+7]);
+    SerialNo1.update(statusResponseRaw[R3+8]);
+    SerialNo2.update(statusResponseRaw[R3+9]);
+    D1.update(statusResponseRaw[R3+10] == "1");
+    D2.update(statusResponseRaw[R3+11] == "1");
+    D3.update(statusResponseRaw[R3+12] == "1");
+    D4.update(statusResponseRaw[R3+13] == "1");
+    D5.update(statusResponseRaw[R3+14] == "1");
+    D6.update(statusResponseRaw[R3+15] == "1");
+    Pump.update(statusResponseRaw[R3+16]);
+    LS.update(statusResponseRaw[R3+17].toInt());
+    HV.update(statusResponseRaw[R3+18] == "1");
+    SnpMR.update(statusResponseRaw[R3+19].toInt());
+    Status.update(statusResponseRaw[R3+20]);
+    PrimeCount.update(statusResponseRaw[R3+21].toInt());
+    EC.update(statusResponseRaw[R3+22].toInt());
+    HAMB.update(statusResponseRaw[R3+23].toInt());
+    HCON.update(statusResponseRaw[R3+24].toInt());
     // update_HV_2(statusResponseRaw[R3+25]);
     #pragma endregion
     #pragma region R4
     try { Mode.updateFromLabel(statusResponseRaw[R4+1].c_str()); } catch (const std::exception& ex) { debugE("Mode update failed: %s", ex.what()); }
-    update_Ser1_Timer(statusResponseRaw[R4+2]);
-    update_Ser2_Timer(statusResponseRaw[R4+3]);
-    update_Ser3_Timer(statusResponseRaw[R4+4]);
-    update_HeatMode(statusResponseRaw[R4+5]);
-    update_PumpIdleTimer(statusResponseRaw[R4+6]);
-    update_PumpRunTimer(statusResponseRaw[R4+7]);
-    update_AdtPoolHys(statusResponseRaw[R4+8]);
-    update_AdtHeaterHys(statusResponseRaw[R4+9]);
-    update_Power(statusResponseRaw[R4+10]);
-    update_Power_kWh(statusResponseRaw[R4+11]);
-    update_Power_Today(statusResponseRaw[R4+12]);
-    update_Power_Yesterday(statusResponseRaw[R4+13]);
-    update_ThermalCutOut(statusResponseRaw[R4+14]);
-    update_Test_D1(statusResponseRaw[R4+15]);
-    update_Test_D2(statusResponseRaw[R4+16]);
-    update_Test_D3(statusResponseRaw[R4+17]);
-    update_ElementHeatSourceOffset(statusResponseRaw[R4+18]);
-    update_Frequency(statusResponseRaw[R4+19]);
-    update_HPHeatSourceOffset_Heat(statusResponseRaw[R4+20]);
-    update_HPHeatSourceOffset_Cool(statusResponseRaw[R4+21]);
-    update_HeatSourceOffTime(statusResponseRaw[R4+22]);
-    update_Vari_Speed(statusResponseRaw[R4+24]);
-    update_Vari_Percent(statusResponseRaw[R4+25]);
-    update_Vari_Mode(statusResponseRaw[R4+23]);
+    Ser1_Timer.update(statusResponseRaw[R4+2].toInt());
+    Ser2_Timer.update(statusResponseRaw[R4+3].toInt());
+    Ser3_Timer.update(statusResponseRaw[R4+4].toInt());
+    HeatMode.update(statusResponseRaw[R4+5].toInt());
+    PumpIdleTimer.update(statusResponseRaw[R4+6].toInt());
+    PumpRunTimer.update(statusResponseRaw[R4+7].toInt());
+    AdtPoolHys.update(statusResponseRaw[R4+8].toInt());
+    AdtHeaterHys.update(statusResponseRaw[R4+9].toInt());
+    Power.update(statusResponseRaw[R4+10].toInt());
+    Power_kWh.update(statusResponseRaw[R4+11].toInt());
+    Power_Today.update(statusResponseRaw[R4+12].toInt());
+    Power_Yesterday.update(statusResponseRaw[R4+13].toInt());
+    ThermalCutOut.update(statusResponseRaw[R4+14].toInt());
+    Test_D1.update(statusResponseRaw[R4+15].toInt());
+    Test_D2.update(statusResponseRaw[R4+16].toInt());
+    Test_D3.update(statusResponseRaw[R4+17].toInt());
+    ElementHeatSourceOffset.update(statusResponseRaw[R4+18].toInt());
+    Frequency.update(statusResponseRaw[R4+19].toInt());
+    HPHeatSourceOffset_Heat.update(statusResponseRaw[R4+20].toInt());
+    HPHeatSourceOffset_Cool.update(statusResponseRaw[R4+21].toInt());
+    HeatSourceOffTime.update(statusResponseRaw[R4+22].toInt());
+    Vari_Speed.update(statusResponseRaw[R4+24].toInt());
+    Vari_Percent.update(statusResponseRaw[R4+25].toInt());
+    Vari_Mode.update(statusResponseRaw[R4+23].toInt());
     #pragma endregion
     #pragma region R5
     //R5
     // Unknown encoding - TouchPad2.updateValue();
     // Unknown encoding - TouchPad1.updateValue();
     //RB_TP_Blower.updateValue(statusResponseRaw[R5 + 5]);
-    update_RB_TP_Sleep(statusResponseRaw[R5 + 10]);
-    update_RB_TP_Ozone(statusResponseRaw[R5 + 11]);
-    update_RB_TP_Heater(statusResponseRaw[R5 + 12]);
-    update_RB_TP_Auto(statusResponseRaw[R5 + 13]);
+    RB_TP_Sleep.update(statusResponseRaw[R5 + 10] == "1");
+    RB_TP_Ozone.update(statusResponseRaw[R5 + 11] == "1");
+    RB_TP_Heater.update(statusResponseRaw[R5 + 12] == "1");
+    RB_TP_Auto.update(statusResponseRaw[R5 + 13] == "1");
     RB_TP_Light.update(statusResponseRaw[R5 + 14].toInt());
-    update_WTMP(statusResponseRaw[R5 + 15]);
-    update_CleanCycle(statusResponseRaw[R5 + 16]);
+    WTMP.update(statusResponseRaw[R5 + 15].toInt());
+    CleanCycle.update(statusResponseRaw[R5 + 16] == "1");
     RB_TP_Pump1.update(statusResponseRaw[R5 + 18].toInt());
     RB_TP_Pump2.update(statusResponseRaw[R5 + 19].toInt());
     RB_TP_Pump3.update(statusResponseRaw[R5 + 20].toInt());
@@ -932,101 +936,101 @@ void SpaInterface::updateMeasures() {
     FiltHrs.update(statusResponseRaw[R6 + 6].toInt());
     FiltBlockHrs.update(statusResponseRaw[R6 + 7].toInt());
     STMP.update(statusResponseRaw[R6 + 8].toInt());
-    update_L_24HOURS(statusResponseRaw[R6 + 9]);
-    update_PSAV_LVL(statusResponseRaw[R6 + 10]);
-    update_PSAV_BGN(statusResponseRaw[R6 + 11]);
-    update_PSAV_END(statusResponseRaw[R6 + 12]);
+    L_24HOURS.update(statusResponseRaw[R6 + 9].toInt());
+    PSAV_LVL.update(statusResponseRaw[R6 + 10].toInt());
+    PSAV_BGN.update(statusResponseRaw[R6 + 11].toInt());
+    PSAV_END.update(statusResponseRaw[R6 + 12].toInt());
     L_1SNZ_DAY.update(statusResponseRaw[R6 + 13].toInt());
     L_2SNZ_DAY.update(statusResponseRaw[R6 + 14].toInt());
     L_1SNZ_BGN.update(statusResponseRaw[R6 + 15].toInt());
     L_2SNZ_BGN.update(statusResponseRaw[R6 + 16].toInt());
     L_1SNZ_END.update(statusResponseRaw[R6 + 17].toInt());
     L_2SNZ_END.update(statusResponseRaw[R6 + 18].toInt());
-    update_DefaultScrn(statusResponseRaw[R6 + 19]);
-    update_TOUT(statusResponseRaw[R6 + 20]);
-    update_VPMP(statusResponseRaw[R6 + 21]);
-    update_HIFI(statusResponseRaw[R6 + 22]);
-    update_BRND(statusResponseRaw[R6 + 23]);
+    DefaultScrn.update(statusResponseRaw[R6 + 19].toInt());
+    TOUT.update(statusResponseRaw[R6 + 20].toInt());
+    VPMP.update(statusResponseRaw[R6 + 21] == "1");
+    HIFI.update(statusResponseRaw[R6 + 22] == "1");
+    BRND.update(statusResponseRaw[R6 + 23].toInt());
     // Note: We only have 23 registers in V2 firmware
     if (R6 > 23) {
-        update_PRME(statusResponseRaw[R6 + 24]);
-        update_ELMT(statusResponseRaw[R6 + 25]);
-        update_TYPE(statusResponseRaw[R6 + 26]);
-        update_GAS(statusResponseRaw[R6 + 27]);
+        PRME.update(statusResponseRaw[R6 + 24].toInt());
+        ELMT.update(statusResponseRaw[R6 + 25].toInt());
+        TYPE.update(statusResponseRaw[R6 + 26].toInt());
+        GAS.update(statusResponseRaw[R6 + 27].toInt());
     }
     #pragma endregion
     #pragma region R7
-    update_WCLNTime(statusResponseRaw[R7 + 1]);
+    WCLNTime.update(statusResponseRaw[R7 + 1].toInt());
     // The following 2 may be reversed
-    update_TemperatureUnits(statusResponseRaw[R7 + 3]);
-    update_OzoneOff(statusResponseRaw[R7 + 2]);
-    update_Ozone24(statusResponseRaw[R7 + 4]);
-    update_Circ24(statusResponseRaw[R7 + 6]);
-    update_CJET(statusResponseRaw[R7 + 5]);
+    TemperatureUnits.update(statusResponseRaw[R7 + 3] == "1");
+    OzoneOff.update(statusResponseRaw[R7 + 2] == "1");
+    Ozone24.update(statusResponseRaw[R7 + 4] == "1");
+    Circ24.update(statusResponseRaw[R7 + 6] == "1");
+    CJET.update(statusResponseRaw[R7 + 5] == "1");
     // 0 = off, 1 = step, 2 = variable
-    update_VELE(statusResponseRaw[R7 + 7]);
+    VELE.update(statusResponseRaw[R7 + 7] == "1");
     //update_StartDD(statusResponseRaw[R7 + 8]);
     //update_StartMM(statusResponseRaw[R7 + 9]);
     //update_StartYY(statusResponseRaw[R7 + 10]);
-    update_V_Max(statusResponseRaw[R7 + 11]);
-    update_V_Min(statusResponseRaw[R7 + 12]);
-    update_V_Max_24(statusResponseRaw[R7 + 13]);
-    update_V_Min_24(statusResponseRaw[R7 + 14]);
-    update_CurrentZero(statusResponseRaw[R7 + 15]);
-    update_CurrentAdjust(statusResponseRaw[R7 + 16]);
-    update_VoltageAdjust(statusResponseRaw[R7 + 17]);
+    V_Max.update(statusResponseRaw[R7 + 11].toInt());
+    V_Min.update(statusResponseRaw[R7 + 12].toInt());
+    V_Max_24.update(statusResponseRaw[R7 + 13].toInt());
+    V_Min_24.update(statusResponseRaw[R7 + 14].toInt());
+    CurrentZero.update(statusResponseRaw[R7 + 15].toInt());
+    CurrentAdjust.update(statusResponseRaw[R7 + 16].toInt());
+    VoltageAdjust.update(statusResponseRaw[R7 + 17].toInt());
     // 168 is unknown
-    update_Ser1(statusResponseRaw[R7 + 19]);
-    update_Ser2(statusResponseRaw[R7 + 20]);
-    update_Ser3(statusResponseRaw[R7 + 21]);
-    update_VMAX(statusResponseRaw[R7 + 22]);
-    update_AHYS(statusResponseRaw[R7 + 23]);
-    update_HUSE(statusResponseRaw[R7 + 24]);
+    Ser1.update(statusResponseRaw[R7 + 19].toInt());
+    Ser2.update(statusResponseRaw[R7 + 20].toInt());
+    Ser3.update(statusResponseRaw[R7 + 21].toInt());
+    VMAX.update(statusResponseRaw[R7 + 22].toInt());
+    AHYS.update(statusResponseRaw[R7 + 23].toInt());
+    HUSE.update(statusResponseRaw[R7 + 24] == "1");
     HELE.update(statusResponseRaw[R7 + 25] == "1");
     HPMP.update(statusResponseRaw[R7 + 26].toInt());
-    update_PMIN(statusResponseRaw[R7 + 27]);
-    update_PFLT(statusResponseRaw[R7 + 28]);
-    update_PHTR(statusResponseRaw[R7 + 29]);
-    update_PMAX(statusResponseRaw[R7 + 30]);
+    PMIN.update(statusResponseRaw[R7 + 27].toInt());
+    PFLT.update(statusResponseRaw[R7 + 28].toInt());
+    PHTR.update(statusResponseRaw[R7 + 29].toInt());
+    PMAX.update(statusResponseRaw[R7 + 30].toInt());
     #pragma endregion
     #pragma region R9
-    update_F1_HR(statusResponseRaw[R9 + 2]);
-    update_F1_Time(statusResponseRaw[R9 + 3]);
-    update_F1_ER(statusResponseRaw[R9 + 4]);
-    update_F1_I(statusResponseRaw[R9 + 5]);
-    update_F1_V(statusResponseRaw[R9 + 6]);
-    update_F1_PT(statusResponseRaw[R9 + 7]);
-    update_F1_HT(statusResponseRaw[R9 + 8]);
-    update_F1_CT(statusResponseRaw[R9 + 9]);
-    update_F1_PU(statusResponseRaw[R9 + 10]);
-    update_F1_VE(statusResponseRaw[R9 + 11]);
-    update_F1_ST(statusResponseRaw[R9 + 12]);
+    F1_HR.update(statusResponseRaw[R9 + 2].toInt());
+    F1_Time.update(statusResponseRaw[R9 + 3].toInt());
+    F1_ER.update(statusResponseRaw[R9 + 4].toInt());
+    F1_I.update(statusResponseRaw[R9 + 5].toInt());
+    F1_V.update(statusResponseRaw[R9 + 6].toInt());
+    F1_PT.update(statusResponseRaw[R9 + 7].toInt());
+    F1_HT.update(statusResponseRaw[R9 + 8].toInt());
+    F1_CT.update(statusResponseRaw[R9 + 9].toInt());
+    F1_PU.update(statusResponseRaw[R9 + 10].toInt());
+    F1_VE.update(statusResponseRaw[R9 + 11] == "1");
+    F1_ST.update(statusResponseRaw[R9 + 12].toInt());
     #pragma endregion
     #pragma region RA
-    update_F2_HR(statusResponseRaw[RA + 2]);
-    update_F2_Time(statusResponseRaw[RA + 3]);
-    update_F2_ER(statusResponseRaw[RA + 4]);
-    update_F2_I(statusResponseRaw[RA + 5]);
-    update_F2_V(statusResponseRaw[RA + 6]);
-    update_F2_PT(statusResponseRaw[RA + 7]);
-    update_F2_HT(statusResponseRaw[RA + 8]);
-    update_F2_CT(statusResponseRaw[RA + 9]);
-    update_F2_PU(statusResponseRaw[RA + 10]);
-    update_F2_VE(statusResponseRaw[RA + 11]);
-    update_F2_ST(statusResponseRaw[RA + 12]);
+    F2_HR.update(statusResponseRaw[RA + 2].toInt());
+    F2_Time.update(statusResponseRaw[RA + 3].toInt());
+    F2_ER.update(statusResponseRaw[RA + 4].toInt());
+    F2_I.update(statusResponseRaw[RA + 5].toInt());
+    F2_V.update(statusResponseRaw[RA + 6].toInt());
+    F2_PT.update(statusResponseRaw[RA + 7].toInt());
+    F2_HT.update(statusResponseRaw[RA + 8].toInt());
+    F2_CT.update(statusResponseRaw[RA + 9].toInt());
+    F2_PU.update(statusResponseRaw[RA + 10].toInt());
+    F2_VE.update(statusResponseRaw[RA + 11] == "1");
+    F2_ST.update(statusResponseRaw[RA + 12].toInt());
     #pragma endregion
     #pragma region RB
-    update_F3_HR(statusResponseRaw[RB + 2]);
-    update_F3_Time(statusResponseRaw[RB + 3]);
-    update_F3_ER(statusResponseRaw[RB + 4]);
-    update_F3_I(statusResponseRaw[RB + 5]);
-    update_F3_V(statusResponseRaw[RB + 6]);
-    update_F3_PT(statusResponseRaw[RB + 7]);
-    update_F3_HT(statusResponseRaw[RB + 8]);
-    update_F3_CT(statusResponseRaw[RB + 9]);
-    update_F3_PU(statusResponseRaw[RB + 10]);
-    update_F3_VE(statusResponseRaw[RB + 11]);
-    update_F3_ST(statusResponseRaw[RB + 12]);
+    F3_HR.update(statusResponseRaw[RB + 2].toInt());
+    F3_Time.update(statusResponseRaw[RB + 3].toInt());
+    F3_ER.update(statusResponseRaw[RB + 4].toInt());
+    F3_I.update(statusResponseRaw[RB + 5].toInt());
+    F3_V.update(statusResponseRaw[RB + 6].toInt());
+    F3_PT.update(statusResponseRaw[RB + 7].toInt());
+    F3_HT.update(statusResponseRaw[RB + 8].toInt());
+    F3_CT.update(statusResponseRaw[RB + 9].toInt());
+    F3_PU.update(statusResponseRaw[RB + 10].toInt());
+    F3_VE.update(statusResponseRaw[RB + 11] == "1");
+    F3_ST.update(statusResponseRaw[RB + 12].toInt());
     #pragma endregion
     #pragma region RC
     //Outlet_Heater.updateValue(statusResponseRaw[]);
@@ -1039,7 +1043,7 @@ void SpaInterface::updateMeasures() {
     Outlet_Blower.update(statusResponseRaw[RC + 10].toInt());
     #pragma endregion
     #pragma region RE
-    update_HP_Present(statusResponseRaw[RE + 1]);
+    HP_Present.update(statusResponseRaw[RE + 1].toInt());
     //HP_FlowSwitch.updateValue(statusResponseRaw[]);
     //HP_HighSwitch.updateValue(statusResponseRaw[]);
     //HP_LowSwitch.updateValue(statusResponseRaw[]);
@@ -1048,27 +1052,27 @@ void SpaInterface::updateMeasures() {
     //HP_D1.updateValue(statusResponseRaw[]);
     //HP_D2.updateValue(statusResponseRaw[]);
     //HP_D3.updateValue(statusResponseRaw[]);
-    update_HP_Ambient(statusResponseRaw[RE + 10]);
-    update_HP_Condensor(statusResponseRaw[RE + 11]);
-    update_HP_Compressor_State(statusResponseRaw[RE + 12]);
-    update_HP_Fan_State(statusResponseRaw[RE + 13]);
-    update_HP_4W_Valve(statusResponseRaw[RE + 14]);
-    update_HP_Heater_State(statusResponseRaw[RE + 15]);
-    update_HP_State(statusResponseRaw[RE + 16]);
-    update_HP_Mode(statusResponseRaw[RE + 17]);
-    update_HP_Defrost_Timer(statusResponseRaw[RE + 18]);
-    update_HP_Comp_Run_Timer(statusResponseRaw[RE + 19]);
-    update_HP_Low_Temp_Timer(statusResponseRaw[RE + 20]);
-    update_HP_Heat_Accum_Timer(statusResponseRaw[RE + 21]);
-    update_HP_Sequence_Timer(statusResponseRaw[RE + 22]);
-    update_HP_Warning(statusResponseRaw[RE + 23]);
-    update_FrezTmr(statusResponseRaw[RE + 24]);
-    update_DBGN(statusResponseRaw[RE + 25]);
-    update_DEND(statusResponseRaw[RE + 26]);
-    update_DCMP(statusResponseRaw[RE + 27]);
-    update_DMAX(statusResponseRaw[RE + 28]);
-    update_DELE(statusResponseRaw[RE + 29]);
-    update_DPMP(statusResponseRaw[RE + 30]);
+    HP_Ambient.update(statusResponseRaw[RE + 10].toInt());
+    HP_Condensor.update(statusResponseRaw[RE + 11].toInt());
+    HP_Compressor_State.update(statusResponseRaw[RE + 12] == "1");
+    HP_Fan_State.update(statusResponseRaw[RE + 13] == "1");
+    HP_4W_Valve.update(statusResponseRaw[RE + 14] == "1");
+    HP_Heater_State.update(statusResponseRaw[RE + 15] == "1");
+    HP_State.update(statusResponseRaw[RE + 16].toInt());
+    HP_Mode.update(statusResponseRaw[RE + 17].toInt());
+    HP_Defrost_Timer.update(statusResponseRaw[RE + 18].toInt());
+    HP_Comp_Run_Timer.update(statusResponseRaw[RE + 19].toInt());
+    HP_Low_Temp_Timer.update(statusResponseRaw[RE + 20].toInt());
+    HP_Heat_Accum_Timer.update(statusResponseRaw[RE + 21].toInt());
+    HP_Sequence_Timer.update(statusResponseRaw[RE + 22].toInt());
+    HP_Warning.update(statusResponseRaw[RE + 23].toInt());
+    FrezTmr.update(statusResponseRaw[RE + 24].toInt());
+    DBGN.update(statusResponseRaw[RE + 25].toInt());
+    DEND.update(statusResponseRaw[RE + 26].toInt());
+    DCMP.update(statusResponseRaw[RE + 27].toInt());
+    DMAX.update(statusResponseRaw[RE + 28].toInt());
+    DELE.update(statusResponseRaw[RE + 29].toInt());
+    DPMP.update(statusResponseRaw[RE + 30].toInt());
     //CMAX.updateValue(statusResponseRaw[]);
     //HP_Compressor.updateValue(statusResponseRaw[]);
     //HP_Pump_State.updateValue(statusResponseRaw[]);
@@ -1079,16 +1083,16 @@ void SpaInterface::updateMeasures() {
     if (RG < 0) return;
 
     #pragma region RG
-    update_Pump1InstallState(statusResponseRaw[RG + 7]);
-    update_Pump2InstallState(statusResponseRaw[RG + 8]);
-    update_Pump3InstallState(statusResponseRaw[RG + 9]);
-    update_Pump4InstallState(statusResponseRaw[RG + 10]);
-    update_Pump5InstallState(statusResponseRaw[RG + 11]);
-    update_Pump1OkToRun(statusResponseRaw[RG + 1]);
-    update_Pump2OkToRun(statusResponseRaw[RG + 2]);
-    update_Pump3OkToRun(statusResponseRaw[RG + 3]);
-    update_Pump4OkToRun(statusResponseRaw[RG + 4]);
-    update_Pump5OkToRun(statusResponseRaw[RG + 5]);
+    Pump1InstallState.update(statusResponseRaw[RG + 7]);
+    Pump2InstallState.update(statusResponseRaw[RG + 8]);
+    Pump3InstallState.update(statusResponseRaw[RG + 9]);
+    Pump4InstallState.update(statusResponseRaw[RG + 10]);
+    Pump5InstallState.update(statusResponseRaw[RG + 11]);
+    Pump1OkToRun.update(statusResponseRaw[RG + 1] == "1");
+    Pump2OkToRun.update(statusResponseRaw[RG + 2] == "1");
+    Pump3OkToRun.update(statusResponseRaw[RG + 3] == "1");
+    Pump4OkToRun.update(statusResponseRaw[RG + 4] == "1");
+    Pump5OkToRun.update(statusResponseRaw[RG + 5] == "1");
     LockMode.update(statusResponseRaw[RG + 12].toInt());
     #pragma endregion
 

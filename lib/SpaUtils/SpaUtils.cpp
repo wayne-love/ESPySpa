@@ -51,7 +51,7 @@ bool getPumpModesJson(SpaInterface &si, int pumpNumber, JsonObject pumps) {
   }
 
   // Retrieve the pump install state dynamically
-  String pumpInstallState = (si.*(pumpInstallStateFunctions[pumpNumber - 1]))();
+  String pumpInstallState = (si.*(SpaInterface::pumpInstallStateFunctions[pumpNumber - 1])).get();
 
   char pumpKey[6] = "pump";  // Start with "pump"
   pumpKey[4] = '0' + pumpNumber;  // Append the pump number as a character
@@ -131,26 +131,26 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
   JsonDocument json;
 
   json["temperatures"]["setPoint"] = si.STMP.get() / 10.0;
-  json["temperatures"]["water"] = si.getWTMP() / 10.0;
-  json["temperatures"]["heater"] = si.getHeaterTemperature() / 10.0;
-  json["temperatures"]["case"] = si.getCaseTemperature(); 
-  json["temperatures"]["heatpumpAmbient"] = si.getHP_Ambient();
-  json["temperatures"]["heatpumpCondensor"] = si.getHP_Condensor();
+  json["temperatures"]["water"] = si.WTMP.get() / 10.0;
+  json["temperatures"]["heater"] = si.HeaterTemperature.get() / 10.0;
+  json["temperatures"]["case"] = si.CaseTemperature.get();
+  json["temperatures"]["heatpumpAmbient"] = si.HP_Ambient.get();
+  json["temperatures"]["heatpumpCondensor"] = si.HP_Condensor.get();
 
-  json["power"]["voltage"] = si.getMainsVoltage();
+  json["power"]["voltage"] = si.MainsVoltage.get();
   json["power"]["current"]= si.MainsCurrent.get() / 10.0; // convert value to A
-  json["power"]["power"] = si.getPower() / 10.0; // convert value to W
-  json["power"]["totalenergy"]= si.getPower_kWh() / 100.0; // convert value to kWh.
+  json["power"]["power"] = si.Power.get() / 10.0; // convert value to W
+  json["power"]["totalenergy"]= si.Power_kWh.get() / 100.0; // convert value to kWh.
 
-  json["status"]["heatingActive"] = si.getRB_TP_Heater()? "ON": "OFF";
-  json["status"]["ozoneActive"] = si.getRB_TP_Ozone()? "ON": "OFF";
-  json["status"]["state"] = si.getStatus();
+  json["status"]["heatingActive"] = si.RB_TP_Heater.get()? "ON": "OFF";
+  json["status"]["ozoneActive"] = si.RB_TP_Ozone.get()? "ON": "OFF";
+  json["status"]["state"] = si.Status.get();
   json["status"]["spaMode"] = si.Mode.getLabel();
-  json["status"]["controller"] = si.getModel();
-  String firmware = si.getSVER().substring(3);
+  json["status"]["controller"] = si.Model.get();
+  String firmware = si.SVER.get().substring(3);
   firmware.replace(' ', '.');
   json["status"]["firmware"] = firmware;
-  json["status"]["serial"] = si.getSerialNo1() + "-" + si.getSerialNo2();
+  json["status"]["serial"] = si.SerialNo1.get() + "-" + si.SerialNo2.get();
   json["status"]["siInitialised"] = si.isInitialised()?"true":"false";
   json["status"]["mqtt"] = mqttClient.connected()?"connected":"disconnected";
 

@@ -5,7 +5,9 @@
 #include <functional>
 #include <stdexcept>
 #include <RemoteDebug.h>
-#include "SpaProperties.h"
+#include <time.h>
+#include <TimeLib.h>
+
 
 extern RemoteDebug Debug;
 #define FAILEDREADFREQUENCY 1000 //(ms) Frequency to retry on a failed read of the status registers.
@@ -13,7 +15,7 @@ extern RemoteDebug Debug;
 template <typename T, size_t N>
 constexpr size_t array_count(const T (&)[N]) { return N; }
 
-class SpaInterface : public SpaProperties {
+class SpaInterface {
     private:
         /// @brief How often to pole the spa for updates in seconds.
         int _updateFrequency = 60;
@@ -221,6 +223,10 @@ class SpaInterface : public SpaProperties {
         /// @brief Internal writer used by `RB_TP_Light` RWProperty.
         /// @details Sends `W14` to toggle the light; updates cached value to `mode`.
         bool setRB_TP_Light(int mode);
+        /// @brief Internal writer used by `statusResponse` RWProperty.
+        /// @details No-op — statusResponse is populated internally by readStatus().
+        /// Allows external injection of a raw response string (e.g. for testing).
+        bool setStatusResponse(String s);
 
     public:
         /// @brief Init SpaInterface.
@@ -246,6 +252,8 @@ class SpaInterface : public SpaProperties {
 
             T get() const { return _value; }
             operator T() const { return _value; }
+            void setCallback(void (*c)(T)) { _callback = c; }
+            void clearCallback() { _callback = nullptr; }
             // Returns the matching label for the current value, or fallback if not found.
             const char* getLabel(const char* fallback = "Unknown") const {
                 if (!_map || _mapSize == 0) {
@@ -276,11 +284,16 @@ class SpaInterface : public SpaProperties {
             bool _hasValue = false;
             const LabelValue* _map = nullptr;
             size_t _mapSize = 0;
+            void (*_callback)(T) = nullptr;
 
             // Called by SpaInterface when a fresh value is received from the spa.
             void update(T newValue) {
+                T oldValue = _value;
                 _value = newValue;
                 _hasValue = true;
+                if (_callback && oldValue != newValue) {
+                    _callback(_value);
+                }
             }
             // Reverse-lookup by label string; throws std::invalid_argument if the label
             // is not found in the map or if no map is configured.
@@ -467,11 +480,204 @@ class SpaInterface : public SpaProperties {
         void setSpaPollFrequency(int updateFrequency);
 
         /// @brief Complete RF command response in a single string
-        Property<String> statusResponse;
+        RWProperty<String> statusResponse{this, &SpaInterface::setStatusResponse};
+
+        const std::array<String, 2> autoPumpOptions = {"Manual", "Auto"};
+
+        /// @brief Mains voltage (V).
+        /// @details Read-only.
+        ROProperty<int> MainsVoltage;
 
         /// @brief Mains current draw x10.
         /// @details Read-only; value 77 represents 7.7A.
         ROProperty<int> MainsCurrent;
+
+        // R2
+        ROProperty<int> CaseTemperature;
+        ROProperty<int> PortCurrent;
+        ROProperty<int> HeaterTemperature;
+        ROProperty<int> PoolTemperature;
+        ROProperty<int> AwakeMinutesRemaining;
+        ROProperty<int> FiltPumpRunTimeTotal;
+        ROProperty<int> FiltPumpReqMins;
+        ROProperty<int> LoadTimeOut;
+        ROProperty<int> HourMeter;
+        ROProperty<int> Relay1;
+        ROProperty<int> Relay2;
+        ROProperty<int> Relay3;
+        ROProperty<int> Relay4;
+        ROProperty<int> Relay5;
+        ROProperty<int> Relay6;
+        ROProperty<int> Relay7;
+        ROProperty<int> Relay8;
+        ROProperty<int> Relay9;
+        ROProperty<bool> WaterPresent;
+        // R3
+        ROProperty<int> CLMT;
+        ROProperty<int> PHSE;
+        ROProperty<int> LLM1;
+        ROProperty<int> LLM2;
+        ROProperty<int> LLM3;
+        ROProperty<String> SVER;
+        ROProperty<String> Model;
+        ROProperty<String> SerialNo1;
+        ROProperty<String> SerialNo2;
+        ROProperty<bool> D1;
+        ROProperty<bool> D2;
+        ROProperty<bool> D3;
+        ROProperty<bool> D4;
+        ROProperty<bool> D5;
+        ROProperty<bool> D6;
+        ROProperty<String> Pump;
+        ROProperty<int> LS;
+        ROProperty<bool> HV;
+        ROProperty<int> SnpMR;
+        ROProperty<String> Status;
+        ROProperty<int> PrimeCount;
+        ROProperty<int> EC;
+        ROProperty<int> HAMB;
+        ROProperty<int> HCON;
+        // R4
+        ROProperty<int> Ser1_Timer;
+        ROProperty<int> Ser2_Timer;
+        ROProperty<int> Ser3_Timer;
+        ROProperty<int> HeatMode;
+        ROProperty<int> PumpIdleTimer;
+        ROProperty<int> PumpRunTimer;
+        ROProperty<int> AdtPoolHys;
+        ROProperty<int> AdtHeaterHys;
+        ROProperty<int> Power;
+        ROProperty<int> Power_kWh;
+        ROProperty<int> Power_Today;
+        ROProperty<int> Power_Yesterday;
+        ROProperty<int> ThermalCutOut;
+        ROProperty<int> Test_D1;
+        ROProperty<int> Test_D2;
+        ROProperty<int> Test_D3;
+        ROProperty<int> ElementHeatSourceOffset;
+        ROProperty<int> Frequency;
+        ROProperty<int> HPHeatSourceOffset_Heat;
+        ROProperty<int> HPHeatSourceOffset_Cool;
+        ROProperty<int> HeatSourceOffTime;
+        ROProperty<int> Vari_Speed;
+        ROProperty<int> Vari_Percent;
+        ROProperty<int> Vari_Mode;
+        // R5
+        ROProperty<int> RB_TP_Blower;
+        ROProperty<int> WTMP;
+        ROProperty<bool> RB_TP_Auto;
+        ROProperty<bool> RB_TP_Heater;
+        ROProperty<bool> RB_TP_Ozone;
+        ROProperty<bool> RB_TP_Sleep;
+        ROProperty<bool> CleanCycle;
+        // R6
+        ROProperty<int> L_24HOURS;
+        ROProperty<int> PSAV_LVL;
+        ROProperty<int> PSAV_BGN;
+        ROProperty<int> PSAV_END;
+        ROProperty<int> DefaultScrn;
+        ROProperty<int> TOUT;
+        ROProperty<int> BRND;
+        ROProperty<int> PRME;
+        ROProperty<int> ELMT;
+        ROProperty<int> TYPE;
+        ROProperty<int> GAS;
+        ROProperty<bool> VPMP;
+        ROProperty<bool> HIFI;
+        // R7
+        ROProperty<int> WCLNTime;
+        ROProperty<int> V_Max;
+        ROProperty<int> V_Min;
+        ROProperty<int> V_Max_24;
+        ROProperty<int> V_Min_24;
+        ROProperty<int> CurrentZero;
+        ROProperty<int> CurrentAdjust;
+        ROProperty<int> VoltageAdjust;
+        ROProperty<int> Ser1;
+        ROProperty<int> Ser2;
+        ROProperty<int> Ser3;
+        ROProperty<int> VMAX;
+        ROProperty<int> AHYS;
+        ROProperty<int> PMIN;
+        ROProperty<int> PFLT;
+        ROProperty<int> PHTR;
+        ROProperty<int> PMAX;
+        ROProperty<bool> TemperatureUnits;
+        ROProperty<bool> OzoneOff;
+        ROProperty<bool> Ozone24;
+        ROProperty<bool> Circ24;
+        ROProperty<bool> CJET;
+        ROProperty<bool> VELE;
+        ROProperty<bool> HUSE;
+        // R9/RA/RB fault logs
+        ROProperty<int> F1_HR;
+        ROProperty<int> F1_Time;
+        ROProperty<int> F1_ER;
+        ROProperty<int> F1_I;
+        ROProperty<int> F1_V;
+        ROProperty<int> F1_PT;
+        ROProperty<int> F1_HT;
+        ROProperty<int> F1_CT;
+        ROProperty<int> F1_PU;
+        ROProperty<int> F1_ST;
+        ROProperty<bool> F1_VE;
+        ROProperty<int> F2_HR;
+        ROProperty<int> F2_Time;
+        ROProperty<int> F2_ER;
+        ROProperty<int> F2_I;
+        ROProperty<int> F2_V;
+        ROProperty<int> F2_PT;
+        ROProperty<int> F2_HT;
+        ROProperty<int> F2_CT;
+        ROProperty<int> F2_PU;
+        ROProperty<int> F2_ST;
+        ROProperty<bool> F2_VE;
+        ROProperty<int> F3_HR;
+        ROProperty<int> F3_Time;
+        ROProperty<int> F3_ER;
+        ROProperty<int> F3_I;
+        ROProperty<int> F3_V;
+        ROProperty<int> F3_PT;
+        ROProperty<int> F3_HT;
+        ROProperty<int> F3_CT;
+        ROProperty<int> F3_PU;
+        ROProperty<int> F3_ST;
+        ROProperty<bool> F3_VE;
+        // RE heatpump
+        ROProperty<int> HP_Present;
+        ROProperty<int> HP_Ambient;
+        ROProperty<int> HP_Condensor;
+        ROProperty<int> HP_State;
+        ROProperty<int> HP_Mode;
+        ROProperty<int> HP_Defrost_Timer;
+        ROProperty<int> HP_Comp_Run_Timer;
+        ROProperty<int> HP_Low_Temp_Timer;
+        ROProperty<int> HP_Heat_Accum_Timer;
+        ROProperty<int> HP_Sequence_Timer;
+        ROProperty<int> HP_Warning;
+        ROProperty<int> FrezTmr;
+        ROProperty<int> DBGN;
+        ROProperty<int> DEND;
+        ROProperty<int> DCMP;
+        ROProperty<int> DMAX;
+        ROProperty<int> DELE;
+        ROProperty<int> DPMP;
+        ROProperty<bool> HP_Compressor_State;
+        ROProperty<bool> HP_Fan_State;
+        ROProperty<bool> HP_4W_Valve;
+        ROProperty<bool> HP_Heater_State;
+
+        // RG
+        ROProperty<String> Pump1InstallState;
+        ROProperty<String> Pump2InstallState;
+        ROProperty<String> Pump3InstallState;
+        ROProperty<String> Pump4InstallState;
+        ROProperty<String> Pump5InstallState;
+        ROProperty<bool> Pump1OkToRun;
+        ROProperty<bool> Pump2OkToRun;
+        ROProperty<bool> Pump3OkToRun;
+        ROProperty<bool> Pump4OkToRun;
+        ROProperty<bool> Pump5OkToRun;
 
         /// @brief Water temperature set point x10.
         /// @details Read/write. Valid range 50..410 (5.0C..41.0C).
@@ -596,19 +802,15 @@ class SpaInterface : public SpaProperties {
             &SpaInterface::RB_TP_Pump4,
             &SpaInterface::RB_TP_Pump5,
         };
-};
 
-
-// Define the function pointer type for getPumpInstallState functions
-typedef String (SpaInterface::*GetPumpStateInstallFunction)();
-
-// Declare the array of function pointers for each pump's install state as static
-static GetPumpStateInstallFunction pumpInstallStateFunctions[] = {
-  &SpaInterface::getPump1InstallState,
-  &SpaInterface::getPump2InstallState,
-  &SpaInterface::getPump3InstallState,
-  &SpaInterface::getPump4InstallState,
-  &SpaInterface::getPump5InstallState
+        using PumpInstallStatePtr = ROProperty<String> SpaInterface::*;
+        static constexpr PumpInstallStatePtr pumpInstallStateFunctions[] = {
+            &SpaInterface::Pump1InstallState,
+            &SpaInterface::Pump2InstallState,
+            &SpaInterface::Pump3InstallState,
+            &SpaInterface::Pump4InstallState,
+            &SpaInterface::Pump5InstallState,
+        };
 };
 
 

@@ -266,7 +266,7 @@ void mqttHaAutoDiscovery() {
   const String* selectedPumpOptions = nullptr;
   size_t arrSize = 0;
   for (int pumpNumber = 1; pumpNumber <= 5; pumpNumber++) {
-    String pumpInstallState = (si.*(pumpInstallStateFunctions[pumpNumber - 1]))();
+    String pumpInstallState = (si.*(SpaInterface::pumpInstallStateFunctions[pumpNumber - 1])).get();
     if (getPumpInstalledState(pumpInstallState) && getPumpPossibleStates(pumpInstallState).length() > 1) {
       ADConf.displayName = "Pump " + String(pumpNumber);
       ADConf.propertyId = "pump" + String(pumpNumber);
@@ -287,7 +287,7 @@ void mqttHaAutoDiscovery() {
     }
   }
 
-  if (si.getHP_Present()) {
+  if (si.HP_Present.get()) {
     ADConf.displayName = "Heatpump Ambient Temperature";
     ADConf.valueTemplate = "{{ value_json.temperatures.heatpumpAmbient }}";
     ADConf.propertyId = "HPAmbTemp";
@@ -513,7 +513,7 @@ void setSpaProperty(String property, String p) {
     }
   } else if (property.startsWith("pump") && property.endsWith("_state")) {
     int pumpNum = property.charAt(4) - '0';
-    String pumpState = (si.*(pumpInstallStateFunctions[pumpNum-1]))();
+    String pumpState = (si.*(SpaInterface::pumpInstallStateFunctions[pumpNum-1])).get();
     if (pumpNum - 1 < array_count(SpaInterface::pumpStatuses)) {
       try {
         if (getPumpSpeedType(pumpState) == "2") (si.*(SpaInterface::pumpStatuses[pumpNum-1])).set(p=="OFF"?0:2); // When we turn on the pump use speed high
@@ -856,7 +856,7 @@ void loop() {
         if ( spaSerialNumber=="" ) {
           debugI("Initialising...");
       
-          spaSerialNumber = si.getSerialNo1()+"-"+si.getSerialNo2();
+          spaSerialNumber = si.SerialNo1.get()+"-"+si.SerialNo2.get();
           debugI("Spa serial number is %s",spaSerialNumber.c_str());
 
           mqttBase = String("sn_esp32/") + spaSerialNumber + String("/");
