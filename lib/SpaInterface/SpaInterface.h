@@ -185,6 +185,11 @@ class SpaInterface : public SpaProperties {
         /// the cached property value when the command succeeds.
         /// Throws std::out_of_range for invalid values (0..6).
         bool setSpaDayOfWeek(int d);
+        /// @brief Internal writer used by `Outlet_Blower` RWProperty.
+        /// @details Sends `S28:<mode>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        /// Throws std::out_of_range for invalid values (0..2).
+        bool setOutlet_Blower(int mode);
 
     public:
         /// @brief Init SpaInterface.
@@ -472,6 +477,16 @@ class SpaInterface : public SpaProperties {
         /// @details Read/write. 0=Monday .. 6=Sunday.
         RWProperty<int> SpaDayOfWeek{this, &SpaInterface::setSpaDayOfWeek, SpaDayOfWeek_Map};
 
+        /// @brief Blower mode label map.
+        static constexpr ROProperty<int>::LabelValue Outlet_Blower_Map[] = {
+            {"Variable", 0},
+            {"Ramp",     1},
+            {"Off",      2},
+        };
+        /// @brief Air blower operating mode.
+        /// @details Read/write. 0=Variable, 1=Ramp, 2=Off.
+        RWProperty<int> Outlet_Blower{this, &SpaInterface::setOutlet_Blower, Outlet_Blower_Map};
+
         /// @brief To be called by loop function of main sketch.  Does regular updates, etc.
         void loop();
 
@@ -497,11 +512,6 @@ class SpaInterface : public SpaProperties {
         /// @param t Time
         /// @return True if successful
         bool setSpaTime(time_t t);
-
-        /// @brief Controls the air blower
-        /// @param mode 0 = Varible, 1 = Ramp, 2 = Off
-        /// @return True if successful
-        bool setOutlet_Blower(int mode);
 
         /// @brief Set the speed of the air blower
         /// @param mode 1 = low, 5 = high

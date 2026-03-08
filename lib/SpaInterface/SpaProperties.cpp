@@ -656,10 +656,6 @@ boolean SpaProperties::update_F3_VE(const String& s) {
     return updateBool01Property(F3_VE, s);
 }
 
-boolean SpaProperties::update_Outlet_Blower(const String& s){
-    return updateIntProperty(Outlet_Blower, s);
-}
-
 boolean SpaProperties::update_HP_Present(const String& s){
     return updateIntProperty(HP_Present, s);
 }

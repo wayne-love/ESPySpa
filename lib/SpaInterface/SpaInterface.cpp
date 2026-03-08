@@ -513,15 +513,18 @@ bool SpaInterface::setSpaTime(time_t t){
 }
 
 bool SpaInterface::setOutlet_Blower(int mode){
-    debugD("setOuput-Blower - %i", mode);
-    if (mode == getOutlet_Blower()) {
-        debugD("No Outlet_Blower change detected - current %i, new %i", getOutlet_Blower(), mode);
+    debugD("setOutlet_Blower - %i", mode);
+    if (mode < 0 || mode > 2) {
+        throw std::out_of_range("Outlet_Blower value out of range (0..2)");
+    }
+    if (mode == Outlet_Blower.get()) {
+        debugD("No Outlet_Blower change detected - current %i, new %i", Outlet_Blower.get(), mode);
         return true;
     }
 
     String smode = String(mode);
     if (sendCommandCheckResult("S28:"+smode,"S28-OK")) {
-        update_Outlet_Blower(smode);
+        Outlet_Blower.update(mode);
         return true;
     }
     return false;
@@ -1032,7 +1035,7 @@ void SpaInterface::updateMeasures() {
     //Outlet_Pump2.updateValue(statusResponseRaw[]);
     //Outlet_Pump4.updateValue(statusResponseRaw[]);
     //Outlet_Pump5.updateValue(statusResponseRaw[]);
-    update_Outlet_Blower(statusResponseRaw[RC + 10]);
+    Outlet_Blower.update(statusResponseRaw[RC + 10].toInt());
     #pragma endregion
     #pragma region RE
     update_HP_Present(statusResponseRaw[RE + 1]);

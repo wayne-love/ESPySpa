@@ -408,7 +408,13 @@ void mqttHaAutoDiscovery() {
   ADConf.propertyId = "blower";
   ADConf.deviceClass = "";
   ADConf.entityCategory = "";
-  generateFanAdJSON(output, ADConf, spa, discoveryTopic, 1, 5, si.blowerStrings.data(), si.blowerStrings.size());
+  // blowerModes bridges the type mismatch between Outlet_Blower_Map (ROProperty<int>::LabelValue[],
+  // which includes "Off") and generateFanAdJSON which expects const String* of preset mode names only.
+  // "Off" is a state rather than a preset mode so is intentionally excluded here.
+  // TODO: future improvement — update generateFanAdJSON to accept the label map directly, skipping
+  // entries that represent the off state, to eliminate this bridging array.
+  static const String blowerModes[] = {"Variable", "Ramp"};
+  generateFanAdJSON(output, ADConf, spa, discoveryTopic, 1, 5, blowerModes, 2);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
   ADConf.displayName = "Spa Mode";
@@ -572,12 +578,24 @@ void setSpaProperty(String property, String p) {
       debugE("Failed to set LSPDValue: %s", ex.what());
     }
   } else if (property == "blower_state") {
-    si.setOutlet_Blower(p=="OFF"?2:0);
+    try {
+      si.Outlet_Blower.set(p=="OFF"?2:0);
+    } catch (const std::exception& ex) {
+      debugE("Failed to set blower state: %s", ex.what());
+    }
   } else if (property == "blower_speed") {
-    if (p=="0") si.setOutlet_Blower(2);
-    else si.setVARIValue(p.toInt());
+    try {
+      if (p=="0") si.Outlet_Blower.set(2);
+      else si.setVARIValue(p.toInt());
+    } catch (const std::exception& ex) {
+      debugE("Failed to set blower speed: %s", ex.what());
+    }
   } else if (property == "blower_mode") {
-    si.setOutlet_Blower(p=="Variable"?0:1);
+    try {
+      si.Outlet_Blower.setLabel(p.c_str());
+    } catch (const std::exception& ex) {
+      debugE("Failed to set blower mode from label '%s': %s", p.c_str(), ex.what());
+    }
   } else if (property == "sleepTimers_1_state") {
     try {
       si.L_1SNZ_DAY.setLabel(p.c_str());

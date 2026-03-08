@@ -458,10 +458,6 @@ Property<bool> HV_2;
     // Attribute<bool> Outlet_Pump2;
     // Attribute<bool> Outlet_Pump4;
     // Attribute<bool> Outlet_Pump5;
-    /// @brief Blower status
-    ///
-    /// 0 = variable mode, 1 = ramp mode, 2 = off
-    Property<int> Outlet_Blower;
 #pragma endregion
 #pragma region RE
     // RE
@@ -746,7 +742,6 @@ protected:
     // Outlet_Pump2.update_Value(String);
     // Outlet_Pump4.update_Value(String);
     // Outlet_Pump5.update_Value(String);
-    boolean update_Outlet_Blower(const String&);
 #pragma endregion
 #pragma region RE
     boolean update_HP_Present(const String&);
@@ -1052,7 +1047,6 @@ public:
 
     int getRB_TP_Blower() { return RB_TP_Blower.getValue(); }
     void setRB_TP_BlowerCallback(void (*callback)(int)) { RB_TP_Blower.setCallback(callback); }
-    const std::array <String, 2> blowerStrings = {"Variable", "Ramp"};
 
     int getRB_TP_Light() { return RB_TP_Light.getValue(); }
     void setRB_TP_LightCallback(void (*callback)(int)) { RB_TP_Light.setCallback(callback); }
@@ -1352,8 +1346,6 @@ public:
     int getF3_ST() { return F3_ST.getValue(); }
     void setF3_STCallback(void (*callback)(int)) { F3_ST.setCallback(callback); }
 
-    int getOutlet_Blower() { return Outlet_Blower.getValue(); }
-    void setOutlet_BlowerCallback(void (*callback)(int)) { Outlet_Blower.setCallback(callback); }
 
     int getHP_Present() { return HP_Present.getValue(); }
     void setHP_PresentCallback(void (*callback)(int)) { HP_Present.setCallback(callback); }
