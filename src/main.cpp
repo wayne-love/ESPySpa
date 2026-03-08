@@ -532,11 +532,10 @@ void setSpaProperty(String property, String p) {
     tm.Second=p.substring(17).toInt();
     si.setSpaTime(makeTime(tm));
   } else if (property == "status_dayOfWeek") {
-    for (int i = 0; i < si.spaDayOfWeekStrings.size(); i++) {
-      if (si.spaDayOfWeekStrings[i] == p) {
-      si.setSpaDayOfWeek(i);
-      break;
-      }
+    try {
+      si.SpaDayOfWeek.setLabel(p.c_str());
+    } catch (const std::exception& ex) {
+      debugE("Failed to set SpaDayOfWeek '%s': %s", p.c_str(), ex.what());
     }
   } else if (property == "lights_state") {
     si.setRB_TP_Light(p=="ON"?1:0);

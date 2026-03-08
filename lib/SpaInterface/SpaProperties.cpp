@@ -40,10 +40,6 @@ static boolean updateTriStateProperty(Property<int>& prop, const String& s) {
     return true;
 }
 
-boolean SpaProperties::update_SpaDayOfWeek(const String& s){
-    return updateIntProperty(SpaDayOfWeek, s);
-}
-
 boolean SpaProperties::update_SpaTime(const String& year, const String& month, const String& day, const String& hour, const String& minute, const String& second){
 
     tmElements_t tm;

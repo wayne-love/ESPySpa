@@ -460,14 +460,17 @@ bool SpaInterface::setCurrClr(int mode){
 
 bool SpaInterface::setSpaDayOfWeek(int d){
     debugD("setSpaDayOfWeek - %i", d);
-    if (d == getSpaDayOfWeek()) {
-        debugD("No SpaDayOfWeek change detected - current %i, new %i", getSpaDayOfWeek(), d);
+    if (d < 0 || d > 6) {
+        throw std::out_of_range("SpaDayOfWeek value out of range (0..6)");
+    }
+    if (d == SpaDayOfWeek.get()) {
+        debugD("No SpaDayOfWeek change detected - current %i, new %i", SpaDayOfWeek.get(), d);
         return true;
     }
 
     String sd = String(d);
     if (sendCommandCheckResult("S06:"+sd,sd)) {
-        update_SpaDayOfWeek(sd);
+        SpaDayOfWeek.update(d);
         return true;
     }
     return false;
@@ -824,7 +827,7 @@ void SpaInterface::updateMeasures() {
     update_MainsVoltage(statusResponseRaw[R2+2]);
     update_CaseTemperature(statusResponseRaw[R2+3]);
     update_PortCurrent(statusResponseRaw[R2+4]);
-    update_SpaDayOfWeek(statusResponseRaw[R2+5]);
+    SpaDayOfWeek.update(statusResponseRaw[R2+5].toInt());
     update_SpaTime(statusResponseRaw[R2+11], statusResponseRaw[R2+10], statusResponseRaw[R2+9], statusResponseRaw[R2+6], statusResponseRaw[R2+7], statusResponseRaw[R2+8]);
     update_HeaterTemperature(statusResponseRaw[R2+12]);
     update_PoolTemperature(statusResponseRaw[R2+13]);

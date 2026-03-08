@@ -46,9 +46,6 @@ private:
     /// @brief 12v port current (mA)
     Property<int> PortCurrent;
 
-    /// @brief Current day of week on Spa RTC
-    /// 0 = Monday, 1 = Tuesday, ..., 6 = Sunday
-    Property<int> SpaDayOfWeek;
         /// @brief Current time on Spa RTC
     Property<time_t> SpaTime;
     /// @brief Heater temperature ('C)
@@ -566,7 +563,6 @@ Property<bool> HV_2;
 
 protected:
 #pragma region R2
-    boolean update_SpaDayOfWeek(const String&);
     boolean update_SpaTime(const String& year, const String& month, const String& day, const String& hour, const String& minute, const String& second);
     boolean update_MainsVoltage(const String&);
     boolean update_CaseTemperature(const String&);
@@ -814,12 +810,6 @@ public:
 
     int getPortCurrent() { return PortCurrent.getValue(); }
     void setPortCurrentCallback(void (*callback)(int)) { PortCurrent.setCallback(callback); }
-
-    /// @brief Gets the day of week from the spa
-    /// @return
-    int getSpaDayOfWeek() { return SpaDayOfWeek.getValue(); }
-    void SpaDayOfWeekCallback(void (*callback)(int)) { SpaDayOfWeek.setCallback(callback); }
-    const std::array <String, 7> spaDayOfWeekStrings = {"Monday","Tuesday", "Wednesday","Thursday","Friday","Saturday","Sunday"};
 
     /// @brief Gets the current time from the spa clock
     /// @return 

@@ -180,6 +180,11 @@ class SpaInterface : public SpaProperties {
         /// @details Sends `W98:<mode>` to the controller and only updates
         /// the cached property value when the command succeeds.
         bool setHELE(bool mode);
+        /// @brief Internal writer used by `SpaDayOfWeek` RWProperty.
+        /// @details Sends `S06:<d>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        /// Throws std::out_of_range for invalid values (0..6).
+        bool setSpaDayOfWeek(int d);
 
     public:
         /// @brief Init SpaInterface.
@@ -453,6 +458,20 @@ class SpaInterface : public SpaProperties {
         /// @details Read/write. false=Off, true=On.
         RWProperty<bool> HELE{this, &SpaInterface::setHELE};
 
+        /// @brief Day of week label map. 0=Monday .. 6=Sunday.
+        static constexpr ROProperty<int>::LabelValue SpaDayOfWeek_Map[] = {
+            {"Monday",    0},
+            {"Tuesday",   1},
+            {"Wednesday", 2},
+            {"Thursday",  3},
+            {"Friday",    4},
+            {"Saturday",  5},
+            {"Sunday",    6},
+        };
+        /// @brief Current day of week on Spa RTC.
+        /// @details Read/write. 0=Monday .. 6=Sunday.
+        RWProperty<int> SpaDayOfWeek{this, &SpaInterface::setSpaDayOfWeek, SpaDayOfWeek_Map};
+
         /// @brief To be called by loop function of main sketch.  Does regular updates, etc.
         void loop();
 
@@ -473,11 +492,6 @@ class SpaInterface : public SpaProperties {
 
         bool setRB_TP_Light(int mode);
 
-
-        /// @brief Sets the day of week on the spa
-        /// @param d Day of week (0 = Monday - 6 = Sunday)
-        /// @return True if successful
-        bool setSpaDayOfWeek(int d);
 
         /// @brief Sets the clock on the spa
         /// @param t Time
