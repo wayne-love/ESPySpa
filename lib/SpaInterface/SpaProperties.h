@@ -229,8 +229,6 @@ Property<bool> HV_2;
 #pragma endregion
 #pragma region R6
     // R6
-/// @brief Filter run time (in hours) per block
-    Property<int> FiltSetHrs;
 /// @brief Water temperature set point ('C)
     // 1 = 12 hrs
     Property<int> L_24HOURS;
@@ -639,7 +637,6 @@ protected:
     boolean update_CleanCycle(const String&);
 #pragma endregion
 #pragma region R6
-    boolean update_FiltHrs(const String&);
     boolean update_L_24HOURS(const String&);
     boolean update_PSAV_LVL(const String&);
     boolean update_PSAV_BGN(const String&);
@@ -1046,11 +1043,6 @@ public:
 
     bool getCleanCycle() { return CleanCycle.getValue(); }
     void setCleanCycleCallback(void (*callback)(bool)) { CleanCycle.setCallback(callback); }
-
-    int getFiltHrs() { return FiltSetHrs.getValue(); }
-    void setFiltHrsCallback(void (*callback)(int)) { FiltSetHrs.setCallback(callback); }
-    // This is used to generated the select 
-    
 
 int getL_24HOURS() { return L_24HOURS.getValue(); }
     void setL_24HOURSCallback(void (*callback)(int)) { L_24HOURS.setCallback(callback); }

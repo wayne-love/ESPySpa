@@ -205,6 +205,11 @@ class SpaInterface : public SpaProperties {
         /// the cached property value when the command succeeds.
         /// Throws std::out_of_range for values not in the valid set (1,2,3,4,6,8,12,24).
         bool setFiltBlockHrs(int mode);
+        /// @brief Internal writer used by `FiltHrs` RWProperty.
+        /// @details Sends `W60:<hrs>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        /// Throws std::out_of_range for invalid values (1..24).
+        bool setFiltHrs(int hrs);
 
     public:
         /// @brief Init SpaInterface.
@@ -547,6 +552,10 @@ class SpaInterface : public SpaProperties {
         /// @details Read/write. Valid values: 1, 2, 3, 4, 6, 8, 12, 24.
         RWProperty<int> FiltBlockHrs{this, &SpaInterface::setFiltBlockHrs, FiltBlockHrs_Map};
 
+        /// @brief Filtration run time per block (hours).
+        /// @details Read/write. Valid range 1..24.
+        RWProperty<int> FiltHrs{this, &SpaInterface::setFiltHrs};
+
         /// @brief To be called by loop function of main sketch.  Does regular updates, etc.
         void loop();
 
@@ -572,10 +581,6 @@ class SpaInterface : public SpaProperties {
         /// @param t Time
         /// @return True if successful
         bool setSpaTime(time_t t);
-
-/// @brief Set filtration hours (1 to 24 hours)
-        /// @param duration
-        bool setFiltHrs(String duration);
 
         bool setLockMode(int mode);
 

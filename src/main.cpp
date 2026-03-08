@@ -649,7 +649,11 @@ void setSpaProperty(String property, String p) {
       debugE("Failed to set FiltBlockHrs from label '%s': %s", p.c_str(), ex.what());
     }
   } else if (property == "filtration_hours") {
-    si.setFiltHrs(p);
+    try {
+      si.FiltHrs.set(p.toInt());
+    } catch (const std::exception& ex) {
+      debugE("Failed to set FiltHrs: %s", ex.what());
+    }
   } else if (property == "lock_mode") {
     for (int i = 0; i < si.lockModeMap.size(); i++) {
       if (si.lockModeMap[i] == p) {

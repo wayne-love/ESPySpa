@@ -161,7 +161,7 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
   json["heatpump"]["auxheat"] = si.HELE ? "ON" : "OFF";
 
   json["filtration"]["blockDuration"] = si.FiltBlockHrs.get();
-  json["filtration"]["hours"] = si.getFiltHrs();
+  json["filtration"]["hours"] = si.FiltHrs.get();
 
   json["lockmode"] = si.lockModeMap[si.getLockMode()];
 

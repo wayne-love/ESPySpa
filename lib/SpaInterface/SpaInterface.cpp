@@ -587,15 +587,17 @@ bool SpaInterface::setFiltBlockHrs(int mode){
     return false;
 }
 
-bool SpaInterface::setFiltHrs(String duration){
-    debugD("setFiltHrs - %s", duration);
-    int hrs = duration.toInt();
-    if (hrs<1 or hrs>24) {
-        debugE("FiltHrs out of range - %s", duration.c_str());
-        return false;
+bool SpaInterface::setFiltHrs(int hrs){
+    debugD("setFiltHrs - %i", hrs);
+    if (hrs < 1 || hrs > 24) {
+        throw std::out_of_range("FiltHrs value out of range (1..24)");
+    }
+    if (hrs == FiltHrs.get()) {
+        debugD("No FiltHrs change detected - current %i, new %i", FiltHrs.get(), hrs);
+        return true;
     }
     if (sendCommandCheckResult("W60:" + String(hrs), String(hrs))) {
-        update_FiltHrs(duration);
+        FiltHrs.update(hrs);
         return true;
     }
     return false;
@@ -929,7 +931,7 @@ void SpaInterface::updateMeasures() {
     CurrClr.update(statusResponseRaw[R6 + 3].toInt());
     ColorMode.update(statusResponseRaw[R6 + 4].toInt());
     LSPDValue.update(statusResponseRaw[R6 + 5].toInt());
-    update_FiltHrs(statusResponseRaw[R6 + 6]);
+    FiltHrs.update(statusResponseRaw[R6 + 6].toInt());
     FiltBlockHrs.update(statusResponseRaw[R6 + 7].toInt());
     STMP.update(statusResponseRaw[R6 + 8].toInt());
     update_L_24HOURS(statusResponseRaw[R6 + 9]);
