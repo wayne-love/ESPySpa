@@ -291,7 +291,7 @@ class SpaInterface : public SpaProperties {
                         return;
                     }
                 }
-                throw std::invalid_argument(String("updateFromLabel: unknown label '") + label + "'");
+                throw std::invalid_argument((String("updateFromLabel: unknown label '") + label + "'").c_str());
             }
 
             friend class SpaInterface;
@@ -585,8 +585,13 @@ class SpaInterface : public SpaProperties {
         /// @brief Unified array of RWProperty pointers for each migrated pump, used for
         /// both reading state and sending commands. Grows as pumps are migrated.
         using PumpStatus = RWProperty<int> SpaInterface::*;
-        static PumpStatus pumpStatuses[];
-        static const int pumpStatusesCount = 5;
+        static constexpr PumpStatus pumpStatuses[] = {
+            &SpaInterface::RB_TP_Pump1,
+            &SpaInterface::RB_TP_Pump2,
+            &SpaInterface::RB_TP_Pump3,
+            &SpaInterface::RB_TP_Pump4,
+            &SpaInterface::RB_TP_Pump5,
+        };
 };
 
 

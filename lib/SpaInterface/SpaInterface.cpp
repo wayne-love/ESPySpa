@@ -11,14 +11,6 @@ SpaInterface::SpaInterface() : port(SPA_SERIAL) {
 
 SpaInterface::~SpaInterface() {}
 
-SpaInterface::PumpStatus SpaInterface::pumpStatuses[] = {
-    &SpaInterface::RB_TP_Pump1,
-    &SpaInterface::RB_TP_Pump2,
-    &SpaInterface::RB_TP_Pump3,
-    &SpaInterface::RB_TP_Pump4,
-    &SpaInterface::RB_TP_Pump5,
-};
-
 void SpaInterface::setSpaPollFrequency(int updateFrequency) {
     _updateFrequency = updateFrequency;
 }

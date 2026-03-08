@@ -495,7 +495,7 @@ void setSpaProperty(String property, String p) {
     if (p == "1") p = "0";
     else if (p == "2") p = "3";
     else if (p == "3") p = "2";
-    if (pumpNum - 1 < SpaInterface::pumpStatusesCount)
+    if (pumpNum - 1 < array_count(SpaInterface::pumpStatuses))
       try {
         (si.*(SpaInterface::pumpStatuses[pumpNum-1])).set(p.toInt());
       } catch (const std::exception& ex) {
@@ -503,7 +503,7 @@ void setSpaProperty(String property, String p) {
       }
   } else if (property.startsWith("pump") && property.endsWith("_mode")) {
     int pumpNum = property.charAt(4) - '0';
-    if (pumpNum - 1 < SpaInterface::pumpStatusesCount) {
+    if (pumpNum - 1 < array_count(SpaInterface::pumpStatuses)) {
       try {
         if (p == "Auto") (si.*(SpaInterface::pumpStatuses[pumpNum-1])).set(4);
         else (si.*(SpaInterface::pumpStatuses[pumpNum-1])).set(3); // When we change mode to manual set speed to low, as this matches the auto display speed
@@ -514,7 +514,7 @@ void setSpaProperty(String property, String p) {
   } else if (property.startsWith("pump") && property.endsWith("_state")) {
     int pumpNum = property.charAt(4) - '0';
     String pumpState = (si.*(pumpInstallStateFunctions[pumpNum-1]))();
-    if (pumpNum - 1 < SpaInterface::pumpStatusesCount) {
+    if (pumpNum - 1 < array_count(SpaInterface::pumpStatuses)) {
       try {
         if (getPumpSpeedType(pumpState) == "2") (si.*(SpaInterface::pumpStatuses[pumpNum-1])).set(p=="OFF"?0:2); // When we turn on the pump use speed high
         else (si.*(SpaInterface::pumpStatuses[pumpNum-1])).set(p=="OFF"?0:1);

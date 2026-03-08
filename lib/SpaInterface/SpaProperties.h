@@ -781,6 +781,12 @@ public:
     int getPortCurrent() { return PortCurrent.getValue(); }
     void setPortCurrentCallback(void (*callback)(int)) { PortCurrent.setCallback(callback); }
 
+    /// @brief Gets the current time from the spa clock
+    /// @return 
+    time_t getSpaTime() { return SpaTime.getValue(); }
+    void setSpaTimeCallback(void (*callback)(time_t)) { SpaTime.setCallback(callback); }
+    
+
     /// @brief Get current heater temperature multiplied by 10 (245 = 24.5 actual)
     /// @return 
     int getHeaterTemperature() { return HeaterTemperature.getValue(); }
