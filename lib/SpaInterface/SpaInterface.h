@@ -497,9 +497,15 @@ class SpaInterface {
         ROProperty<int> CaseTemperature;
         /// @brief Port current draw x10 (A).
         ROProperty<int> PortCurrent;
+        /// @brief Current day of week on Spa RTC.
+        /// @details Read/write. 0=Monday .. 6=Sunday.
+        RWProperty<int> SpaDayOfWeek{this, &SpaInterface::setSpaDayOfWeek, SpaDayOfWeek_Map};
+        /// @brief Spa RTC clock value.
+        /// @details Read/write. Writing sends S01..S05 + S06 to the controller.
+        RWProperty<time_t> SpaTime{this, &SpaInterface::setSpaTime};
         /// @brief Heater element temperature x10 (°C).
         ROProperty<int> HeaterTemperature;
-        /// @brief Spa pool/water temperature x10 (°C). e.g. 380 = 38.0°C.
+        /// @brief Pool temperature x10 (°C). Note: often returns unreliable values; use WTMP for actual water temperature.
         ROProperty<int> PoolTemperature;
         /// @brief Minutes remaining before spa returns to sleep.
         ROProperty<int> AwakeMinutesRemaining;
@@ -509,7 +515,7 @@ class SpaInterface {
         ROProperty<int> FiltPumpReqMins;
         /// @brief Load management timeout counter.
         ROProperty<int> LoadTimeOut;
-        /// @brief Total controller run time (hours).
+        /// @brief Total controller run time x10 (hours). e.g. 33207 = 3320.7 hours.
         ROProperty<int> HourMeter;
         /// @brief Relay 1 output state.
         ROProperty<int> Relay1;
@@ -532,15 +538,15 @@ class SpaInterface {
         /// @brief True when water is detected in the spa.
         ROProperty<bool> WaterPresent;
         // R3
-        /// @brief Current limit setting (A).
+        /// @brief Current limit setting (A). Range 10–60A; should match the circuit breaker rating feeding the spa (C.LMT OEM setting).
         ROProperty<int> CLMT;
-        /// @brief Mains phase configuration (1 = single phase, 3 = three phase).
+        /// @brief Mains phase configuration (1=Single Phase, 2=Dual Phase, 3=Three Phase).
         ROProperty<int> PHSE;
-        /// @brief Load limit 1 — first-stage current limit (A).
+        /// @brief Phase 1 load limit — maximum number of loads (pumps/blower) allowed to run simultaneously on phase 1. Range 1–5 (x.LLM OEM setting).
         ROProperty<int> LLM1;
-        /// @brief Load limit 2 — second-stage current limit (A).
+        /// @brief Phase 2 load limit — maximum number of loads (pumps/blower) allowed to run simultaneously on phase 2. Range 1–5 (x.LLM OEM setting).
         ROProperty<int> LLM2;
-        /// @brief Load limit 3 — third-stage current limit (A).
+        /// @brief Phase 3 load limit — maximum number of loads (pumps/blower) allowed to run simultaneously on phase 3. Range 1–5 (x.LLM OEM setting).
         ROProperty<int> LLM3;
         /// @brief Controller software/firmware version string (e.g. "SW V3 SV3a").
         ROProperty<String> SVER;
@@ -550,23 +556,21 @@ class SpaInterface {
         ROProperty<String> SerialNo1;
         /// @brief Serial number part 2.
         ROProperty<String> SerialNo2;
-        /// @brief Dipswitch 1 state.
+        /// @brief Dipswitch 1 state. SW1: Circulation pump fitted (ON=Fitted, OFF=Not Fitted).
         ROProperty<bool> D1;
-        /// @brief Dipswitch 2 state.
+        /// @brief Dipswitch 2 state. SW2: Pump 1 type (ON=Two Speed, OFF=Single Speed; if OFF, Pump 2 assumed fitted).
         ROProperty<bool> D2;
-        /// @brief Dipswitch 3 state.
+        /// @brief Dipswitch 3 state. SW3: SV2/SV4: Pump 3 type (ON=Two Speed, OFF=Single Speed); SV3: Pump 3 fitted (ON=Fitted, OFF=Not Fitted). Not used on SV2/SV2-VH.
         ROProperty<bool> D3;
-        /// @brief Dipswitch 4 state.
+        /// @brief Dipswitch 4 state. SW4: SV2/SV4: Pump 4 fitted (ON=Fitted, OFF=Not Fitted; not used on SV2/SV2-VH); SV3: Not used.
         ROProperty<bool> D4;
-        /// @brief Dipswitch 5 state.
+        /// @brief Dipswitch 5 state. SW5: Phase input selection (ON=2/3 Phase, OFF=Single Phase). Enables SW6 when ON.
         ROProperty<bool> D5;
-        /// @brief Dipswitch 6 state.
+        /// @brief Dipswitch 6 state. SW6: Multi-phase type, enabled when SW5=ON (ON=Three Phase, OFF=Two Phase).
         ROProperty<bool> D6;
         /// @brief Pump configuration string.
         ROProperty<String> Pump;
-        /// @brief Lock state bitmask.
         ROProperty<int> LS;
-        /// @brief True when high-voltage supply is present.
         ROProperty<bool> HV;
         /// @brief Snooze mode remaining time (minutes).
         ROProperty<int> SnpMR;
@@ -581,6 +585,9 @@ class SpaInterface {
         /// @brief Heater connection/conductivity value.
         ROProperty<int> HCON;
         // R4
+        /// @brief Spa operating mode.
+        /// @details Read/write. 0=NORM, 1=ECON, 2=AWAY, 3=WEEK.
+        RWProperty<int> Mode{this, &SpaInterface::setMode, Mode_Map};
         /// @brief Service interval 1 countdown (hours remaining).
         ROProperty<int> Ser1_Timer;
         /// @brief Service interval 2 countdown (hours remaining).
@@ -630,21 +637,63 @@ class SpaInterface {
         /// @brief Variable speed pump mode (0=Auto, 1=Manual).
         ROProperty<int> Vari_Mode;
         // R5
-        /// @brief Blower/air injector operating state (0=Off, 1=On).
+        /// @brief Blower/air injector operating state. Note: encoding unknown; this property is never populated from the RF response.
         ROProperty<int> RB_TP_Blower;
-        /// @brief Target water temperature set point x10 (°C). Read-only mirror; write via STMP.
-        ROProperty<int> WTMP;
-        /// @brief True when auto mode is active.
-        ROProperty<bool> RB_TP_Auto;
-        /// @brief True when heating or cooling is actively running.
-        ROProperty<bool> RB_TP_Heater;
-        /// @brief True when ozone/UV sanitiser is running.
-        ROProperty<bool> RB_TP_Ozone;
         /// @brief True when spa is sleeping due to a sleep timer.
         ROProperty<bool> RB_TP_Sleep;
+        /// @brief True when ozone/UV sanitiser is running.
+        ROProperty<bool> RB_TP_Ozone;
+        /// @brief True when heating or cooling is actively running.
+        ROProperty<bool> RB_TP_Heater;
+        /// @brief True when auto mode is active.
+        ROProperty<bool> RB_TP_Auto;
+        /// @brief Light on/off state.
+        /// @details Read/write. 0=Off, 1=On.
+        RWProperty<int> RB_TP_Light{this, &SpaInterface::setRB_TP_Light};
+        /// @brief Actual (measured) water temperature x10 (°C). e.g. 376 = 37.6°C. For the set point see STMP.
+        ROProperty<int> WTMP;
         /// @brief True when a clean cycle is in progress.
         ROProperty<bool> CleanCycle;
+        /// @brief Pump 1 operating state.
+        /// @details Read/write. 0=Off, 1=On, 4=Auto (if supported).
+        RWProperty<int> RB_TP_Pump1{this, &SpaInterface::setRB_TP_Pump1};
+        /// @brief Pump 2 operating state.
+        /// @details Read/write. 0=Off, 1=On, 4=Auto (if supported).
+        RWProperty<int> RB_TP_Pump2{this, &SpaInterface::setRB_TP_Pump2};
+        /// @brief Pump 3 operating state.
+        /// @details Read/write. 0=Off, 1=On, 4=Auto (if supported).
+        RWProperty<int> RB_TP_Pump3{this, &SpaInterface::setRB_TP_Pump3};
+        /// @brief Pump 4 operating state.
+        /// @details Read/write. 0=Off, 1=On, 4=Auto (if supported).
+        RWProperty<int> RB_TP_Pump4{this, &SpaInterface::setRB_TP_Pump4};
+        /// @brief Pump 5 operating state.
+        /// @details Read/write. 0=Off, 1=On, 4=Auto (if supported).
+        RWProperty<int> RB_TP_Pump5{this, &SpaInterface::setRB_TP_Pump5};
         // R6
+        /// @brief Variable pump/blower speed.
+        /// @details Read/write. Valid range 1..5.
+        RWProperty<int> VARIValue{this, &SpaInterface::setVARIValue};
+        /// @brief Light brightness.
+        /// @details Read/write. Valid range 1..5.
+        RWProperty<int> LBRTValue{this, &SpaInterface::setLBRTValue};
+        /// @brief Light color index.
+        /// @details Read/write. Valid range 0..31.
+        RWProperty<int> CurrClr{this, &SpaInterface::setCurrClr, CurrClr_Map};
+        /// @brief Light effect/mode.
+        /// @details Read/write. 0=White, 1=Color, 2=Fade, 3=Step, 4=Party.
+        RWProperty<int> ColorMode{this, &SpaInterface::setColorMode, ColorMode_Map};
+        /// @brief Light effect speed.
+        /// @details Read/write. Valid range 1..5.
+        RWProperty<int> LSPDValue{this, &SpaInterface::setLSPDValue, LSPDValue_Map};
+        /// @brief Filtration run time per block (hours).
+        /// @details Read/write. Valid range 1..24.
+        RWProperty<int> FiltHrs{this, &SpaInterface::setFiltHrs};
+        /// @brief Filtration block duration (hours).
+        /// @details Read/write. Valid values: 1, 2, 3, 4, 6, 8, 12, 24.
+        RWProperty<int> FiltBlockHrs{this, &SpaInterface::setFiltBlockHrs, FiltBlockHrs_Map};
+        /// @brief Water temperature set point x10.
+        /// @details Read/write. Valid range 50..410 (5.0°C..41.0°C).
+        RWProperty<int> STMP{this, &SpaInterface::setSTMP};
         /// @brief 24-hour operation flag (0=Off, 1=On).
         ROProperty<int> L_24HOURS;
         /// @brief Power save level (0=Off, 1=Low, 2=High).
@@ -653,9 +702,27 @@ class SpaInterface {
         ROProperty<int> PSAV_BGN;
         /// @brief Power save end time encoded as h*256+m.
         ROProperty<int> PSAV_END;
+        /// @brief Sleep timer 1 day mode bitmap.
+        /// @details Read/write. Typical values: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays.
+        RWProperty<int> L_1SNZ_DAY{this, &SpaInterface::setL_1SNZ_DAY, SNZ_DAY_Map};
+        /// @brief Sleep timer 2 day mode bitmap.
+        /// @details Read/write. Typical values: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays.
+        RWProperty<int> L_2SNZ_DAY{this, &SpaInterface::setL_2SNZ_DAY, SNZ_DAY_Map};
+        /// @brief Sleep timer 1 start time.
+        /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock).
+        RWProperty<int> L_1SNZ_BGN{this, &SpaInterface::setL_1SNZ_BGN};
+        /// @brief Sleep timer 2 start time.
+        /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock).
+        RWProperty<int> L_2SNZ_BGN{this, &SpaInterface::setL_2SNZ_BGN};
+        /// @brief Sleep timer 1 finish time.
+        /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock).
+        RWProperty<int> L_1SNZ_END{this, &SpaInterface::setL_1SNZ_END};
+        /// @brief Sleep timer 2 finish time.
+        /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock).
+        RWProperty<int> L_2SNZ_END{this, &SpaInterface::setL_2SNZ_END};
         /// @brief Default touchpad screen index shown when waking.
         ROProperty<int> DefaultScrn;
-        /// @brief Touchpad sleep timeout (minutes, 0=never).
+        /// @brief Pump and blower auto time-out duration (minutes). Range 10–60. Set via W74.
         ROProperty<int> TOUT;
         /// @brief OEM brand identifier.
         ROProperty<int> BRND;
@@ -672,7 +739,7 @@ class SpaInterface {
         /// @brief True when HiFi audio output is enabled.
         ROProperty<bool> HIFI;
         // R7
-        /// @brief Water cleaning (ozone/UV) cycle duration (minutes).
+        /// @brief Auto sanitise cycle start time encoded as h*256+m. Range 0–5947. e.g. 2304 = 9:00. Set via W73.
         ROProperty<int> WCLNTime;
         /// @brief Maximum mains voltage recorded this session (V).
         ROProperty<int> V_Max;
@@ -718,8 +785,14 @@ class SpaInterface {
         ROProperty<bool> CJET;
         /// @brief True when variable-power element operation is enabled.
         ROProperty<bool> VELE;
-        /// @brief True when heater usage is disabled (1=Off).
+        /// @brief True when heat pump operation is enabled while the spa pool is in use (H.USE OEM setting). When false, heat pump is suspended during spa use.
         ROProperty<bool> HUSE;
+        /// @brief Aux element (booster) state.
+        /// @details Read/write. false=Off, true=On.
+        RWProperty<bool> HELE{this, &SpaInterface::setHELE};
+        /// @brief Heatpump operating mode.
+        /// @details Read/write. 0=Auto, 1=Heat, 2=Cool, 3=Off.
+        RWProperty<int> HPMP{this, &SpaInterface::setHPMP, HPMP_Map};
         // R9/RA/RB fault logs — most recent 3 faults (F1=most recent)
         /// @brief Fault 1 hour-of-day at time of fault.
         ROProperty<int> F1_HR;
@@ -787,6 +860,10 @@ class SpaInterface {
         ROProperty<int> F3_ST;
         /// @brief Fault 3 variable element state at time of fault.
         ROProperty<bool> F3_VE;
+        // RC
+        /// @brief Air blower operating mode.
+        /// @details Read/write. 0=Variable, 1=Ramp, 2=Off.
+        RWProperty<int> Outlet_Blower{this, &SpaInterface::setOutlet_Blower, Outlet_Blower_Map};
         // RE heatpump
         /// @brief Heat pump unit installed (0=No, 1=Yes).
         ROProperty<int> HP_Present;
@@ -856,119 +933,23 @@ class SpaInterface {
         ROProperty<bool> Pump4OkToRun;
         /// @brief True when pump 5 is in a safe state to start.
         ROProperty<bool> Pump5OkToRun;
-
-        /// @brief Water temperature set point x10.
-        /// @details Read/write. Valid range 50..410 (5.0C..41.0C).
-        RWProperty<int> STMP{this, &SpaInterface::setSTMP};
-
-        /// @brief Heatpump operating mode.
-        /// @details Read/write. 0=Auto, 1=Heat, 2=Cool, 3=Off.
-        RWProperty<int> HPMP{this, &SpaInterface::setHPMP, HPMP_Map};
-
-        /// @brief Light effect/mode.
-        /// @details Read/write. 0=White, 1=Color, 2=Fade, 3=Step, 4=Party.
-        RWProperty<int> ColorMode{this, &SpaInterface::setColorMode, ColorMode_Map};
-
-        /// @brief Light brightness.
-        /// @details Read/write. Valid range 1..5.
-        RWProperty<int> LBRTValue{this, &SpaInterface::setLBRTValue};
-
-        /// @brief Light effect speed.
-        /// @details Read/write. Valid range 1..5.
-        RWProperty<int> LSPDValue{this, &SpaInterface::setLSPDValue, LSPDValue_Map};
-
-        /// @brief Light color index.
-        /// @details Read/write. Valid range 0..31.
-        RWProperty<int> CurrClr{this, &SpaInterface::setCurrClr, CurrClr_Map};
-
-        /// @brief Sleep timer 1 day mode bitmap.
-        /// @details Read/write. Typical values: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays.
-        RWProperty<int> L_1SNZ_DAY{this, &SpaInterface::setL_1SNZ_DAY, SNZ_DAY_Map};
-        /// @brief Sleep timer 2 day mode bitmap.
-        /// @details Read/write. Typical values: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays.
-        RWProperty<int> L_2SNZ_DAY{this, &SpaInterface::setL_2SNZ_DAY, SNZ_DAY_Map};
-
-        /// @brief Sleep timer 1 start time.
-        /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock).
-        RWProperty<int> L_1SNZ_BGN{this, &SpaInterface::setL_1SNZ_BGN};
-        /// @brief Sleep timer 1 finish time.
-        /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock).
-        RWProperty<int> L_1SNZ_END{this, &SpaInterface::setL_1SNZ_END};
-        /// @brief Sleep timer 2 start time.
-        /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock).
-        RWProperty<int> L_2SNZ_BGN{this, &SpaInterface::setL_2SNZ_BGN};
-        /// @brief Sleep timer 2 finish time.
-        /// @details Read/write. Valid range 0..5947 encoded as h*256+m (24-hour clock).
-        RWProperty<int> L_2SNZ_END{this, &SpaInterface::setL_2SNZ_END};
-
-        /// @brief Pump 1 operating state.
-        /// @details Read/write. 0=Off, 1=On, 4=Auto (if supported).
-        RWProperty<int> RB_TP_Pump1{this, &SpaInterface::setRB_TP_Pump1};
-        /// @brief Pump 2 operating state.
-        /// @details Read/write. 0=Off, 1=On, 4=Auto (if supported).
-        RWProperty<int> RB_TP_Pump2{this, &SpaInterface::setRB_TP_Pump2};
-        /// @brief Pump 3 operating state.
-        /// @details Read/write. 0=Off, 1=On, 4=Auto (if supported).
-        RWProperty<int> RB_TP_Pump3{this, &SpaInterface::setRB_TP_Pump3};
-        /// @brief Pump 4 operating state.
-        /// @details Read/write. 0=Off, 1=On, 4=Auto (if supported).
-        RWProperty<int> RB_TP_Pump4{this, &SpaInterface::setRB_TP_Pump4};
-        /// @brief Pump 5 operating state.
-        /// @details Read/write. 0=Off, 1=On, 4=Auto (if supported).
-        RWProperty<int> RB_TP_Pump5{this, &SpaInterface::setRB_TP_Pump5};
-        /// @brief Aux element (booster) state.
-        /// @details Read/write. false=Off, true=On.
-        RWProperty<bool> HELE{this, &SpaInterface::setHELE};
-
-        /// @brief Current day of week on Spa RTC.
-        /// @details Read/write. 0=Monday .. 6=Sunday.
-        RWProperty<int> SpaDayOfWeek{this, &SpaInterface::setSpaDayOfWeek, SpaDayOfWeek_Map};
-
-        /// @brief Air blower operating mode.
-        /// @details Read/write. 0=Variable, 1=Ramp, 2=Off.
-        RWProperty<int> Outlet_Blower{this, &SpaInterface::setOutlet_Blower, Outlet_Blower_Map};
-
-        /// @brief Spa operating mode.
-        /// @details Read/write. 0=NORM, 1=ECON, 2=AWAY, 3=WEEK.
-        RWProperty<int> Mode{this, &SpaInterface::setMode, Mode_Map};
-
-        /// @brief Variable pump/blower speed.
-        /// @details Read/write. Valid range 1..5.
-        RWProperty<int> VARIValue{this, &SpaInterface::setVARIValue};
-
-        /// @brief Filtration block duration (hours).
-        /// @details Read/write. Valid values: 1, 2, 3, 4, 6, 8, 12, 24.
-        RWProperty<int> FiltBlockHrs{this, &SpaInterface::setFiltBlockHrs, FiltBlockHrs_Map};
-
-        /// @brief Filtration run time per block (hours).
-        /// @details Read/write. Valid range 1..24.
-        RWProperty<int> FiltHrs{this, &SpaInterface::setFiltHrs};
-
         /// @brief Keypad lock mode.
         /// @details Read/write. 0=Unlocked, 1=Partially Locked, 2=Locked.
         RWProperty<int> LockMode{this, &SpaInterface::setLockMode, LockMode_Map};
-
-        /// @brief Spa RTC clock value.
-        /// @details Read/write. Writing sends S01..S05 + S06 to the controller.
-        RWProperty<time_t> SpaTime{this, &SpaInterface::setSpaTime};
 
         /// @brief To be called by loop function of main sketch.  Does regular updates, etc.
         void loop();
 
         /// @brief Have we sucessfuly read the registers from the SpaNet controller.
-        /// @return 
+        /// @return
         bool isInitialised();
 
         /// @brief Set the function to be called when properties have been updated.
-        /// @param f 
+        /// @param f
         void setUpdateCallback(void (*f)());
 
         /// @brief Clear the call back function.
         void clearUpdateCallback();
-
-        /// @brief Light on/off state.
-        /// @details Read/write. 0=Off, 1=On.
-        RWProperty<int> RB_TP_Light{this, &SpaInterface::setRB_TP_Light};
 
         /// @brief Unified array of RWProperty pointers for each migrated pump, used for
         /// both reading state and sending commands. Grows as pumps are migrated.
