@@ -493,190 +493,368 @@ class SpaInterface {
         ROProperty<int> MainsCurrent;
 
         // R2
+        /// @brief Controller case temperature x10 (°C). e.g. 250 = 25.0°C.
         ROProperty<int> CaseTemperature;
+        /// @brief Port current draw x10 (A).
         ROProperty<int> PortCurrent;
+        /// @brief Heater element temperature x10 (°C).
         ROProperty<int> HeaterTemperature;
+        /// @brief Spa pool/water temperature x10 (°C). e.g. 380 = 38.0°C.
         ROProperty<int> PoolTemperature;
+        /// @brief Minutes remaining before spa returns to sleep.
         ROProperty<int> AwakeMinutesRemaining;
+        /// @brief Total filtration pump run time (minutes).
         ROProperty<int> FiltPumpRunTimeTotal;
+        /// @brief Filtration pump required run minutes remaining.
         ROProperty<int> FiltPumpReqMins;
+        /// @brief Load management timeout counter.
         ROProperty<int> LoadTimeOut;
+        /// @brief Total controller run time (hours).
         ROProperty<int> HourMeter;
+        /// @brief Relay 1 output state.
         ROProperty<int> Relay1;
+        /// @brief Relay 2 output state.
         ROProperty<int> Relay2;
+        /// @brief Relay 3 output state.
         ROProperty<int> Relay3;
+        /// @brief Relay 4 output state.
         ROProperty<int> Relay4;
+        /// @brief Relay 5 output state.
         ROProperty<int> Relay5;
+        /// @brief Relay 6 output state.
         ROProperty<int> Relay6;
+        /// @brief Relay 7 output state.
         ROProperty<int> Relay7;
+        /// @brief Relay 8 output state.
         ROProperty<int> Relay8;
+        /// @brief Relay 9 output state.
         ROProperty<int> Relay9;
+        /// @brief True when water is detected in the spa.
         ROProperty<bool> WaterPresent;
         // R3
+        /// @brief Current limit setting (A).
         ROProperty<int> CLMT;
+        /// @brief Mains phase configuration (1 = single phase, 3 = three phase).
         ROProperty<int> PHSE;
+        /// @brief Load limit 1 — first-stage current limit (A).
         ROProperty<int> LLM1;
+        /// @brief Load limit 2 — second-stage current limit (A).
         ROProperty<int> LLM2;
+        /// @brief Load limit 3 — third-stage current limit (A).
         ROProperty<int> LLM3;
+        /// @brief Controller software/firmware version string (e.g. "SW V3 SV3a").
         ROProperty<String> SVER;
+        /// @brief Controller model identifier string.
         ROProperty<String> Model;
+        /// @brief Serial number part 1.
         ROProperty<String> SerialNo1;
+        /// @brief Serial number part 2.
         ROProperty<String> SerialNo2;
+        /// @brief Dipswitch 1 state.
         ROProperty<bool> D1;
+        /// @brief Dipswitch 2 state.
         ROProperty<bool> D2;
+        /// @brief Dipswitch 3 state.
         ROProperty<bool> D3;
+        /// @brief Dipswitch 4 state.
         ROProperty<bool> D4;
+        /// @brief Dipswitch 5 state.
         ROProperty<bool> D5;
+        /// @brief Dipswitch 6 state.
         ROProperty<bool> D6;
+        /// @brief Pump configuration string.
         ROProperty<String> Pump;
+        /// @brief Lock state bitmask.
         ROProperty<int> LS;
+        /// @brief True when high-voltage supply is present.
         ROProperty<bool> HV;
+        /// @brief Snooze mode remaining time (minutes).
         ROProperty<int> SnpMR;
+        /// @brief Operational status string (e.g. "Filtering", "Heating").
         ROProperty<String> Status;
+        /// @brief Priming cycle count.
         ROProperty<int> PrimeCount;
+        /// @brief Error/fault code. 0 = no fault.
         ROProperty<int> EC;
+        /// @brief Heater ambient air temperature x10 (°C).
         ROProperty<int> HAMB;
+        /// @brief Heater connection/conductivity value.
         ROProperty<int> HCON;
         // R4
+        /// @brief Service interval 1 countdown (hours remaining).
         ROProperty<int> Ser1_Timer;
+        /// @brief Service interval 2 countdown (hours remaining).
         ROProperty<int> Ser2_Timer;
+        /// @brief Service interval 3 countdown (hours remaining).
         ROProperty<int> Ser3_Timer;
+        /// @brief Heating mode (0=Element, 1=Heat pump, 2=Both, 3=Cool).
         ROProperty<int> HeatMode;
+        /// @brief Pump idle timer (minutes since last use).
         ROProperty<int> PumpIdleTimer;
+        /// @brief Pump run timer (minutes of continuous run).
         ROProperty<int> PumpRunTimer;
+        /// @brief Adaptive pool temperature hysteresis x10 (°C).
         ROProperty<int> AdtPoolHys;
+        /// @brief Adaptive heater temperature hysteresis x10 (°C).
         ROProperty<int> AdtHeaterHys;
+        /// @brief Instantaneous power consumption x10 (W). e.g. 35 = 3.5 kW.
         ROProperty<int> Power;
+        /// @brief Cumulative energy consumption x100 (kWh).
         ROProperty<int> Power_kWh;
+        /// @brief Energy consumed today x10 (Wh).
         ROProperty<int> Power_Today;
+        /// @brief Energy consumed yesterday x10 (Wh).
         ROProperty<int> Power_Yesterday;
+        /// @brief Thermal cut-out trip count.
         ROProperty<int> ThermalCutOut;
+        /// @brief Test/diagnostic output D1 state.
         ROProperty<int> Test_D1;
+        /// @brief Test/diagnostic output D2 state.
         ROProperty<int> Test_D2;
+        /// @brief Test/diagnostic output D3 state.
         ROProperty<int> Test_D3;
+        /// @brief Element heat source temperature offset x10 (°C).
         ROProperty<int> ElementHeatSourceOffset;
+        /// @brief Detected mains frequency (Hz).
         ROProperty<int> Frequency;
+        /// @brief Heat pump heat mode source temperature offset x10 (°C).
         ROProperty<int> HPHeatSourceOffset_Heat;
+        /// @brief Heat pump cool mode source temperature offset x10 (°C).
         ROProperty<int> HPHeatSourceOffset_Cool;
+        /// @brief Heat source off-time (minutes).
         ROProperty<int> HeatSourceOffTime;
+        /// @brief Variable speed pump current speed setting.
         ROProperty<int> Vari_Speed;
+        /// @brief Variable speed pump output percentage (%).
         ROProperty<int> Vari_Percent;
+        /// @brief Variable speed pump mode (0=Auto, 1=Manual).
         ROProperty<int> Vari_Mode;
         // R5
+        /// @brief Blower/air injector operating state (0=Off, 1=On).
         ROProperty<int> RB_TP_Blower;
+        /// @brief Target water temperature set point x10 (°C). Read-only mirror; write via STMP.
         ROProperty<int> WTMP;
+        /// @brief True when auto mode is active.
         ROProperty<bool> RB_TP_Auto;
+        /// @brief True when heating or cooling is actively running.
         ROProperty<bool> RB_TP_Heater;
+        /// @brief True when ozone/UV sanitiser is running.
         ROProperty<bool> RB_TP_Ozone;
+        /// @brief True when spa is sleeping due to a sleep timer.
         ROProperty<bool> RB_TP_Sleep;
+        /// @brief True when a clean cycle is in progress.
         ROProperty<bool> CleanCycle;
         // R6
+        /// @brief 24-hour operation flag (0=Off, 1=On).
         ROProperty<int> L_24HOURS;
+        /// @brief Power save level (0=Off, 1=Low, 2=High).
         ROProperty<int> PSAV_LVL;
+        /// @brief Power save start time encoded as h*256+m.
         ROProperty<int> PSAV_BGN;
+        /// @brief Power save end time encoded as h*256+m.
         ROProperty<int> PSAV_END;
+        /// @brief Default touchpad screen index shown when waking.
         ROProperty<int> DefaultScrn;
+        /// @brief Touchpad sleep timeout (minutes, 0=never).
         ROProperty<int> TOUT;
+        /// @brief OEM brand identifier.
         ROProperty<int> BRND;
+        /// @brief Priming mode setting.
         ROProperty<int> PRME;
+        /// @brief Heating element type/configuration.
         ROProperty<int> ELMT;
+        /// @brief System type identifier.
         ROProperty<int> TYPE;
+        /// @brief Gas heating installed (0=No, 1=Yes).
         ROProperty<int> GAS;
+        /// @brief True when variable-speed pump is fitted.
         ROProperty<bool> VPMP;
+        /// @brief True when HiFi audio output is enabled.
         ROProperty<bool> HIFI;
         // R7
+        /// @brief Water cleaning (ozone/UV) cycle duration (minutes).
         ROProperty<int> WCLNTime;
+        /// @brief Maximum mains voltage recorded this session (V).
         ROProperty<int> V_Max;
+        /// @brief Minimum mains voltage recorded this session (V).
         ROProperty<int> V_Min;
+        /// @brief Maximum mains voltage recorded in the last 24 hours (V).
         ROProperty<int> V_Max_24;
+        /// @brief Minimum mains voltage recorded in the last 24 hours (V).
         ROProperty<int> V_Min_24;
+        /// @brief Current sensor zero-point calibration offset.
         ROProperty<int> CurrentZero;
+        /// @brief Current sensor gain calibration adjustment.
         ROProperty<int> CurrentAdjust;
+        /// @brief Voltage sensor calibration adjustment.
         ROProperty<int> VoltageAdjust;
+        /// @brief Service interval 1 period (hours).
         ROProperty<int> Ser1;
+        /// @brief Service interval 2 period (hours).
         ROProperty<int> Ser2;
+        /// @brief Service interval 3 period (hours).
         ROProperty<int> Ser3;
+        /// @brief Maximum permitted supply voltage (V).
         ROProperty<int> VMAX;
+        /// @brief Adaptive hysteresis setting x10 (°C).
         ROProperty<int> AHYS;
+        /// @brief Minimum power level for load management (kW x10).
         ROProperty<int> PMIN;
+        /// @brief Filtration pump power draw (kW x10).
         ROProperty<int> PFLT;
+        /// @brief Heater element power draw (kW x10).
         ROProperty<int> PHTR;
+        /// @brief Maximum total power for load management (kW x10).
         ROProperty<int> PMAX;
+        /// @brief True when temperature display is in °F, false for °C.
         ROProperty<bool> TemperatureUnits;
+        /// @brief True when ozone/sanitiser output is manually disabled.
         ROProperty<bool> OzoneOff;
+        /// @brief True when ozone/sanitiser runs 24 hours, false for auto-controlled.
         ROProperty<bool> Ozone24;
+        /// @brief True when circulation pump runs 24 hours, false for auto-controlled.
         ROProperty<bool> Circ24;
+        /// @brief True when the circulation jet boost is active.
         ROProperty<bool> CJET;
+        /// @brief True when variable-power element operation is enabled.
         ROProperty<bool> VELE;
+        /// @brief True when heater usage is disabled (1=Off).
         ROProperty<bool> HUSE;
-        // R9/RA/RB fault logs
+        // R9/RA/RB fault logs — most recent 3 faults (F1=most recent)
+        /// @brief Fault 1 hour-of-day at time of fault.
         ROProperty<int> F1_HR;
+        /// @brief Fault 1 time-of-day encoded as h*256+m.
         ROProperty<int> F1_Time;
+        /// @brief Fault 1 error code.
         ROProperty<int> F1_ER;
+        /// @brief Fault 1 current reading x10 (A) at time of fault.
         ROProperty<int> F1_I;
+        /// @brief Fault 1 voltage reading (V) at time of fault.
         ROProperty<int> F1_V;
+        /// @brief Fault 1 pool temperature x10 (°C) at time of fault.
         ROProperty<int> F1_PT;
+        /// @brief Fault 1 heater temperature x10 (°C) at time of fault.
         ROProperty<int> F1_HT;
+        /// @brief Fault 1 case temperature x10 (°C) at time of fault.
         ROProperty<int> F1_CT;
+        /// @brief Fault 1 pump state at time of fault.
         ROProperty<int> F1_PU;
+        /// @brief Fault 1 system status at time of fault.
         ROProperty<int> F1_ST;
+        /// @brief Fault 1 variable element state at time of fault.
         ROProperty<bool> F1_VE;
+        /// @brief Fault 2 hour-of-day at time of fault.
         ROProperty<int> F2_HR;
+        /// @brief Fault 2 time-of-day encoded as h*256+m.
         ROProperty<int> F2_Time;
+        /// @brief Fault 2 error code.
         ROProperty<int> F2_ER;
+        /// @brief Fault 2 current reading x10 (A) at time of fault.
         ROProperty<int> F2_I;
+        /// @brief Fault 2 voltage reading (V) at time of fault.
         ROProperty<int> F2_V;
+        /// @brief Fault 2 pool temperature x10 (°C) at time of fault.
         ROProperty<int> F2_PT;
+        /// @brief Fault 2 heater temperature x10 (°C) at time of fault.
         ROProperty<int> F2_HT;
+        /// @brief Fault 2 case temperature x10 (°C) at time of fault.
         ROProperty<int> F2_CT;
+        /// @brief Fault 2 pump state at time of fault.
         ROProperty<int> F2_PU;
+        /// @brief Fault 2 system status at time of fault.
         ROProperty<int> F2_ST;
+        /// @brief Fault 2 variable element state at time of fault.
         ROProperty<bool> F2_VE;
+        /// @brief Fault 3 hour-of-day at time of fault.
         ROProperty<int> F3_HR;
+        /// @brief Fault 3 time-of-day encoded as h*256+m.
         ROProperty<int> F3_Time;
+        /// @brief Fault 3 error code.
         ROProperty<int> F3_ER;
+        /// @brief Fault 3 current reading x10 (A) at time of fault.
         ROProperty<int> F3_I;
+        /// @brief Fault 3 voltage reading (V) at time of fault.
         ROProperty<int> F3_V;
+        /// @brief Fault 3 pool temperature x10 (°C) at time of fault.
         ROProperty<int> F3_PT;
+        /// @brief Fault 3 heater temperature x10 (°C) at time of fault.
         ROProperty<int> F3_HT;
+        /// @brief Fault 3 case temperature x10 (°C) at time of fault.
         ROProperty<int> F3_CT;
+        /// @brief Fault 3 pump state at time of fault.
         ROProperty<int> F3_PU;
+        /// @brief Fault 3 system status at time of fault.
         ROProperty<int> F3_ST;
+        /// @brief Fault 3 variable element state at time of fault.
         ROProperty<bool> F3_VE;
         // RE heatpump
+        /// @brief Heat pump unit installed (0=No, 1=Yes).
         ROProperty<int> HP_Present;
+        /// @brief Heat pump ambient air temperature x10 (°C).
         ROProperty<int> HP_Ambient;
+        /// @brief Heat pump condenser temperature x10 (°C).
         ROProperty<int> HP_Condensor;
+        /// @brief Heat pump operating state code.
         ROProperty<int> HP_State;
+        /// @brief Heat pump mode (0=Auto, 1=Heat, 2=Cool, 3=Off).
         ROProperty<int> HP_Mode;
+        /// @brief Heat pump defrost cycle timer (minutes).
         ROProperty<int> HP_Defrost_Timer;
+        /// @brief Heat pump compressor cumulative run timer (minutes).
         ROProperty<int> HP_Comp_Run_Timer;
+        /// @brief Heat pump low ambient temperature protection timer (minutes).
         ROProperty<int> HP_Low_Temp_Timer;
+        /// @brief Heat pump heat accumulation timer (minutes).
         ROProperty<int> HP_Heat_Accum_Timer;
+        /// @brief Heat pump start sequence timer (seconds).
         ROProperty<int> HP_Sequence_Timer;
+        /// @brief Heat pump warning/fault code. 0 = no warning.
         ROProperty<int> HP_Warning;
+        /// @brief Freeze protection activation timer (minutes).
         ROProperty<int> FrezTmr;
+        /// @brief Defrost cycle start temperature x10 (°C).
         ROProperty<int> DBGN;
+        /// @brief Defrost cycle end temperature x10 (°C).
         ROProperty<int> DEND;
+        /// @brief Defrost compressor run time limit (minutes).
         ROProperty<int> DCMP;
+        /// @brief Defrost maximum duration (minutes).
         ROProperty<int> DMAX;
+        /// @brief Defrost element activation delay (minutes).
         ROProperty<int> DELE;
+        /// @brief Defrost pump operating mode.
         ROProperty<int> DPMP;
+        /// @brief True when heat pump compressor is running.
         ROProperty<bool> HP_Compressor_State;
+        /// @brief True when heat pump fan is running.
         ROProperty<bool> HP_Fan_State;
+        /// @brief True when heat pump 4-way reversing valve is active (cool mode).
         ROProperty<bool> HP_4W_Valve;
+        /// @brief True when heat pump auxiliary heater element is active.
         ROProperty<bool> HP_Heater_State;
 
         // RG
+        /// @brief Pump 1 installation configuration string.
+        /// @details Format "I-S-PPP" where I=installed (1/0), S=speed type (1=single, 2=dual),
+        /// PPP=possible states (e.g. "014" = Off/On/Auto). Example: "1-1-014".
         ROProperty<String> Pump1InstallState;
+        /// @brief Pump 2 installation configuration string. See Pump1InstallState for format.
         ROProperty<String> Pump2InstallState;
+        /// @brief Pump 3 installation configuration string. See Pump1InstallState for format.
         ROProperty<String> Pump3InstallState;
+        /// @brief Pump 4 installation configuration string. See Pump1InstallState for format.
         ROProperty<String> Pump4InstallState;
+        /// @brief Pump 5 installation configuration string. See Pump1InstallState for format.
         ROProperty<String> Pump5InstallState;
+        /// @brief True when pump 1 is in a safe state to start.
         ROProperty<bool> Pump1OkToRun;
+        /// @brief True when pump 2 is in a safe state to start.
         ROProperty<bool> Pump2OkToRun;
+        /// @brief True when pump 3 is in a safe state to start.
         ROProperty<bool> Pump3OkToRun;
+        /// @brief True when pump 4 is in a safe state to start.
         ROProperty<bool> Pump4OkToRun;
+        /// @brief True when pump 5 is in a safe state to start.
         ROProperty<bool> Pump5OkToRun;
 
         /// @brief Water temperature set point x10.
