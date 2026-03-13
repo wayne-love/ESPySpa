@@ -81,7 +81,7 @@ void SpaInterface::_processDebugCommand() {
     if (_instance == nullptr) return;
 
     String cmd = Debug.getLastCommand();
-    if (!cmd.startsWith("spa ")) return;
+    if (!cmd.startsWith("ss ")) return;
 
     String payload = cmd.substring(4);
     debugI("TX: %s", payload.c_str());
@@ -835,7 +835,7 @@ void SpaInterface::updateStatus() {
 
 void SpaInterface::loop(){
     if (!_debugInitialised) {
-        Debug.setHelpProjectsCmds("spa <cmd> - Send raw command to spa serial and print response");
+        Debug.setHelpProjectsCmds("ss <cmd> - Send raw command to spa serial and print response");
         Debug.setCallBackProjectCmds(&SpaInterface::_processDebugCommand);
         _debugInitialised = true;
     }
