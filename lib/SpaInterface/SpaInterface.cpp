@@ -2,11 +2,15 @@
 
 #define BAUD_RATE 38400
 
+SpaInterface* SpaInterface::_instance = nullptr;
+
 SpaInterface::SpaInterface() : port(SPA_SERIAL) {
     SPA_SERIAL.setRxBufferSize(1024);  //required for unit testing
     SPA_SERIAL.setTxBufferSize(1024);  //required for unit testing
     SPA_SERIAL.begin(BAUD_RATE, SERIAL_8N1, RX_PIN, TX_PIN);
     SPA_SERIAL.setTimeout(250);
+
+    _instance = this;
 }
 
 SpaInterface::~SpaInterface() {}
@@ -71,6 +75,42 @@ bool SpaInterface::sendCommandCheckResult(String cmd, String expected){
     bool outcome = result == expected;
     debugD("Sent command '%s', expected '%s', got '%s'",cmd.c_str(),expected.c_str(),result.c_str());
     return outcome;
+}
+
+void SpaInterface::_processDebugCommand() {
+    if (_instance == nullptr) return;
+
+    String cmd = Debug.getLastCommand();
+    if (!cmd.startsWith("spa ")) return;
+
+    String payload = cmd.substring(4);
+    debugI("TX: %s", payload.c_str());
+
+    _instance->flushSerialReadBuffer();
+    _instance->port.print('\n');
+    _instance->port.flush();
+    delay(50);
+    _instance->port.printf("%s\n", payload.c_str());
+    _instance->port.flush();
+
+    // Drain until 100ms of silence (max 2s absolute)
+    String response = "";
+    unsigned long lastByte = millis();
+    unsigned long deadline = millis() + 2000;
+    while (millis() - lastByte < 100 && millis() < deadline) {
+        while (_instance->port.available()) {
+            response += (char)_instance->port.read();
+            lastByte = millis();
+        }
+    }
+
+    if (response.length() > 0) {
+        debugI("RX:\n%s", response.c_str());
+    } else {
+        debugI("RX: (no response)");
+    }
+
+    _instance->_resultRegistersDirty = true;
 }
 
 bool SpaInterface::setRB_TP_Pump1(int mode){
@@ -794,6 +834,12 @@ void SpaInterface::updateStatus() {
 
 
 void SpaInterface::loop(){
+    if (!_debugInitialised) {
+        Debug.setHelpProjectsCmds("spa <cmd> - Send raw command to spa serial and print response");
+        Debug.setCallBackProjectCmds(&SpaInterface::_processDebugCommand);
+        _debugInitialised = true;
+    }
+
     if ( _lastWaitMessage + 1000 < millis()) {
         debugV("Waiting...");
         _lastWaitMessage = millis();

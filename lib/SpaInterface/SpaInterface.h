@@ -93,6 +93,14 @@ class SpaInterface {
         String flushSerialReadBuffer(bool returnData);
 
 
+        /// @brief Singleton pointer used by the static RemoteDebug callback.
+        static SpaInterface* _instance;
+
+        /// @brief Static callback registered with RemoteDebug.
+        /// Handles the `s <cmd>` project command: sends the payload to the spa
+        /// serial port and prints the response via RemoteDebug.
+        static void _processDebugCommand();
+
         /// @brief Stores millis time at which next update should occur
         unsigned long _nextUpdateDue = 0;
 
@@ -101,6 +109,9 @@ class SpaInterface {
 
         /// @brief If the result registers have been modified locally, need to do a fress pull from the controller
         bool _resultRegistersDirty = true;
+
+        /// @brief True once RemoteDebug project commands have been registered (deferred to first loop() call).
+        bool _debugInitialised = false;
 
    
         void (*updateCallback)() = nullptr;
