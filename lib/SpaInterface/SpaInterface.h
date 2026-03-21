@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <functional>
 #include <stdexcept>
+#include <vector>
 #include <RemoteDebug.h>
 #include <time.h>
 #include <TimeLib.h>
@@ -265,6 +266,7 @@ class SpaInterface {
             operator T() const { return _value; }
             void setCallback(void (*c)(T)) { _callback = c; }
             void clearCallback() { _callback = nullptr; }
+            
             // Returns the matching label for the current value, or fallback if not found.
             const char* getLabel(const char* fallback = "Unknown") const {
                 if (!_map || _mapSize == 0) {
@@ -277,12 +279,32 @@ class SpaInterface {
                 }
                 return fallback;
             }
+
             // Expose label/value map for building UI dropdowns.
             const LabelValue* getLabelMap(size_t& count) const {
                 count = _mapSize;
                 return _map;
             }
+            
+            /// @brief Replace the label/value map at runtime. The map data is copied
+            ///        into the property so the caller's array does not need to outlive this call.
+            template <size_t N>
+            void setLabelMap(const LabelValue (&map)[N]) {
+                _ownedMap.assign(map, map + N);
+                _map = _ownedMap.data();
+                _mapSize = _ownedMap.size();
+            }
+            
+            /// @brief Replace the label/value map at runtime using a braced initialiser list,
+            ///        e.g. setLabelMap({{"On",1},{"Off",0}}). The data is owned by the property.
+            void setLabelMap(std::initializer_list<LabelValue> map) {
+                _ownedMap.assign(map);
+                _map = _ownedMap.data();
+                _mapSize = _ownedMap.size();
+            }
+            
             size_t getLabelCount() const { return _mapSize; }
+
             const char* getLabelAt(size_t index, const char* fallback = "Unknown") const {
                 if (!_map || index >= _mapSize) {
                     return fallback;
@@ -296,6 +318,7 @@ class SpaInterface {
             const LabelValue* _map = nullptr;
             size_t _mapSize = 0;
             void (*_callback)(T) = nullptr;
+            std::vector<LabelValue> _ownedMap;
 
             // Called by SpaInterface when a fresh value is received from the spa.
             void update(T newValue) {
@@ -962,8 +985,8 @@ class SpaInterface {
         /// @brief Clear the call back function.
         void clearUpdateCallback();
 
-        /// @brief Unified array of RWProperty pointers for each migrated pump, used for
-        /// both reading state and sending commands. Grows as pumps are migrated.
+        /// @brief Unified array of RWProperty pointers for eachpump, used for
+        /// both reading state and sending commands.
         using PumpStatus = RWProperty<int> SpaInterface::*;
         static constexpr PumpStatus pumpStatuses[] = {
             &SpaInterface::RB_TP_Pump1,

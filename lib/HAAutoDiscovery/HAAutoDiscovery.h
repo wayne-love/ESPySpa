@@ -68,7 +68,48 @@ void generateSelectAdJSON(String& output, const AutoDiscoveryInformationTemplate
    serializeJson(json, output);
 }
 
-void generateFanAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, int min, int max, const String* modes, const size_t modesSize=0);
+template <typename T>
+void generateFanAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, int min, int max, const SpaInterface::ROProperty<T>& prop) {
+   JsonDocument json;
+   generateCommonAdJSON(json, config, spa, discoveryTopic, "fan");
+
+   // Find the last character that is not a space or curly brace
+   int lastIndex = config.valueTemplate.length() - 1;
+   while (lastIndex >= 0 && (config.valueTemplate[lastIndex] == ' ' || config.valueTemplate[lastIndex] == '}')) {
+      lastIndex--;
+   }
+   json["state_value_template"] = config.valueTemplate.substring(0, lastIndex + 1) + ".state" + config.valueTemplate.substring(lastIndex + 1);
+   json["command_topic"] = spa.commandTopic + "/" + config.propertyId + "_state";
+
+   if (max > min) {
+      json["percentage_state_topic"] = spa.stateTopic;
+      json["percentage_command_topic"] = spa.commandTopic + "/" + config.propertyId + "_speed";
+      json["percentage_value_template"] = config.valueTemplate.substring(0, lastIndex + 1) + ".speed" + config.valueTemplate.substring(lastIndex + 1);
+
+      json["speed_range_min"]=min;
+      json["speed_range_max"]=max;
+   }
+   
+   const size_t count = prop.getLabelCount(); 
+   if (count > 0) {
+      json["preset_mode_state_topic"] = spa.stateTopic;
+      json["preset_mode_command_topic"] = spa.commandTopic + "/" + config.propertyId + "_mode";
+      json["preset_mode_value_template"] = config.valueTemplate.substring(0, lastIndex + 1) + ".mode" + config.valueTemplate.substring(lastIndex + 1);
+      
+      JsonArray jsonModes = json["preset_modes"].to<JsonArray>();
+      for (size_t i = 0; i < count; i++) jsonModes.add(prop.getLabelAt(i));
+
+   }
+
+   if (config.propertyId.startsWith("pump")) {
+      json["icon"] = "mdi:pump";
+   }
+
+   serializeJson(json, output);
+
+}
+
+
 
 template <typename T, size_t N>
 void generateLightAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, const std::array<T, N>& colorModes) {

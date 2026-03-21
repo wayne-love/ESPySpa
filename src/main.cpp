@@ -272,16 +272,14 @@ void mqttHaAutoDiscovery() {
       ADConf.propertyId = "pump" + String(pumpNumber);
       ADConf.valueTemplate = "{{ value_json.pumps.pump" + String(pumpNumber) + " }}";
       if (pumpInstallState.endsWith("4")) {
-        selectedPumpOptions = si.autoPumpOptions.data();
-        arrSize = si.autoPumpOptions.size();
-      } else {
-        selectedPumpOptions = nullptr;
-        arrSize = 0;
+
+        (si.*(SpaInterface::pumpStatuses[pumpNumber-1])).setLabelMap({{"Manual",3},{"Auto",4}});
+
       }
       if (getPumpSpeedType(pumpInstallState) == "1") {
-        generateFanAdJSON(output, ADConf, spa, discoveryTopic, 0, 0, selectedPumpOptions, arrSize);
+        generateFanAdJSON(output, ADConf, spa, discoveryTopic, 0, 0, (si.*(SpaInterface::pumpStatuses[pumpNumber-1])));
       } else {
-        generateFanAdJSON(output, ADConf, spa, discoveryTopic, getPumpSpeedMin(pumpInstallState), getPumpSpeedMax(pumpInstallState), selectedPumpOptions, arrSize);
+        generateFanAdJSON(output, ADConf, spa, discoveryTopic, getPumpSpeedMin(pumpInstallState), getPumpSpeedMax(pumpInstallState), (si.*(SpaInterface::pumpStatuses[pumpNumber-1])));
       }
       mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
     }
@@ -408,13 +406,7 @@ void mqttHaAutoDiscovery() {
   ADConf.propertyId = "blower";
   ADConf.deviceClass = "";
   ADConf.entityCategory = "";
-  // blowerModes bridges the type mismatch between Outlet_Blower_Map (ROProperty<int>::LabelValue[],
-  // which includes "Off") and generateFanAdJSON which expects const String* of preset mode names only.
-  // "Off" is a state rather than a preset mode so is intentionally excluded here.
-  // TODO: future improvement — update generateFanAdJSON to accept the label map directly, skipping
-  // entries that represent the off state, to eliminate this bridging array.
-  static const String blowerModes[] = {"Variable", "Ramp"};
-  generateFanAdJSON(output, ADConf, spa, discoveryTopic, 1, 5, blowerModes, 2);
+  generateFanAdJSON(output, ADConf, spa, discoveryTopic, 1, 5, si.Outlet_Blower);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
   ADConf.displayName = "Spa Mode";
