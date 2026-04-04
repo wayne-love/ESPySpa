@@ -102,6 +102,7 @@ void startWiFiManager(){
     config.writeConfig();
   }
 
+  WiFi.disconnect(true); // Force teardown of all socket connections
   ESP.restart(); // Restart the ESP to apply the new settings
 }
 
@@ -122,6 +123,7 @@ void checkButton(){
 void startWifiManagerCallback() {
   debugD("Starting Wi-Fi Manager...");
   startWiFiManager();
+  WiFi.disconnect(true); // Force teardown of all socket connections
   ESP.restart(); //do we need to reboot here??
 }
 
@@ -208,6 +210,14 @@ void mqttHaAutoDiscovery() {
   ADConf.displayName = "Mains Current";
   ADConf.valueTemplate = "{{ value_json.power.current }}";
   ADConf.propertyId = "MainsCurrent";
+  ADConf.deviceClass = "current";
+  ADConf.entityCategory = "diagnostic";
+  generateSensorAdJSON(output, ADConf, spa, discoveryTopic, "measurement", "A");
+  mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
+
+  ADConf.displayName = "Heat Element Current";
+  ADConf.valueTemplate = "{{ value_json.power.heatElementCurrent }}";
+  ADConf.propertyId = "EC";
   ADConf.deviceClass = "current";
   ADConf.entityCategory = "diagnostic";
   generateSensorAdJSON(output, ADConf, spa, discoveryTopic, "measurement", "A");
@@ -799,6 +809,7 @@ void loop() {
     if (spaCallbackProperty == "reboot") {
       debugI("Rebooting ESP after %d ms", spaCallbackValue.toInt());
       delay(spaCallbackValue.toInt()); // Wait for the specified time before rebooting
+      WiFi.disconnect(true); // Force teardown of all socket connections
       ESP.restart();
     } else {
       debugD("Setting Spa Properties...");

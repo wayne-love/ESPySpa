@@ -141,6 +141,7 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
   json["power"]["current"]= si.MainsCurrent.get() / 10.0; // convert value to A
   json["power"]["power"] = si.Power.get() / 10.0; // convert value to W
   json["power"]["totalenergy"]= si.Power_kWh.get() / 100.0; // convert value to kWh.
+  json["power"]["heatElementCurrent"] = si.EC.get() / 10.0; // convert value to A
 
   json["status"]["heatingActive"] = si.RB_TP_Heater.get()? "ON": "OFF";
   json["status"]["ozoneActive"] = si.RB_TP_Ozone.get()? "ON": "OFF";

@@ -329,6 +329,7 @@ class SpaInterface {
                     _callback(_value);
                 }
             }
+
             // Reverse-lookup by label string; throws std::invalid_argument if the label
             // is not found in the map or if no map is configured.
             void updateFromLabel(const char* label) {
@@ -612,7 +613,7 @@ class SpaInterface {
         ROProperty<String> Status;
         /// @brief Priming cycle count.
         ROProperty<int> PrimeCount;
-        /// @brief Error/fault code. 0 = no fault.
+        /// @brief Variable heat element current draw x10 (A). e.g. 77 = 7.7A.
         ROProperty<int> EC;
         /// @brief Heater ambient air temperature x10 (°C).
         ROProperty<int> HAMB;
