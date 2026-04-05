@@ -81,9 +81,9 @@ void SpaInterface::_processDebugCommand() {
     if (_instance == nullptr) return;
 
     String cmd = Debug.getLastCommand();
-    if (!cmd.startsWith("ss ")) return;
+    if (!cmd.startsWith("ss ") && !cmd.startsWith("SS ")) return;
 
-    String payload = cmd.substring(4);
+    String payload = cmd.substring(3);
     debugI("TX: %s", payload.c_str());
 
     _instance->flushSerialReadBuffer();
@@ -93,14 +93,17 @@ void SpaInterface::_processDebugCommand() {
     _instance->port.printf("%s\n", payload.c_str());
     _instance->port.flush();
 
-    // Drain until 100ms of silence (max 2s absolute)
+    // Wait up to 2s for first byte, then collect until 500ms gap
     String response = "";
-    unsigned long lastByte = millis();
-    unsigned long deadline = millis() + 2000;
-    while (millis() - lastByte < 100 && millis() < deadline) {
-        while (_instance->port.available()) {
-            response += (char)_instance->port.read();
-            lastByte = millis();
+    unsigned long start = millis();
+    while (!_instance->port.available() && millis() - start < 2000) {}
+    if (_instance->port.available()) {
+        unsigned long lastByte = millis();
+        while (millis() - lastByte < 500) {
+            while (_instance->port.available()) {
+                response += (char)_instance->port.read();
+                lastByte = millis();
+            }
         }
     }
 
