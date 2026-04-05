@@ -310,6 +310,13 @@ Each fault register follows the same layout. R9=F1, RA=F2, RB=F3.
 | `S25:<0-4>` | RB_TP_Pump4 | |
 | `S26:<0-4>` | RB_TP_Pump5 | |
 | `S28:<0-2>` | Outlet_Blower | 0=Variable, 1=Ramp, 2=Off |
+| `W01` | Reset energy and voltage statistics mensures ||
+| `W02` | Unknown W02 valid, W02:1 invalid ||
+| `W03` | Set zero current level. Spa should be drawing no power when this is done. ||
+| `W04` | Decrease current calibration gain by 1 (0.1A)||
+| `W05` | Increase current calibration gain by 1 (0.1A)||
+| `W06` | VoltageAdjust | Increase voltage calibration gain by 1 (0.1v) |
+| `W07` | VoltageAdjust | Decrease voltage calibration gain by 1 (0.1v)|
 | `W14` | RB_TP_Light | **Toggle** — no value argument |
 | `W40:<value>` | STMP | Set point ×10. e.g. `W40:380` = 38.0°C |
 | `W60:<1-24>` | FiltHrs | Filtration hours per block |
