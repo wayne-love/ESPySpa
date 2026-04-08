@@ -28,17 +28,17 @@ Fields are addressed as `RN+offset` where N is the register name and offset is t
 | R2+16 | `AwakeMinutesRemaining` | Minutes before spa returns to sleep/standby | — |
 | R2+17 | `FiltPumpRunTimeTotal` | Total cumulative filtration pump run time (minutes) | — |
 | R2+18 | `FiltPumpReqMins` | Remaining filtration minutes required this cycle | — |
-| R2+19 | `LoadTimeOut` | Load management timeout counter (seconds) | — |
-| R2+20 | `HourMeter` | Total controller run time ×10 (hours). e.g. 279654 = 27965.4 h | — |
-| R2+21 | `Relay1` | Relay 1 cumulative run time or state | — |
-| R2+22 | `Relay2` | Relay 2 cumulative run time or state | — |
-| R2+23 | `Relay3` | Relay 3 cumulative run time or state | — |
-| R2+24 | `Relay4` | Relay 4 cumulative run time or state | — |
-| R2+25 | `Relay5` | Relay 5 cumulative run time or state | — |
-| R2+26 | `Relay6` | Relay 6 cumulative run time or state | — |
-| R2+27 | `Relay7` | Relay 7 cumulative run time or state | — |
-| R2+28 | `Relay8` | Relay 8 cumulative run time or state | — |
-| R2+29 | `Relay9` | Relay 9 cumulative run time or state | — |
+| R2+19 | `LoadTimeOut` | In-use sessions timer (seconds) | — |
+| R2+20 | `HourMeter` | Total controller run time ×10 (hours). e.g. 279654 = 27965.4 h | `W23:<hh>` |
+| R2+21 | `Relay1` | Relay 1 cumulative activation count | `W24:<count>` |
+| R2+22 | `Relay2` | Relay 2 cumulative activation count | `W25:<count>` |
+| R2+23 | `Relay3` | Relay 3 cumulative activation count | `W26:<count>` |
+| R2+24 | `Relay4` | Relay 4 cumulative activation count | `W27:<count>` |
+| R2+25 | `Relay5` | Relay 5 cumulative activation count | `W28:<count>` |
+| R2+26 | `Relay6` | Relay 6 cumulative activation count | `W29:<count>` |
+| R2+27 | `Relay7` | Relay 7 cumulative activation count | `W30:<count>` |
+| R2+28 | `Relay8` | Relay 8 cumulative activation count, controls Heating Element | `W31:<count>` |
+| R2+29 | `Relay9` | Relay 9 cumulative activation count | `W32:<count>` |
 
 ---
 
@@ -63,14 +63,14 @@ Fields are addressed as `RN+offset` where N is the register name and offset is t
 | R3+15 | `D6` | Dipswitch 6: Multi-phase type when D5=1 (1=Three Phase, 0=Two Phase) | — |
 | R3+16 | `Pump` | Pump configuration string | — |
 | R3+17 | `LS` | Load shedding level | — |
-| R3+18 | `HV` | High voltage input active (bool) | — |
+| R3+18 | *HV* | Unknown, no observed changes.  0 = Off | — |
 | R3+19 | `SnpMR` | Snooze mode remaining time (MR). Per-second countdown; 0 when not in snooze | — |
 | R3+20 | `Status` | Operational status string (e.g. `Filtering`, `In use`, `Heating`) | — |
 | R3+21 | `PrimeCount` | Priming cycle count | — |
 | R3+22 | `EC` | Variable heat element current draw x10 (A) | — |
-| R3+23 | `HAMB` | Heater ambient air temperature ×10 (°C) | — |
-| R3+24 | `HCON` | Heater conductivity/connection value | — |
-| R3+25 | *(HV_2)* | High voltage 2 input state. Encoding unconfirmed; not mapped in code | — |
+| R3+23 | `HAMB` | Heat pump ambient air temperature ×10 (°C) | — |
+| R3+24 | `HCON` | Heat pump condensor temperature x10 (°C) | — |
+| R3+25 | *HV_2* | 0 when heat element inactive (Off), 90 when active | — |
 
 ---
 
@@ -83,8 +83,8 @@ Fields are addressed as `RN+offset` where N is the register name and offset is t
 | R4+3 | `Ser2_Timer` | Service interval 2 countdown (hours remaining) | — |
 | R4+4 | `Ser3_Timer` | Service interval 3 countdown (hours remaining) | — |
 | R4+5 | `HeatMode` | Heating source mode. 0=Element, 1=Heat pump, 2=Both, 3=Cool | — |
-| R4+6 | `PumpIdleTimer` | Minutes since last pump activity | — |
-| R4+7 | `PumpRunTimer` | Continuous pump run time (seconds, increments each second) | — |
+| R4+6 | `PumpIdleTimer` | In sleep mode: seconds elapsed in 600 s duty cycle (R4+6 + R4+7 = 600). In use mode: continuous session elapsed timer (counts beyond 600) | — |
+| R4+7 | `PumpRunTimer` | In sleep mode: seconds remaining in 600 s duty cycle (counts down to 0). In use mode: clamps at 0 | — |
 | R4+8 | `AdtPoolHys` | Adaptive pool temperature hysteresis ×10 (°C) | — |
 | R4+9 | `AdtHeaterHys` | Adaptive heater temperature hysteresis ×10 (°C) | — |
 | R4+10 | `Power` | Instantaneous power consumption ×10 (W). e.g. 35 = 3.5 kW | — |
@@ -94,15 +94,18 @@ Fields are addressed as `RN+offset` where N is the register name and offset is t
 | R4+14 | `ThermalCutOut` | Thermal cut-out trip count | — |
 | R4+15 | `Test_D1` | Diagnostic output D1 state | — |
 | R4+16 | `Test_D2` | Diagnostic output D2 state | — |
-| R4+17 | `Test_D3` | Diagnostic output D3 state | — |
+| R4+17 | `Test_D3` | Diagnostic output D3 state. Observed to fluctuate (0 / 262144) with spa state transitions — not directly written by any known S/W command | — |
 | R4+18 | `ElementHeatSourceOffset` | Element heat source temperature offset ×10 (°C) | — |
-| R4+19 | `Frequency` | Detected mains frequency (Hz) | — |
+| R4+19 | `Frequency` | Unknown | — |
 | R4+20 | `HPHeatSourceOffset_Heat` | Heat pump heat-mode source temperature offset ×10 (°C) | — |
 | R4+21 | `HPHeatSourceOffset_Cool` | Heat pump cool-mode source temperature offset ×10 (°C) | — |
 | R4+22 | `HeatSourceOffTime` | Heat source off-time (minutes) | — |
-| R4+23 | `Vari_Mode` | Variable speed pump mode. 0=Auto, 1=Manual | — |
-| R4+24 | `Vari_Speed` | Variable speed pump current speed setting | — |
-| R4+25 | `Vari_Percent` | Variable speed pump output percentage (%) | — |
+| R4+23 | `Vari_Mode` | Variable speed pump commanded speed target (%). Written by `S15:<n>`. Values observed: 1, 4, 100 | `S15:<n>` |
+| R4+24 | `Vari_Speed` | Variable speed pump live speed reading | — |
+| R4+25 | `Vari_Percent` | Variable speed pump live output percentage (%) | — |
+| R4+26 | *(unknown)* | | — |
+| R4+27 | *(unknown)* | | — |
+| R4+28 | *(unknown)* | Mirrors R4+23; also written by `S15:<n>` | `S15:<n>` |
 
 ---
 
@@ -119,10 +122,10 @@ Fields are addressed as `RN+offset` where N is the register name and offset is t
 | R5+11 | `RB_TP_Ozone` | True when ozone/UV sanitiser is running | — |
 | R5+12 | `RB_TP_Heater` | True when heating or cooling is actively running | — |
 | R5+13 | `RB_TP_Auto` | True when auto mode is active | — |
-| R5+14 | `RB_TP_Light` | Light state. 0=Off, 1=On | `W14` (toggle — no value argument) |
+| R5+14 | `RB_TP_Light` | Light state. 0=Off, 1=On | `W14` (toggle) / `S30` |
 | R5+15 | `WTMP` | Actual (measured) water temperature ×10 (°C). e.g. 376 = 37.6°C | — |
 | R5+16 | `CleanCycle` | True when a sanitise/clean cycle is in progress | — |
-| R5+17 | *(unknown)* | Per-second countdown timer. Behaviour consistent with a touchpad activity timeout (~30 s); resets on keypad interaction | — |
+| R5+17 | *(unss rfknown)* | Per-second countdown timer. Behaviour consistent with a touchpad activity timeout (~30 s); resets on keypad interaction | — |
 | R5+18 | `RB_TP_Pump1` | Pump 1 operating state. 0=Off, 1=Speed 1, 2=Speed 2, 4=Auto | `S22:<0-4>` |
 | R5+19 | `RB_TP_Pump2` | Pump 2 operating state. 0=Off, 1=On, 4=Auto | `S23:<0-4>` |
 | R5+20 | `RB_TP_Pump3` | Pump 3 operating state. 0=Off, 1=On, 4=Auto | `S24:<0-4>` |
@@ -175,7 +178,7 @@ Fields are addressed as `RN+offset` where N is the register name and offset is t
 | R7+4 | `Ozone24` | Ozone/sanitiser continuous 24h mode (bool) | — |
 | R7+5 | `CJET` | Circulation jet boost active (bool) | — |
 | R7+6 | `Circ24` | Circulation pump continuous 24h mode (bool) | — |
-| R7+7 | `VELE` | Variable-power element operation enabled (bool) | — |
+| R7+7 | `VELE` | Variable-power element mode. 0=Off, 1=Step, 2=Variable | `W91:<0-2>` |
 | R7+8 | *(StartDD)* | Install date — day. Not mapped in code | — |
 | R7+9 | *(StartMM)* | Install date — month. Not mapped in code | — |
 | R7+10 | *(StartYY)* | Install date — year. Not mapped in code | — |
@@ -192,7 +195,7 @@ Fields are addressed as `RN+offset` where N is the register name and offset is t
 | R7+21 | `Ser3` | Service interval 3 period (hours) | — |
 | R7+22 | `VMAX` | Maximum permitted supply voltage (V) | — |
 | R7+23 | `AHYS` | Adaptive hysteresis setting ×10 (°C) | — |
-| R7+24 | `HUSE` | Heat pump suspended during spa use when false (H.USE OEM setting) | — |
+| R7+24 | `HUSE` | Heat pump available when spa is in use. 0=Not available, 1=Available (H.USE OEM setting) | `W97:<0-1>` |
 | R7+25 | `HELE` | Auxiliary booster element. false=Off, true=On | `W98:<0-1>` |
 | R7+26 | `HPMP` | Heat pump operating mode. 0=Auto, 1=Heat, 2=Cool, 3=Off | `W99:<0-3>` |
 | R7+27 | `PMIN` | Minimum power level for load management ×10 (kW) | — |
@@ -227,13 +230,15 @@ Each fault register follows the same layout. R9=F1, RA=F2, RB=F3.
 
 | Offset | Property | Description | Write Command |
 |--------|----------|-------------|---------------|
-| RC+1 | *(Outlet_Heater)* | Heating element relay output state. Encoding not confirmed; not mapped in code | — |
+| RC+1 | *(Outlet_Heater)* | Heating element relay output state. Not mapped in code | — |
 | RC+2 | *(Outlet_Circ)* | Circulation pump relay output state. Not mapped in code | — |
 | RC+3 | *(Outlet_Sanitise)* | Sanitiser relay output state. Not mapped in code | — |
 | RC+4 | *(Outlet_Pump1)* | Pump 1 relay output state. Not mapped in code | — |
 | RC+5 | *(Outlet_Pump2)* | Pump 2 relay output state. Not mapped in code | — |
 | RC+6–9 | *(unknown)* | Unmapped relay fields | — |
-| RC+10 | `Outlet_Blower` | Air blower mode. 0=Variable, 1=Ramp, 2=Off | `S28:<0-2>` |
+| RC+10 | `Outlet_Blower` | Air blower mode. 0=Variable, 1=Ramp, 2=Off. Confirmed by direct observation. | `S12:<0-2>` / `S28:<0-2>` |
+| RC+11 | *(Demo mode?)* | Suspected demo mode flag. Set to 1 by bare `S32`; second call does not clear it. When active, temperature readings appear offset by ~20°C — consistent with simulated/demo values | `S32` |
+| RC+12 | *(unknown)* | Written by `S33:<0-1>`. 0=Off, 1=On. Returns value + `S33` echo. Bare `S33` invalid | `S33:<0-1>` |
 
 ---
 
@@ -302,24 +307,86 @@ Each fault register follows the same layout. R9=F1, RA=F2, RB=F3.
 | `S08:<1-5>` | LBRTValue | Light brightness |
 | `S09:<1-5>` | LSPDValue | Light effect speed |
 | `S10:<0-31>` | CurrClr | Light colour index |
+| `S11` | *(unknown)* | S11 valid (returns `S11`). S11:1 invalid. No observed register changes |
+| `S12:<0-2>` | Outlet_Blower | Blower control. 0=Variable, 1=Ramp, 2=Off. Returns value + `S12` |
 | `S13:<1-5>` | VARIValue | Variable pump/blower speed |
+| `S14` || Toggle Blower |
+| `S15:<n>` | Vari_Mode | Variable speed pump commanded speed target. Writes value to R4+23 and R4+28. Returns value + `S15` echo. |
+| `S16` | Outlet_Blower | Toggle blower on/off. S16:n invalid. |
+| `S17` | *(unknown)* | Valid bare toggle (returns `S17`). No observable register changes — function unknown |
+| `S18` | *(unknown)* | Valid bare toggle (returns `S18`). No observable register changes — function unknown |
+| `S19` | ⚠️ **DANGEROUS** | **Corrupts the serial connection. Requires spa power cycle to restore communication. DO NOT SEND.** |
+| `S20:<n>` | *(unknown)* | Valid with parameter (returns value + `S20`). `S20` invalid. No observable register changes. |
 | `S21:<0-2>` | LockMode | 0=Unlocked, 1=Partial, 2=Locked |
 | `S22:<0-4>` | RB_TP_Pump1 | 0=Off, 1=Spd1, 2=Spd2, 4=Auto |
-| `S23:<0-4>` | RB_TP_Pump2 | |
-| `S24:<0-4>` | RB_TP_Pump3 | |
-| `S25:<0-4>` | RB_TP_Pump4 | |
-| `S26:<0-4>` | RB_TP_Pump5 | |
-| `S28:<0-2>` | Outlet_Blower | 0=Variable, 1=Ramp, 2=Off |
-| `W01` | Reset energy and voltage statistics mensures ||
-| `W02` | Unknown W02 valid, W02:1 invalid ||
-| `W03` | Set zero current level. Spa should be drawing no power when this is done. ||
-| `W04` | Decrease current calibration gain by 1 (0.1A)||
-| `W05` | Increase current calibration gain by 1 (0.1A)||
-| `W06` | VoltageAdjust | Increase voltage calibration gain by 1 (0.1v) |
+| `S23:<0-4>` | RB_TP_Pump2 | 0=Off, 1=Spd1, 2=Spd2, 4=Auto |
+| `S24:<0-4>` | RB_TP_Pump3 | 0=Off, 1=Spd1, 2=Spd2, 4=Auto |
+| `S25:<0-4>` | RB_TP_Pump4 | 0=Off, 1=Spd1, 2=Spd2, 4=Auto |
+| `S26:<0-4>` | RB_TP_Pump5 | 0=Off, 1=Spd1, 2=Spd2, 4=Auto |
+| `S27:<n>` | *(unknown)* | Valid with parameter. Returns value only (no command echo). Observed: resets R2+19, S27:1 woke spa from Sleeping to In use |
+| `S28:<0-2>` | Outlet_Blower | Blower control. 0=Variable, 1=Ramp, 2=Off |
+| `S29` | *(unknown)* | Valid bare toggle (returns `S29`). S29:n invalid. No observable register changes |
+| `S30` | RB_TP_Light | Bare only. Observed: R5+14 (RB_TP_Light) 0→1. Not a toggle — exact behaviour unknown |
+| `S31:<n>` | ⚠️ **DANGEROUS** | **Triggers "Busy, config INFR" — corrupts serial link. Requires spa power cycle to restore communication. DO NOT SEND.** |
+| `S32` | *(Demo mode?)* | Valid bare only (S32:n invalid). Sets RC+11=1; suspected to activate demo mode. Second call does not clear it — no known off command |
+| `S33:<0-1>` | *(unknown)* | Valid with parameter. Writes value to RC+12. Returns value + `S33`. |
+| `W01` | Reset energy and voltage statistics mesures ||
+| `W02` || Unknown W02 valid, W02:1 invalid |
+| `W03` | CurrentZero | Zeros the Current meter by adjusting CurrentZero. Spa should be drawing no power when this is done. |
+| `W04` | CurrentAdjust | Decrease current calibration gain by 1 (0.1A)|
+| `W05` | CurrentAdjust | Increase current calibration gain by 1 (0.1A)|
+| `W06` | VoltageAdjust | Increase voltage calibration gain by 1 (0.1v)|
 | `W07` | VoltageAdjust | Decrease voltage calibration gain by 1 (0.1v)|
-| `W14` | RB_TP_Light | **Toggle** — no value argument |
+| `W08` || Keypad Up button press. Returns "W8" |
+| `W09` || Keypad OK button press. Returns "W9" |
+| `W10` || Keypad Down button press |
+| `W11` || Keypad Invert display button press |
+| `W12` | CleanCycle | Keypad Start / Stop clean cycle.  Returns W12.|
+| `W13` | RB_TP_Blower | Keypad Toggle Blower. Returns W13. | 
+| `W14` | RB_TP_Light | Keypad Toggle Lights. Returns W15. |
+| `W15` || Keypad Unknown, suspect keypress |
+| `W16` || Keypad Unknown, suspect keypress |
+| `W17` || Keypad Pump 2 toggle |
+| `W18` || Keypad Pump 3 toggle |
+| `W19` || Keypad Pump 4 toggle |
+| `W20` || Keypad Unknown, suspect keypress |
+| `W23:<value>` | HourMeter | Sets the hour meter runtime.  Returns "<value>" |
+| `W24:<value>` | Relay1 | Sets Relay 1 count.  Returns "<value>" |
+| `W25:<value>` | Relay2 | Sets Relay 2 count.  Returns "<value>" |
+| `W26:<value>` | Relay3 | Sets Relay 3 count.  Returns "<value>" |
+| `W27:<value>` | Relay4 | Sets Relay 4 count.  Returns "<value>" |
+| `W28:<value>` | Relay5 | Sets Relay 5 count.  Returns "<value>" |
+| `W29:<value>` | Relay6 | Sets Relay 6 count.  Returns "<value>" |
+| `W30:<value>` | Relay7 | Sets Relay 7 count.  Returns "<value>" |
+| `W31:<value>` | Relay8 | Sets Relay 8 count.  Returns "<value>" |
+| `W32:<value>` | Relay9 | Sets Relay 9 count.  Returns "<value>" |
+| `W33:<value>` | CurrentZero | Sets the current offset value. Returns "<value>" |
+| `W34:<value>` | CurrentAdjust | Sets the current adjust value. Returns "<value>" |
+| `W35:<value>` | VoltageAdjust | Sets the voltage adjust value. Returns "<value>" |
+| `W36:<dd>` | StartDD | Set install day. Returns "dd" |
+| `W37:<mm>` | StartMM | Set install month. Returns "mm" |
+| `W39:<yyy>` | StartYY | Set install year. Returns "yyyy" |
+| `W39` || Set the install date to today(?) has been seen to zero the install date |
 | `W40:<value>` | STMP | Set point ×10. e.g. `W40:380` = 38.0°C |
-| `W60:<1-24>` | FiltHrs | Filtration hours per block |
+| `W41:<value>` | AdtPoolHys | Set AdtPoolHys ×10. e.g. `W41:380` = 38.0°C |
+| `W42:<value>` | AdtHeaterHys | Set AdtHeaterHys ×10. e.g. `W42:380` = 38.0°C |
+| `W43 to W49` || Invalid. No response to bare or parametric forms |
+| `W50` | V_Max/V_Min | Reset all voltage min/max stats (R7+11–14) to current voltage. Returns `W50` |
+| `W51` | HourMeter | Reset `HourMeter` (R2+20) to 0. Spa writes a fault log entry as a record of the reset. Returns `W51` |
+| `W52` | Relay counters | Reset all relay activation counters (R2+21–29) to 0. Returns `W52` |
+| `W53` | Power_kWh | Reset cumulative energy `Power_kWh` (R4+11) to 0. Returns `W53` |
+| `W54` | Power_Today/Yesterday | Reset daily energy counters `Power_Today` (R4+12) and `Power_Yesterday` (R4+13) to 0. Returns `W54` |
+| `W55` || Valid toggle (returns `W55`). No observed register changes; suspected `Ser1_Timer` (R4+2) reset — invisible when already 0 |
+| `W56` || Valid toggle (returns `W56`). No observed register changes; suspected `Ser2_Timer` (R4+3) reset — invisible when already 0 |
+| `W57` || Valid toggle (returns `W57`). No observed register changes; suspected `Ser3_Timer` (R4+4) reset — invisible when already 0 |
+| `W58` || Valid toggle (returns `W58`). No observed register changes; W58:1 invalid — toggle only |
+| `W59` || Invalid. No response to bare, `:1`, or `:100` forms |
+| `W60:<1-24>` | FiltHrs | Filtration run time per block (hours). Range 1–24 |
+| `W61:<0-1>` | L_24HOURS | 24-hour continuous operation. 0=Off, 1=On |
+| `W62:<n>` | DefaultScrn | Default touchpad screen index shown on wake |
+| `W63:<0-2>` | PSAV_LVL | Power save level. 0=Off, 1=Low, 2=High |
+| `W64:<value>` | PSAV_BGN | Power save start time encoded as h×256+m. e.g. `W64:3584` = 14:00 |
+| `W65:<value>` | PSAV_END | Power save end time encoded as h×256+m. |
 | `W66:<0-3>` | Mode | 0=NORM, 1=ECON, 2=AWAY, 3=WEEK |
 | `W67:<value>` | L_1SNZ_DAY | Day bitmap: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays |
 | `W68:<value>` | L_1SNZ_BGN | Sleep timer 1 start: h×256+m |
@@ -327,6 +394,31 @@ Each fault register follows the same layout. R9=F1, RA=F2, RB=F3.
 | `W70:<value>` | L_2SNZ_DAY | Day bitmap (same as W67) |
 | `W71:<value>` | L_2SNZ_BGN | Sleep timer 2 start: h×256+m |
 | `W72:<value>` | L_2SNZ_END | Sleep timer 2 end: h×256+m |
+| `W73:<value>` | WCLNTime | Auto sanitise cycle start time encoded as h×256+m. e.g. `W73:2304` = 09:00 |
+| `W74:<10-60>` | TOUT | Pump and blower auto time-out duration (minutes). Range 10–60 |
+| `W75` || Invalid. No response to bare or parametric forms |
+| `W76` || Invalid. No response to bare or parametric forms |
+| `W77` || Invalid. No response to bare or parametric forms |
+| `W78` || Invalid. No response to bare or parametric forms |
+| `W79` || Invalid. No response to bare or parametric forms |
+| `W80:<0-1>` | OzoneOff | Ozone/sanitiser manually disabled. 0=Enabled, 1=Disabled. Bare form invalid |
+| `W81:<0-1>` | TemperatureUnits | Temperature display units. 0=°C, 1=°F. Bare form invalid |
+| `W82:<n>` | Ozone24 | Ozone/sanitiser 24h continuous mode. Sets the Ozone daily run time to <n> hours |
+| `W83:<0-1>` | CJET | Circulation jet boost. 0=Off, 1=Active |
+| `W84:<n>` | *(unknown)* | Valid, accepts any value, returns value. No observed register changes on this spa. Possible `Circ24` (R7+6) |
+| `W85:<n>` | CLMT | Supply current limit (A). Range 10–60. **Caution: low values prevent all loads from running** |
+| `W86:<n>` | LS | Load shedding level |
+| `W87:<n>` | LLM1 | Phase 1 load limit. Range 1–5. 255 = not configured |
+| `W88:<n>` | LLM2 | Phase 2 load limit. Range 1–5 |
+| `W89:<n>` | LLM3 | Phase 3 load limit. Range 1–5 *(predicted — not yet tested)* |
 | `W90:<hrs>` | FiltBlockHrs | Valid: 1,2,3,4,6,8,12,24 |
+| `W91:<0-2>` | VELE | Variable-power element mode. 0=Off, 1=Step, 2=Variable |
+| `W92:<n>` | Ser1 | Service interval 1 period (hours) |
+| `W93:<n>` | Ser2 | Service interval 2 period (hours) |
+| `W94:<n>` | Ser3 | Service interval 3 period (hours) |
+| `W95:<n>` | VMAX | Maximum heating element current (A). e.g. `W95:23` = 23A |
+| `W96:<n>` | AHYS | Adaptive hysteresis ×10 (°C). e.g. `W96:200` = 20.0°C |
+| `W97:<0-1>` | HUSE | Heat pump available during spa use. 0=Not available, 1=Available |
 | `W98:<0-1>` | HELE | Aux booster element |
 | `W99:<0-3>` | HPMP | 0=Auto, 1=Heat, 2=Cool, 3=Off |
+
