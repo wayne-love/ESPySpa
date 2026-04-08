@@ -446,6 +446,14 @@ void mqttHaAutoDiscovery() {
   generateSelectAdJSON(output, ADConf, spa, discoveryTopic, FiltHrsSelect);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
+  ADConf.displayName = "Keyboard Button Press";
+  ADConf.valueTemplate = "";
+  ADConf.propertyId = "keypad_up";
+  ADConf.deviceClass = "";
+  ADConf.entityCategory = "diagnostic";
+  generateButtonAdJSON(output, ADConf, spa, discoveryTopic);
+  mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
+
   ADConf.displayName = "Lock Mode";
   ADConf.valueTemplate = "{{ value_json.lockmode }}";
   ADConf.propertyId = "lock_mode";
@@ -665,6 +673,12 @@ void setSpaProperty(String property, String p) {
       si.LockMode.setLabel(p.c_str());
     } catch (const std::exception& ex) {
       debugE("Failed to set LockMode from label '%s': %s", p.c_str(), ex.what());
+    }
+  } else if (property == "keypad_up") {
+    try {
+      si.sendKey(SpaInterface::SpaKey::Up);
+    } catch (const std::exception& ex) {
+      debugE("Failed to send keypad up: %s", ex.what());
     }
   } else {
     debugE("Unhandled property - %s",property.c_str());

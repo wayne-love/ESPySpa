@@ -79,6 +79,16 @@ void generateSwitchAdJSON(String& output, const AutoDiscoveryInformationTemplate
    serializeJson(json, output);
 }
 
+void generateButtonAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic) {
+   JsonDocument json;
+   generateCommonAdJSON(json, config, spa, discoveryTopic, "button");
+   json.remove("state_topic");
+   json.remove("value_template");
+   json["command_topic"] = spa.commandTopic + "/" + config.propertyId;
+   json["payload_press"] = "PRESS";
+   serializeJson(json, output);
+}
+
 void generateClimateAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic) {
    JsonDocument json;
    generateCommonAdJSON(json, config, spa, discoveryTopic, "climate");

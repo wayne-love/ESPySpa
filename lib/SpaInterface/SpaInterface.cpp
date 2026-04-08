@@ -235,9 +235,22 @@ bool SpaInterface::setHELE(bool mode){
 }
 
 
+bool SpaInterface::sendKey(SpaKey key) {
+    String cmd;
+    String expected;
+    switch (key) {
+        case SpaKey::Up:     cmd = "W08"; expected = "W8";  break;
+        case SpaKey::Ok:     cmd = "W09"; expected = "W9";  break;
+        case SpaKey::Down:   cmd = "W10"; expected = "W10"; break;
+        case SpaKey::Invert: cmd = "W11"; expected = "W11"; break;
+        default: return false;
+    }
+    return sendCommandCheckResult(cmd, expected);
+}
+
 /// @brief Set the water temperature set point * 10 (380 = 38.0)
-/// @param temp 
-/// @return 
+/// @param temp
+/// @return
 bool SpaInterface::setSTMP(int temp){
     debugD("setSTMP - %i", temp);
 

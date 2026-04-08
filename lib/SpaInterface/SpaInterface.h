@@ -75,7 +75,6 @@ class SpaInterface {
         /// @param cmd - cmd to be executed.
         void sendCommand(String cmd);
 
-        
         /// @brief Sends a command to the SpanNet controller and returns the result string
         /// @param cmd - cmd to be executed
         /// @return String - result string
@@ -92,7 +91,6 @@ class SpaInterface {
 
         void flushSerialReadBuffer() { flushSerialReadBuffer(false); };
         String flushSerialReadBuffer(bool returnData);
-
 
         /// @brief Singleton pointer used by the static RemoteDebug callback.
         static SpaInterface* _instance;
@@ -513,6 +511,19 @@ class SpaInterface {
         /// @brief configure how often the spa is polled in seconds.
         /// @param SpaPollFrequency
         void setSpaPollFrequency(int updateFrequency);
+
+        /// @brief Keypad keys that can be simulated via sendKey().
+        enum class SpaKey {
+            Up,       ///< W08 — Keypad Up
+            Ok,       ///< W09 — Keypad OK / Confirm
+            Down,     ///< W10 — Keypad Down
+            Invert    ///< W11 — Keypad Invert display
+        };
+
+        /// @brief Simulate a keypad button press on the spa controller.
+        /// @param key The key to press.
+        /// @return true if the command was acknowledged.
+        bool sendKey(SpaKey key);
 
         /// @brief Complete RF command response in a single string
         RWProperty<String> statusResponse{this, &SpaInterface::setStatusResponse};
