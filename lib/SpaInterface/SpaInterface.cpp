@@ -318,6 +318,7 @@ bool SpaInterface::setL_1SNZ_BGN(int mode){
     }
 
     if (sendCommandCheckResult(String("W68:")+mode,String(mode))) {
+        L_1SNZ_BGN.update(mode);
         return true;
     }
     return false;
@@ -340,6 +341,7 @@ bool SpaInterface::setL_1SNZ_END(int mode){
     }
     
     if (sendCommandCheckResult(String("W69:")+mode,String(mode))) {
+        L_1SNZ_END.update(mode);
         return true;
     }
     return false;
@@ -387,6 +389,7 @@ bool SpaInterface::setL_2SNZ_BGN(int mode){
     }
 
     if (sendCommandCheckResult(String("W71:")+mode,String(mode))) {
+        L_2SNZ_BGN.update(mode);
         return true;
     }
     return false;
@@ -409,6 +412,7 @@ bool SpaInterface::setL_2SNZ_END(int mode){
     }
 
     if (sendCommandCheckResult(String("W72:")+mode,String(mode))) {
+        L_2SNZ_END.update(mode);
         return true;
     }
     return false;
