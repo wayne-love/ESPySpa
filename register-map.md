@@ -193,7 +193,7 @@ Fields are addressed as `RN+offset` where N is the register name and offset is t
 | R7+19 | `Ser1` | Service interval 1 period (hours) | — |
 | R7+20 | `Ser2` | Service interval 2 period (hours) | — |
 | R7+21 | `Ser3` | Service interval 3 period (hours) | — |
-| R7+22 | `VMAX` | Maximum permitted supply voltage (V) | — |
+| R7+22 | `VMAX` | Maximum heating element current (A) | — |
 | R7+23 | `AHYS` | Adaptive hysteresis setting ×10 (°C) | — |
 | R7+24 | `HUSE` | Heat pump available when spa is in use. 0=Not available, 1=Available (H.USE OEM setting) | `W97:<0-1>` |
 | R7+25 | `HELE` | Auxiliary booster element. false=Off, true=On | `W98:<0-1>` |
