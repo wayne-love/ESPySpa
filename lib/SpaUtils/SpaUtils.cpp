@@ -138,6 +138,7 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
   json["temperatures"]["heatpumpCondensor"] = si.HP_Condensor.get();
 
   json["power"]["voltage"] = si.MainsVoltage.get();
+  json["power"]["vmax"] = si.VMAX.get();
   json["power"]["current"]= si.MainsCurrent.get() / 10.0; // convert value to A
   json["power"]["power"] = si.Power.get() / 10.0; // convert value to W
   json["power"]["totalenergy"]= si.Power_kWh.get() / 100.0; // convert value to kWh.

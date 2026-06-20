@@ -227,6 +227,10 @@ class SpaInterface {
         /// the cached property value when the command succeeds.
         /// Throws std::out_of_range for invalid values (0..2).
         bool setLockMode(int mode);
+        /// @brief Internal writer used by `VMAX` RWProperty.
+        /// @details Sends `W95:<mode>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        bool setVMAX(int mode);
         /// @brief Internal writer used by `SpaTime` RWProperty.
         /// @details Sends S01..S05 + S06 (via setSpaDayOfWeek) to the controller.
         bool setSpaTime(time_t t);
@@ -808,7 +812,8 @@ class SpaInterface {
         /// @brief Service interval 3 period (hours).
         ROProperty<int> Ser3;
         /// @brief Maximum permitted supply voltage (V).
-        ROProperty<int> VMAX;
+        /// @details Read/write. Writes `W95:<value>` to the controller.
+        RWProperty<int> VMAX{this, &SpaInterface::setVMAX};
         /// @brief Adaptive hysteresis setting x10 (°C).
         ROProperty<int> AHYS;
         /// @brief Minimum power level for load management (kW x10).

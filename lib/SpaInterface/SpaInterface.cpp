@@ -234,6 +234,20 @@ bool SpaInterface::setHELE(bool mode){
     return false;
 }
 
+bool SpaInterface::setVMAX(int mode){
+    debugD("setVMAX - %i", mode);
+    if (mode == VMAX.get()) {
+        debugD("No VMAX change detected - current %i, new %i", VMAX.get(), mode);
+        return true;
+    }
+
+    if (sendCommandCheckResult("W95:" + String(mode), String(mode))) {
+        VMAX.update(mode);
+        return true;
+    }
+    return false;
+}
+
 
 bool SpaInterface::sendKey(SpaKey key) {
     String cmd;

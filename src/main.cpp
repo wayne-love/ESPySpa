@@ -223,6 +223,14 @@ void mqttHaAutoDiscovery() {
   generateSensorAdJSON(output, ADConf, spa, discoveryTopic, "measurement", "A");
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
+  ADConf.displayName = "Maximum Current for Heat Element";
+  ADConf.valueTemplate = "{{ value_json.power.vmax }}";
+  ADConf.propertyId = "vmax";
+  ADConf.deviceClass = "current";
+  ADConf.entityCategory = "config";
+  generateTextAdJSON(output, ADConf, spa, discoveryTopic, "[0-9]{1,2}");
+  mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
+
   ADConf.displayName = "Power";
   ADConf.valueTemplate = "{{ value_json.power.power }}";
   ADConf.propertyId = "Power";
@@ -537,6 +545,12 @@ void setSpaProperty(String property, String p) {
       si.HELE.set(p != "OFF");
     } catch (const std::exception& ex) {
       debugE("Failed to set HELE: %s", ex.what());
+    }
+  } else if (property == "vmax") {
+    try {
+      si.VMAX = p.toInt();
+    } catch (const std::exception& ex) {
+      debugE("Failed to set VMAX: %s", ex.what());
     }
   } else if (property == "status_datetime") {
     tmElements_t tm;
