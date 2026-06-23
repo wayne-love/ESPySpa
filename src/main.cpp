@@ -373,13 +373,12 @@ void mqttHaAutoDiscovery() {
   generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.sleepSelection);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
-  /*
   ADConf.displayName = "Date Time";
   ADConf.valueTemplate = "{{ value_json.status.datetime }}";
   ADConf.propertyId = "status_datetime";
   ADConf.deviceClass = "";
   ADConf.entityCategory = "config";
-  generateTextAdJSON(output, ADConf, spa, discoveryTopic, "[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}");
+  generateTextAdJSON(output, ADConf, spa, discoveryTopic, "[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}", false);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
   ADConf.displayName = "Day of Week";
@@ -387,9 +386,8 @@ void mqttHaAutoDiscovery() {
   ADConf.propertyId = "status_dayOfWeek";
   ADConf.deviceClass = "";
   ADConf.entityCategory = "config";
-  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.spaDayOfWeekStrings);
+  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.spaDayOfWeekStrings, false);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
-  */
   
   ADConf.displayName = "Sleep Timer 1 Begin";
   ADConf.valueTemplate = "{{ value_json.sleepTimers.timer1.begin }}";

@@ -5,7 +5,8 @@ void generateCommonAdJSON(
    const AutoDiscoveryInformationTemplate& config,
    const SpaADInformationTemplate& spa,
    String& discoveryTopic,
-   String type
+   String type,
+   bool enabledByDefault
    ) {
 /*
 { 
@@ -28,6 +29,7 @@ void generateCommonAdJSON(
    json["state_topic"] = spa.stateTopic;
    json["value_template"] = config.valueTemplate;
    json["unique_id"] = spa.spaSerialNumber + "-" + config.propertyId;
+   if (!enabledByDefault) json["enabled_by_default"] = false;
    json["device"]["identifiers"][0] = spa.spaSerialNumber;
    json["device"]["serial_number"] = spa.spaSerialNumber;
    json["device"]["name"] = spa.spaName;
@@ -43,9 +45,9 @@ void generateCommonAdJSON(
 
 }
 
-void generateSensorAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, String stateClass, String unitOfMeasure) {
+void generateSensorAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, String stateClass, String unitOfMeasure, bool enabledByDefault) {
    JsonDocument json;
-   generateCommonAdJSON(json, config, spa, discoveryTopic, "sensor");
+   generateCommonAdJSON(json, config, spa, discoveryTopic, "sensor", enabledByDefault);
 
    if (!unitOfMeasure.isEmpty()) json["unit_of_measurement"] = unitOfMeasure;
    if (!stateClass.isEmpty()) json["state_class"] = stateClass;
@@ -53,16 +55,16 @@ void generateSensorAdJSON(String& output, const AutoDiscoveryInformationTemplate
    serializeJson(json, output);
 }
 
-void generateBinarySensorAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic) {
+void generateBinarySensorAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, bool enabledByDefault) {
    JsonDocument json;
-   generateCommonAdJSON(json, config, spa, discoveryTopic, "binary_sensor");
+   generateCommonAdJSON(json, config, spa, discoveryTopic, "binary_sensor", enabledByDefault);
 
    serializeJson(json, output);
 }
 
-void generateTextAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, String regex) {
+void generateTextAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, String regex, bool enabledByDefault) {
    JsonDocument json;
-   generateCommonAdJSON(json, config, spa, discoveryTopic, "text");
+   generateCommonAdJSON(json, config, spa, discoveryTopic, "text", enabledByDefault);
 
    json["command_topic"] = spa.commandTopic + "/" + config.propertyId;
    if (!regex.isEmpty()) json["pattern"] = regex;
@@ -70,18 +72,18 @@ void generateTextAdJSON(String& output, const AutoDiscoveryInformationTemplate& 
    serializeJson(json, output);
 }
 
-void generateSwitchAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic) {
+void generateSwitchAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, bool enabledByDefault) {
    JsonDocument json;
-   generateCommonAdJSON(json, config, spa, discoveryTopic, "switch");
+   generateCommonAdJSON(json, config, spa, discoveryTopic, "switch", enabledByDefault);
 
    json["command_topic"] = spa.commandTopic + "/" + config.propertyId;
 
    serializeJson(json, output);
 }
 
-void generateFanAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, int min, int max, const String* modes, const size_t modesSize) {
+void generateFanAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, int min, int max, const String* modes, const size_t modesSize, bool enabledByDefault) {
    JsonDocument json;
-   generateCommonAdJSON(json, config, spa, discoveryTopic, "fan");
+   generateCommonAdJSON(json, config, spa, discoveryTopic, "fan", enabledByDefault);
 
    // Find the last character that is not a space or curly brace
    int lastIndex = config.valueTemplate.length() - 1;
@@ -117,9 +119,9 @@ void generateFanAdJSON(String& output, const AutoDiscoveryInformationTemplate& c
    serializeJson(json, output);
 }
 
-void generateClimateAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic) {
+void generateClimateAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, bool enabledByDefault) {
    JsonDocument json;
-   generateCommonAdJSON(json, config, spa, discoveryTopic, "climate");
+   generateCommonAdJSON(json, config, spa, discoveryTopic, "climate", enabledByDefault);
 
    // Find the last character that is not a space or curly brace
    int lastIndex = config.valueTemplate.length() - 1;
