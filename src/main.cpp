@@ -691,6 +691,10 @@ void setup() {
 
   //WiFi.begin(config.WiFiSSID.getValue().c_str(), config.WiFiPassword.getValue().c_str());
   WiFi.begin();
+  // Disable WiFi modem-sleep. With the default power-save mode the radio sleeps
+  // between DTIM beacons, which delays the loop()/MQTT keepalive and causes the
+  // broker to drop the client ("exceeded timeout") on networks with any latency.
+  WiFi.setSleep(false);
   if (WiFi.waitForConnectResult() == WL_CONNECTED) {
     debugI("Connected to Wi-Fi as %s", WiFi.getHostname());
     int totalTry = 5;
