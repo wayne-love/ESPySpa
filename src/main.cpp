@@ -231,6 +231,22 @@ void mqttHaAutoDiscovery() {
   generateNumberAdJSON(output, ADConf, spa, discoveryTopic, "A", 3, 25, 1);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
+  ADConf.displayName = "Current Limit";
+  ADConf.valueTemplate = "{{ value_json.power.clmt }}";
+  ADConf.propertyId = "clmt";
+  ADConf.deviceClass = "current";
+  ADConf.entityCategory = "config";
+  generateNumberAdJSON(output, ADConf, spa, discoveryTopic, "A", 10, 60, 1);
+  mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
+
+  ADConf.displayName = "Sanitise Start Time";
+  ADConf.valueTemplate = "{{ value_json.filtration.wclnTime }}";
+  ADConf.propertyId = "wclnTime";
+  ADConf.deviceClass = "";
+  ADConf.entityCategory = "config";
+  generateTextAdJSON(output, ADConf, spa, discoveryTopic, "[0-2][0-9]:[0-9]{2}");
+  mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
+
   ADConf.displayName = "Power";
   ADConf.valueTemplate = "{{ value_json.power.power }}";
   ADConf.propertyId = "Power";
@@ -551,6 +567,18 @@ void setSpaProperty(String property, String p) {
       si.VMAX = p.toInt();
     } catch (const std::exception& ex) {
       debugE("Failed to set VMAX: %s", ex.what());
+    }
+  } else if (property == "clmt") {
+    try {
+      si.CLMT = p.toInt();
+    } catch (const std::exception& ex) {
+      debugE("Failed to set CLMT: %s", ex.what());
+    }
+  } else if (property == "wclnTime") {
+    try {
+      si.WCLNTime = convertToInteger(p);
+    } catch (const std::exception& ex) {
+      debugE("Failed to set WCLNTime: %s", ex.what());
     }
   } else if (property == "status_datetime") {
     tmElements_t tm;

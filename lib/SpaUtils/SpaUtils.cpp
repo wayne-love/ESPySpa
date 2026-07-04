@@ -139,6 +139,7 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
 
   json["power"]["voltage"] = si.MainsVoltage.get();
   json["power"]["vmax"] = si.VMAX.get();
+  json["power"]["clmt"] = si.CLMT.get();
   json["power"]["current"]= si.MainsCurrent.get() / 10.0; // convert value to A
   json["power"]["power"] = si.Power.get() / 10.0; // convert value to W
   json["power"]["totalenergy"]= si.Power_kWh.get() / 100.0; // convert value to kWh.
@@ -164,6 +165,7 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
 
   json["filtration"]["blockDuration"] = si.FiltBlockHrs.get();
   json["filtration"]["hours"] = si.FiltHrs.get();
+  json["filtration"]["wclnTime"] = convertToTime(si.WCLNTime.get());
 
   json["lockmode"] = si.LockMode.getLabel();
 

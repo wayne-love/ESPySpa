@@ -234,6 +234,42 @@ bool SpaInterface::setHELE(bool mode){
     return false;
 }
 
+bool SpaInterface::setCLMT(int mode){
+    debugD("setCLMT - %i", mode);
+    if (mode < 10 || mode > 60) {
+        throw std::out_of_range("CLMT value out of range (10..60)");
+    }
+
+    if (mode == CLMT.get()) {
+        debugD("No CLMT change detected - current %i, new %i", CLMT.get(), mode);
+        return true;
+    }
+
+    if (sendCommandCheckResult("W85:" + String(mode), String(mode))) {
+        CLMT.update(mode);
+        return true;
+    }
+    return false;
+}
+
+bool SpaInterface::setWCLNTime(int value){
+    debugD("setWCLNTime - %i", value);
+    if (value < 0 || value > 5947) {
+        throw std::out_of_range("WCLNTime value out of range (0..5947)");
+    }
+
+    if (value == WCLNTime.get()) {
+        debugD("No WCLNTime change detected - current %i, new %i", WCLNTime.get(), value);
+        return true;
+    }
+
+    if (sendCommandCheckResult("W73:" + String(value), String(value))) {
+        WCLNTime.update(value);
+        return true;
+    }
+    return false;
+}
+
 bool SpaInterface::setVMAX(int mode){
     debugD("setVMAX - %i", mode);
     if (mode == VMAX.get()) {

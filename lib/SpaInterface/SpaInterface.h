@@ -227,6 +227,16 @@ class SpaInterface {
         /// the cached property value when the command succeeds.
         /// Throws std::out_of_range for invalid values (0..2).
         bool setLockMode(int mode);
+        /// @brief Internal writer used by `WCLNTime` RWProperty.
+        /// @details Sends `W73:<value>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        /// Throws std::out_of_range for invalid values (0..5947).
+        bool setWCLNTime(int value);
+        /// @brief Internal writer used by `CLMT` RWProperty.
+        /// @details Sends `W85:<mode>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        /// Throws std::out_of_range for invalid values (10..60).
+        bool setCLMT(int mode);
         /// @brief Internal writer used by `VMAX` RWProperty.
         /// @details Sends `W95:<mode>` to the controller and only updates
         /// the cached property value when the command succeeds.
@@ -589,7 +599,8 @@ class SpaInterface {
         ROProperty<bool> WaterPresent;
         // R3
         /// @brief Current limit setting (A). Range 10–60A; should match the circuit breaker rating feeding the spa (C.LMT OEM setting).
-        ROProperty<int> CLMT;
+        /// @details Read/write. Writes `W85:<value>` to the controller.
+        RWProperty<int> CLMT{this, &SpaInterface::setCLMT};
         /// @brief Mains phase configuration (1=Single Phase, 2=Dual Phase, 3=Three Phase).
         ROProperty<int> PHSE;
         /// @brief Phase 1 load limit — maximum number of loads (pumps/blower) allowed to run simultaneously on phase 1. Range 1–5 (x.LLM OEM setting).
@@ -790,7 +801,8 @@ class SpaInterface {
         ROProperty<bool> HIFI;
         // R7
         /// @brief Auto sanitise cycle start time encoded as h*256+m. Range 0–5947. e.g. 2304 = 9:00. Set via W73.
-        ROProperty<int> WCLNTime;
+        /// @details Read/write. Writes `W73:<value>` to the controller.
+        RWProperty<int> WCLNTime{this, &SpaInterface::setWCLNTime};
         /// @brief Maximum mains voltage recorded this session (V).
         ROProperty<int> V_Max;
         /// @brief Minimum mains voltage recorded this session (V).
