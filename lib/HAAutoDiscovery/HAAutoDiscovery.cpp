@@ -70,6 +70,20 @@ void generateTextAdJSON(String& output, const AutoDiscoveryInformationTemplate& 
    serializeJson(json, output);
 }
 
+void generateNumberAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, String unitOfMeasure, int min, int max, int step) {
+   JsonDocument json;
+   generateCommonAdJSON(json, config, spa, discoveryTopic, "number");
+
+   json["command_topic"] = spa.commandTopic + "/" + config.propertyId;
+   if (!unitOfMeasure.isEmpty()) json["unit_of_measurement"] = unitOfMeasure;
+   json["mode"] = "box";
+   json["min"] = min;
+   json["max"] = max;
+   json["step"] = step;
+
+   serializeJson(json, output);
+}
+
 void generateSwitchAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic) {
    JsonDocument json;
    generateCommonAdJSON(json, config, spa, discoveryTopic, "switch");

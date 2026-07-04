@@ -228,7 +228,7 @@ void mqttHaAutoDiscovery() {
   ADConf.propertyId = "vmax";
   ADConf.deviceClass = "current";
   ADConf.entityCategory = "config";
-  generateTextAdJSON(output, ADConf, spa, discoveryTopic, "[0-9]{1,2}");
+  generateNumberAdJSON(output, ADConf, spa, discoveryTopic, "A", 3, 25, 1);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
   ADConf.displayName = "Power";
