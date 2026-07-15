@@ -2,6 +2,8 @@
 
 #define BAUD_RATE 38400
 
+SpaInterface* SpaInterface::_instance = nullptr;
+
 /**
  * @brief Constructor - intentionally does NOT initialize serial.
  * 
