@@ -165,7 +165,7 @@ void WebUI::begin() {
 
     server.on("/status", HTTP_GET, [this](AsyncWebServerRequest *request) {
         debugD("uri: %s", request->url().c_str());
-        AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", _spa->statusResponse.getValue());
+        AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", _spa->statusResponse.get());
         response->addHeader("Connection", "close");
         request->send(response);
     });

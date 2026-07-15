@@ -2,6 +2,7 @@
 #include <WebServer.h>
 
 #include <WiFiClient.h>
+#include <exception>
 #include <RemoteDebug.h>
 #include <WiFiManager.h>
 #include <ESPmDNS.h>
@@ -103,6 +104,7 @@ void startWiFiManager(){
     config.writeConfig();
   }
 
+  WiFi.disconnect(true); // Force teardown of all socket connections
   ESP.restart(); // Restart the ESP to apply the new settings
 }
 
@@ -142,6 +144,7 @@ void checkButton(){
 void startWifiManagerCallback() {
   debugD("Starting Wi-Fi Manager...");
   startWiFiManager();
+  WiFi.disconnect(true); // Force teardown of all socket connections
   ESP.restart(); //do we need to reboot here??
 }
 
@@ -233,6 +236,38 @@ void mqttHaAutoDiscovery() {
   generateSensorAdJSON(output, ADConf, spa, discoveryTopic, "measurement", "A");
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
+  ADConf.displayName = "Heat Element Current";
+  ADConf.valueTemplate = "{{ value_json.power.heatElementCurrent }}";
+  ADConf.propertyId = "EC";
+  ADConf.deviceClass = "current";
+  ADConf.entityCategory = "diagnostic";
+  generateSensorAdJSON(output, ADConf, spa, discoveryTopic, "measurement", "A");
+  mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
+
+  ADConf.displayName = "Maximum Current for Heat Element";
+  ADConf.valueTemplate = "{{ value_json.power.vmax }}";
+  ADConf.propertyId = "vmax";
+  ADConf.deviceClass = "current";
+  ADConf.entityCategory = "config";
+  generateNumberAdJSON(output, ADConf, spa, discoveryTopic, "A", 3, 25, 1);
+  mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
+
+  ADConf.displayName = "Current Limit";
+  ADConf.valueTemplate = "{{ value_json.power.clmt }}";
+  ADConf.propertyId = "clmt";
+  ADConf.deviceClass = "current";
+  ADConf.entityCategory = "config";
+  generateNumberAdJSON(output, ADConf, spa, discoveryTopic, "A", 10, 60, 1);
+  mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
+
+  ADConf.displayName = "Sanitise Start Time";
+  ADConf.valueTemplate = "{{ value_json.filtration.wclnTime }}";
+  ADConf.propertyId = "wclnTime";
+  ADConf.deviceClass = "";
+  ADConf.entityCategory = "config";
+  generateTextAdJSON(output, ADConf, spa, discoveryTopic, "[0-2][0-9]:[0-9]{2}");
+  mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
+
   ADConf.displayName = "Power";
   ADConf.valueTemplate = "{{ value_json.power.power }}";
   ADConf.propertyId = "Power";
@@ -286,28 +321,26 @@ void mqttHaAutoDiscovery() {
   const String* selectedPumpOptions = nullptr;
   size_t arrSize = 0;
   for (int pumpNumber = 1; pumpNumber <= 5; pumpNumber++) {
-    String pumpInstallState = (si.*(pumpInstallStateFunctions[pumpNumber - 1]))();
+    String pumpInstallState = (si.*(SpaInterface::pumpInstallStateFunctions[pumpNumber - 1])).get();
     if (getPumpInstalledState(pumpInstallState) && getPumpPossibleStates(pumpInstallState).length() > 1) {
       ADConf.displayName = "Pump " + String(pumpNumber);
       ADConf.propertyId = "pump" + String(pumpNumber);
       ADConf.valueTemplate = "{{ value_json.pumps.pump" + String(pumpNumber) + " }}";
       if (pumpInstallState.endsWith("4")) {
-        selectedPumpOptions = si.autoPumpOptions.data();
-        arrSize = si.autoPumpOptions.size();
-      } else {
-        selectedPumpOptions = nullptr;
-        arrSize = 0;
+
+        (si.*(SpaInterface::pumpStatuses[pumpNumber-1])).setLabelMap({{"Manual",3},{"Auto",4}});
+
       }
       if (getPumpSpeedType(pumpInstallState) == "1") {
-        generateFanAdJSON(output, ADConf, spa, discoveryTopic, 0, 0, selectedPumpOptions, arrSize);
+        generateFanAdJSON(output, ADConf, spa, discoveryTopic, 0, 0, (si.*(SpaInterface::pumpStatuses[pumpNumber-1])));
       } else {
-        generateFanAdJSON(output, ADConf, spa, discoveryTopic, getPumpSpeedMin(pumpInstallState), getPumpSpeedMax(pumpInstallState), selectedPumpOptions, arrSize);
+        generateFanAdJSON(output, ADConf, spa, discoveryTopic, getPumpSpeedMin(pumpInstallState), getPumpSpeedMax(pumpInstallState), (si.*(SpaInterface::pumpStatuses[pumpNumber-1])));
       }
       mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
     }
   }
 
-  if (si.getHP_Present()) {
+  if (si.HP_Present.get()) {
     ADConf.displayName = "Heatpump Ambient Temperature";
     ADConf.valueTemplate = "{{ value_json.temperatures.heatpumpAmbient }}";
     ADConf.propertyId = "HPAmbTemp";
@@ -329,7 +362,7 @@ void mqttHaAutoDiscovery() {
     ADConf.propertyId = "heatpump_mode";
     ADConf.deviceClass = "";
     ADConf.entityCategory = "";
-    generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.HPMPStrings);
+    generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.HPMP);
     mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
     ADConf.displayName = "Aux Heat Element";
@@ -346,7 +379,7 @@ void mqttHaAutoDiscovery() {
   ADConf.propertyId = "lights";
   ADConf.deviceClass = "";
   ADConf.entityCategory = "";
-  generateLightAdJSON(output, ADConf, spa, discoveryTopic, si.colorModeStrings);
+  generateLightAdJSON(output, ADConf, spa, discoveryTopic, si.ColorMode);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
   ADConf.displayName = "Lights Speed";
@@ -354,7 +387,7 @@ void mqttHaAutoDiscovery() {
   ADConf.propertyId = "lights_speed";
   ADConf.deviceClass = "";
   ADConf.entityCategory = "";
-  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.lightSpeedMap );
+  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.LSPDValue);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
   ADConf.displayName = "Sleep Timer 1";
@@ -362,7 +395,7 @@ void mqttHaAutoDiscovery() {
   ADConf.propertyId = "sleepTimers_1_state";
   ADConf.deviceClass = "";
   ADConf.entityCategory = "config";
-  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.sleepSelection);
+  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.L_1SNZ_DAY);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
   ADConf.displayName = "Sleep Timer 2";
@@ -370,7 +403,7 @@ void mqttHaAutoDiscovery() {
   ADConf.propertyId = "sleepTimers_2_state";
   ADConf.deviceClass = "";
   ADConf.entityCategory = "config";
-  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.sleepSelection);
+  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.L_2SNZ_DAY);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
   /*
@@ -428,7 +461,7 @@ void mqttHaAutoDiscovery() {
   ADConf.propertyId = "blower";
   ADConf.deviceClass = "";
   ADConf.entityCategory = "";
-  generateFanAdJSON(output, ADConf, spa, discoveryTopic, 1, 5, si.blowerStrings.data(), si.blowerStrings.size());
+  generateFanAdJSON(output, ADConf, spa, discoveryTopic, 1, 5, si.Outlet_Blower);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
   ADConf.displayName = "Spa Mode";
@@ -436,7 +469,7 @@ void mqttHaAutoDiscovery() {
   ADConf.propertyId = "status_spaMode";
   ADConf.deviceClass = "";
   ADConf.entityCategory = "";
-  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.spaModeStrings);
+  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.Mode);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
   ADConf.displayName = "Filtration Block Duration";
@@ -444,7 +477,7 @@ void mqttHaAutoDiscovery() {
   ADConf.propertyId = "filtration_blockDuration";
   ADConf.deviceClass = "";
   ADConf.entityCategory = "config";
-  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.FiltBlockHrsSelect);
+  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.FiltBlockHrs);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
   // Simply used to populate the select options for filtration hours 1 to 24
@@ -458,12 +491,20 @@ void mqttHaAutoDiscovery() {
   generateSelectAdJSON(output, ADConf, spa, discoveryTopic, FiltHrsSelect);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
+  ADConf.displayName = "Keyboard Button Press";
+  ADConf.valueTemplate = "";
+  ADConf.propertyId = "keypad_up";
+  ADConf.deviceClass = "";
+  ADConf.entityCategory = "diagnostic";
+  generateButtonAdJSON(output, ADConf, spa, discoveryTopic);
+  mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
+
   ADConf.displayName = "Lock Mode";
   ADConf.valueTemplate = "{{ value_json.lockmode }}";
   ADConf.propertyId = "lock_mode";
   ADConf.deviceClass = "";
   ADConf.entityCategory = "config";
-  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.lockModeMap);
+  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.LockMode);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
 }
@@ -490,9 +531,17 @@ void setSpaProperty(String property, String p) {
   debugI("Received update for %s to %s",property.c_str(),p.c_str());
 
   if (property == "temperatures_setPoint") {
-    si.setSTMP(int(p.toFloat()*10));
+    try {
+      si.STMP = int(p.toFloat()*10);
+    } catch (const std::exception& ex) {
+      debugE("Failed to set STMP: %s", ex.what());
+    }
   } else if (property == "heatpump_mode") {
-    si.setHPMP(p);
+    try {
+      si.HPMP.setLabel(p.c_str());
+    } catch (const std::exception& ex) {
+      debugE("Failed to set HPMP label: %s", ex.what());
+    }
   // note single speed pumps should never trigger a mode or speed events
   } else if (property.startsWith("pump") && property.endsWith("_speed")) {
     int pumpNum = property.charAt(4) - '0';
@@ -501,18 +550,57 @@ void setSpaProperty(String property, String p) {
     if (p == "1") p = "0";
     else if (p == "2") p = "3";
     else if (p == "3") p = "2";
-    (si.*(setPumpFunctions[pumpNum-1]))(p.toInt());
+    if (pumpNum - 1 < array_count(SpaInterface::pumpStatuses))
+      try {
+        (si.*(SpaInterface::pumpStatuses[pumpNum-1])).set(p.toInt());
+      } catch (const std::exception& ex) {
+        debugE("Failed to set pump%d speed: %s", pumpNum, ex.what());
+      }
   } else if (property.startsWith("pump") && property.endsWith("_mode")) {
     int pumpNum = property.charAt(4) - '0';
-    if (p == "Auto") (si.*(setPumpFunctions[pumpNum-1]))(4);
-    else (si.*(setPumpFunctions[pumpNum-1]))(3); // When we change mode to manual set speed to low, as this matches the auto display speed
+    if (pumpNum - 1 < array_count(SpaInterface::pumpStatuses)) {
+      try {
+        if (p == "Auto") (si.*(SpaInterface::pumpStatuses[pumpNum-1])).set(4);
+        else (si.*(SpaInterface::pumpStatuses[pumpNum-1])).set(3); // When we change mode to manual set speed to low, as this matches the auto display speed
+      } catch (const std::exception& ex) {
+        debugE("Failed to set pump%d mode: %s", pumpNum, ex.what());
+      }
+    }
   } else if (property.startsWith("pump") && property.endsWith("_state")) {
     int pumpNum = property.charAt(4) - '0';
-    String pumpState = (si.*(pumpInstallStateFunctions[pumpNum-1]))();
-    if (getPumpSpeedType(pumpState) == "2") (si.*(setPumpFunctions[pumpNum-1]))(p=="OFF"?0:2); // When we turn on the pump use speed high
-    else (si.*(setPumpFunctions[pumpNum-1]))(p=="OFF"?0:1);
+    String pumpState = (si.*(SpaInterface::pumpInstallStateFunctions[pumpNum-1])).get();
+    if (pumpNum - 1 < array_count(SpaInterface::pumpStatuses)) {
+      try {
+        if (getPumpSpeedType(pumpState) == "2") (si.*(SpaInterface::pumpStatuses[pumpNum-1])).set(p=="OFF"?0:2); // When we turn on the pump use speed high
+        else (si.*(SpaInterface::pumpStatuses[pumpNum-1])).set(p=="OFF"?0:1);
+      } catch (const std::exception& ex) {
+        debugE("Failed to set pump%d state: %s", pumpNum, ex.what());
+      }
+    }
   } else if (property == "heatpump_auxheat") {
-    si.setHELE(p=="OFF"?0:1);
+    try {
+      si.HELE.set(p != "OFF");
+    } catch (const std::exception& ex) {
+      debugE("Failed to set HELE: %s", ex.what());
+    }
+  } else if (property == "vmax") {
+    try {
+      si.VMAX = p.toInt();
+    } catch (const std::exception& ex) {
+      debugE("Failed to set VMAX: %s", ex.what());
+    }
+  } else if (property == "clmt") {
+    try {
+      si.CLMT = p.toInt();
+    } catch (const std::exception& ex) {
+      debugE("Failed to set CLMT: %s", ex.what());
+    }
+  } else if (property == "wclnTime") {
+    try {
+      si.WCLNTime = convertToInteger(p);
+    } catch (const std::exception& ex) {
+      debugE("Failed to set WCLNTime: %s", ex.what());
+    }
   } else if (property == "status_datetime") {
     tmElements_t tm;
     tm.Year=CalendarYrToTm(p.substring(0,4).toInt());
@@ -521,67 +609,139 @@ void setSpaProperty(String property, String p) {
     tm.Hour=p.substring(11,13).toInt();
     tm.Minute=p.substring(14,16).toInt();
     tm.Second=p.substring(17).toInt();
-    si.setSpaTime(makeTime(tm));
+    try {
+      si.SpaTime.set(makeTime(tm));
+    } catch (const std::exception& ex) {
+      debugE("Failed to set SpaTime: %s", ex.what());
+    }
   } else if (property == "status_dayOfWeek") {
-    for (int i = 0; i < si.spaDayOfWeekStrings.size(); i++) {
-      if (si.spaDayOfWeekStrings[i] == p) {
-      si.setSpaDayOfWeek(i);
-      break;
-      }
+    try {
+      si.SpaDayOfWeek.setLabel(p.c_str());
+    } catch (const std::exception& ex) {
+      debugE("Failed to set SpaDayOfWeek '%s': %s", p.c_str(), ex.what());
     }
   } else if (property == "lights_state") {
-    si.setRB_TP_Light(p=="ON"?1:0);
+    try {
+      si.RB_TP_Light.set(p=="ON"?1:0);
+    } catch (const std::exception& ex) {
+      debugE("Failed to set RB_TP_Light: %s", ex.what());
+    }
   } else if (property == "lights_effect") {
-    si.setColorMode(p);
+    try {
+      si.ColorMode.setLabel(p.c_str());
+    } catch (const std::exception& ex) {
+      debugE("Failed to set ColorMode label: %s", ex.what());
+    }
   } else if (property == "lights_brightness") {
-    si.setLBRTValue(p.toInt());
+    try {
+      si.LBRTValue = p.toInt();
+    } catch (const std::exception& ex) {
+      debugE("Failed to set LBRTValue: %s", ex.what());
+    }
   } else if (property == "lights_color") {
     int pos = p.indexOf(',');
     if ( pos > 0) {
       int value = p.substring(0, pos).toInt();
-      si.setCurrClr(si.colorMap[value/15]);
+      int hue = (value / 15) * 15;
+      if (hue < 0) hue = 0;
+      if (hue > 360) hue = 360;
+      String hueLabel = String(hue);
+      try {
+        si.CurrClr.setLabel(hueLabel.c_str());
+      } catch (const std::exception& ex) {
+        debugE("Failed to set CurrClr: %s", ex.what());
+      }
     }
   } else if (property == "lights_speed") {
-    si.setLSPDValue(p);
+    try {
+      si.LSPDValue = p.toInt();
+    } catch (const std::exception& ex) {
+      debugE("Failed to set LSPDValue: %s", ex.what());
+    }
   } else if (property == "blower_state") {
-    si.setOutlet_Blower(p=="OFF"?2:0);
+    try {
+      si.Outlet_Blower.set(p=="OFF"?2:0);
+    } catch (const std::exception& ex) {
+      debugE("Failed to set blower state: %s", ex.what());
+    }
   } else if (property == "blower_speed") {
-    if (p=="0") si.setOutlet_Blower(2);
-    else si.setVARIValue(p.toInt());
+    try {
+      if (p=="0") si.Outlet_Blower.set(2);
+      else si.VARIValue.set(p.toInt());
+    } catch (const std::exception& ex) {
+      debugE("Failed to set blower speed: %s", ex.what());
+    }
   } else if (property == "blower_mode") {
-    si.setOutlet_Blower(p=="Variable"?0:1);
-  } else if (property == "sleepTimers_1_state" || property == "sleepTimers_2_state") {
-    int member=0;
-    for (const auto& i : si.sleepSelection) {
-      if (i == p) {
-        if (property == "sleepTimers_1_state")
-          si.setL_1SNZ_DAY(si.sleepBitmap[member]);
-        else if (property == "sleepTimers_2_state")
-          si.setL_2SNZ_DAY(si.sleepBitmap[member]);
-        break;
-      }
-      member++;
+    try {
+      si.Outlet_Blower.setLabel(p.c_str());
+    } catch (const std::exception& ex) {
+      debugE("Failed to set blower mode from label '%s': %s", p.c_str(), ex.what());
+    }
+  } else if (property == "sleepTimers_1_state") {
+    try {
+      si.L_1SNZ_DAY.setLabel(p.c_str());
+    } catch (const std::exception& ex) {
+      debugE("Failed to set L_1SNZ_DAY from label '%s': %s", p.c_str(), ex.what());
+    }
+  } else if (property == "sleepTimers_2_state") {
+    try {
+      si.L_2SNZ_DAY.setLabel(p.c_str());
+    } catch (const std::exception& ex) {
+      debugE("Failed to set L_2SNZ_DAY from label '%s': %s", p.c_str(), ex.what());
     }
   } else if (property == "sleepTimers_1_begin") {
-    si.setL_1SNZ_BGN(convertToInteger(p));
+    try {
+      si.L_1SNZ_BGN = convertToInteger(p);
+    } catch (const std::exception& ex) {
+      debugE("Failed to set L_1SNZ_BGN: %s", ex.what());
+    }
   } else if (property == "sleepTimers_1_end") {
-    si.setL_1SNZ_END(convertToInteger(p));
+    try {
+      si.L_1SNZ_END = convertToInteger(p);
+    } catch (const std::exception& ex) {
+      debugE("Failed to set L_1SNZ_END: %s", ex.what());
+    }
   } else if (property == "sleepTimers_2_begin") {
-    si.setL_2SNZ_BGN(convertToInteger(p));
+    try {
+      si.L_2SNZ_BGN = convertToInteger(p);
+    } catch (const std::exception& ex) {
+      debugE("Failed to set L_2SNZ_BGN: %s", ex.what());
+    }
   } else if (property == "sleepTimers_2_end") {
-    si.setL_2SNZ_END(convertToInteger(p));
+    try {
+      si.L_2SNZ_END = convertToInteger(p);
+    } catch (const std::exception& ex) {
+      debugE("Failed to set L_2SNZ_END: %s", ex.what());
+    }
   } else if (property == "status_spaMode") {
-    si.setMode(p);
+    try {
+      si.Mode.setLabel(p.c_str());
+    } catch (const std::exception& ex) {
+      debugE("Failed to set Mode from label '%s': %s", p.c_str(), ex.what());
+    }
   } else if (property == "filtration_blockDuration") {
-    si.setFiltBlockHrs(p);
+    try {
+      si.FiltBlockHrs.setLabel(p.c_str());
+    } catch (const std::exception& ex) {
+      debugE("Failed to set FiltBlockHrs from label '%s': %s", p.c_str(), ex.what());
+    }
   } else if (property == "filtration_hours") {
-    si.setFiltHrs(p);
+    try {
+      si.FiltHrs.set(p.toInt());
+    } catch (const std::exception& ex) {
+      debugE("Failed to set FiltHrs: %s", ex.what());
+    }
   } else if (property == "lock_mode") {
-    for (int i = 0; i < si.lockModeMap.size(); i++) {
-      if (si.lockModeMap[i] == p) {
-        si.setLockMode(i);
-        break;
-      }
+    try {
+      si.LockMode.setLabel(p.c_str());
+    } catch (const std::exception& ex) {
+      debugE("Failed to set LockMode from label '%s': %s", p.c_str(), ex.what());
+    }
+  } else if (property == "keypad_up") {
+    try {
+      si.sendKey(SpaInterface::SpaKey::Up);
+    } catch (const std::exception& ex) {
+      debugE("Failed to send keypad up: %s", ex.what());
     }
   } else {
     debugE("Unhandled property - %s",property.c_str());
@@ -741,6 +901,7 @@ void loop() {
     if (spaCallbackProperty == "reboot") {
       debugI("Rebooting ESP after %d ms", spaCallbackValue.toInt());
       delay(spaCallbackValue.toInt()); // Wait for the specified time before rebooting
+      WiFi.disconnect(true); // Force teardown of all socket connections
       ESP.restart();
     } else {
       debugD("Setting Spa Properties...");
@@ -790,7 +951,7 @@ void loop() {
         if ( spaSerialNumber=="" ) {
           debugI("Initialising...");
       
-          spaSerialNumber = si.getSerialNo1()+"-"+si.getSerialNo2();
+          spaSerialNumber = si.SerialNo1.get()+"-"+si.SerialNo2.get();
           debugI("Spa serial number is %s",spaSerialNumber.c_str());
 
           mqttBase = String("sn_esp32/") + spaSerialNumber + String("/");

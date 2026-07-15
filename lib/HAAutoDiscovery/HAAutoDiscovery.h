@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include "SpaInterface.h"
 
 
 /// @brief Configuration structure for the data elements for the Spa.
@@ -38,7 +39,9 @@ void generateCommonAdJSON(JsonDocument& json, const AutoDiscoveryInformationTemp
 void generateSensorAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, String stateClass="", String unitOfMeasure="");
 void generateBinarySensorAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic);
 void generateTextAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, String regex="");
+void generateNumberAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, String unitOfMeasure="", int min=0, int max=100, int step=1);
 void generateSwitchAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic);
+void generateButtonAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic);
 
 template <typename T, size_t N>
 void generateSelectAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, const std::array<T, N>& options) {
@@ -52,7 +55,63 @@ void generateSelectAdJSON(String& output, const AutoDiscoveryInformationTemplate
    serializeJson(json, output);
 }
 
-void generateFanAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, int min, int max, const String* modes, const size_t modesSize=0);
+template <typename T>
+void generateSelectAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, const SpaInterface::ROProperty<T>& prop) {
+   JsonDocument json;
+   generateCommonAdJSON(json, config, spa, discoveryTopic, "select");
+
+   json["command_topic"] = spa.commandTopic + "/" + config.propertyId;
+   JsonArray opts = json["options"].to<JsonArray>();
+   const size_t count = prop.getLabelCount();
+   for (size_t i = 0; i < count; i++) {
+      opts.add(prop.getLabelAt(i));
+   }
+
+   serializeJson(json, output);
+}
+
+template <typename T>
+void generateFanAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, int min, int max, const SpaInterface::ROProperty<T>& prop) {
+   JsonDocument json;
+   generateCommonAdJSON(json, config, spa, discoveryTopic, "fan");
+
+   // Find the last character that is not a space or curly brace
+   int lastIndex = config.valueTemplate.length() - 1;
+   while (lastIndex >= 0 && (config.valueTemplate[lastIndex] == ' ' || config.valueTemplate[lastIndex] == '}')) {
+      lastIndex--;
+   }
+   json["state_value_template"] = config.valueTemplate.substring(0, lastIndex + 1) + ".state" + config.valueTemplate.substring(lastIndex + 1);
+   json["command_topic"] = spa.commandTopic + "/" + config.propertyId + "_state";
+
+   if (max > min) {
+      json["percentage_state_topic"] = spa.stateTopic;
+      json["percentage_command_topic"] = spa.commandTopic + "/" + config.propertyId + "_speed";
+      json["percentage_value_template"] = config.valueTemplate.substring(0, lastIndex + 1) + ".speed" + config.valueTemplate.substring(lastIndex + 1);
+
+      json["speed_range_min"]=min;
+      json["speed_range_max"]=max;
+   }
+   
+   const size_t count = prop.getLabelCount(); 
+   if (count > 0) {
+      json["preset_mode_state_topic"] = spa.stateTopic;
+      json["preset_mode_command_topic"] = spa.commandTopic + "/" + config.propertyId + "_mode";
+      json["preset_mode_value_template"] = config.valueTemplate.substring(0, lastIndex + 1) + ".mode" + config.valueTemplate.substring(lastIndex + 1);
+      
+      JsonArray jsonModes = json["preset_modes"].to<JsonArray>();
+      for (size_t i = 0; i < count; i++) jsonModes.add(prop.getLabelAt(i));
+
+   }
+
+   if (config.propertyId.startsWith("pump")) {
+      json["icon"] = "mdi:pump";
+   }
+
+   serializeJson(json, output);
+
+}
+
+
 
 template <typename T, size_t N>
 void generateLightAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, const std::array<T, N>& colorModes) {
@@ -88,6 +147,47 @@ void generateLightAdJSON(String& output, const AutoDiscoveryInformationTemplate&
    json["effect"] = true;
    JsonArray effect_list = json["effect_list"].to<JsonArray>();
    for (const auto& effect: colorModes) effect_list.add(effect);
+   JsonArray color_modes = json["supported_color_modes"].to<JsonArray>();
+   color_modes.add("hs");
+
+   serializeJson(json, output);
+}
+
+template <typename T>
+void generateLightAdJSON(String& output, const AutoDiscoveryInformationTemplate& config, const SpaADInformationTemplate& spa, String &discoveryTopic, const SpaInterface::ROProperty<T>& prop) {
+   JsonDocument json;
+   generateCommonAdJSON(json, config, spa, discoveryTopic, "light");
+
+   json["brightness_state_topic"] = spa.stateTopic;
+   json["color_mode_state_topic"] = spa.stateTopic;
+   json["effect_state_topic"] = spa.stateTopic;
+   json["hs_state_topic"] = spa.stateTopic;
+
+   json["command_topic"] = spa.commandTopic + "/" + config.propertyId + "_state";
+   json["brightness_command_topic"] = spa.commandTopic + "/" + config.propertyId + "_brightness";
+   json["effect_command_topic"] = spa.commandTopic + "/" + config.propertyId + "_effect";
+   json["hs_command_topic"] = spa.commandTopic + "/" + config.propertyId + "_color";
+
+   int lastIndex = config.valueTemplate.length() - 1;
+   while (lastIndex >= 0 && (config.valueTemplate[lastIndex] == ' ' || config.valueTemplate[lastIndex] == '}')) {
+      lastIndex--;
+   }
+
+   json["state_value_template"] = config.valueTemplate.substring(0, lastIndex + 1) + ".state" + config.valueTemplate.substring(lastIndex + 1);
+   json["brightness_value_template"] = config.valueTemplate.substring(0, lastIndex + 1) + ".brightness" + config.valueTemplate.substring(lastIndex + 1);
+   json["effect_value_template"] = config.valueTemplate.substring(0, lastIndex + 1) + ".effect" + config.valueTemplate.substring(lastIndex + 1);
+   json["hs_value_template"] = config.valueTemplate.substring(0, lastIndex + 1) + ".color.h" + config.valueTemplate.substring(lastIndex + 1) + ","
+                              + config.valueTemplate.substring(0, lastIndex + 1) + ".color.s" + config.valueTemplate.substring(lastIndex + 1);
+   json["color_mode_value_template"] = config.valueTemplate.substring(0, lastIndex + 1) + ".color_mode" + config.valueTemplate.substring(lastIndex + 1);
+
+   json["brightness"] = true;
+   json["brightness_scale"]=5;
+   json["effect"] = true;
+   JsonArray effect_list = json["effect_list"].to<JsonArray>();
+   const size_t count = prop.getLabelCount();
+   for (size_t i = 0; i < count; i++) {
+      effect_list.add(prop.getLabelAt(i));
+   }
    JsonArray color_modes = json["supported_color_modes"].to<JsonArray>();
    color_modes.add("hs");
 

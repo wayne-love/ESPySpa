@@ -46,7 +46,7 @@ jobs:
       - name: Build file system image for ${{ inputs.platform }}
         run: pio run --target buildfs -e ${{ inputs.platform }}
       - name: Build for ${{ inputs.platform }}
-        run: pio run -e ${{ inputs.platform }} -t mergebin
+        run: pio run -e ${{ inputs.platform }} -v -t mergebin
       #- name: Display firmware files
       #  run: ls -la .pio/build/${{ inputs.platform }}/firmware*.bin
       - name: Rename and move firmware files

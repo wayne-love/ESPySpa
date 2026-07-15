@@ -26,10 +26,11 @@ void SpaInterface::begin() {
     SPA_SERIAL.setTxBufferSize(1024);  //required for unit testing
     SPA_SERIAL.begin(BAUD_RATE, SERIAL_8N1, RX_PIN, TX_PIN);
     SPA_SERIAL.setTimeout(250);
+
+    _instance = this;
 }
 
 SpaInterface::~SpaInterface() {}
-
 
 void SpaInterface::setSpaPollFrequency(int updateFrequency) {
     _updateFrequency = updateFrequency;
@@ -93,121 +94,242 @@ bool SpaInterface::sendCommandCheckResult(String cmd, String expected){
     return outcome;
 }
 
+void SpaInterface::_processDebugCommand() {
+    if (_instance == nullptr) return;
+
+    String cmd = Debug.getLastCommand();
+    if (!cmd.startsWith("ss ") && !cmd.startsWith("SS ")) return;
+
+    String payload = cmd.substring(3);
+    debugI("TX: %s", payload.c_str());
+
+    _instance->flushSerialReadBuffer();
+    _instance->port.print('\n');
+    _instance->port.flush();
+    delay(50);
+    _instance->port.printf("%s\n", payload.c_str());
+    _instance->port.flush();
+
+    // Wait up to 2s for first byte, then collect until 500ms gap
+    String response = "";
+    unsigned long start = millis();
+    while (!_instance->port.available() && millis() - start < 2000) {}
+    if (_instance->port.available()) {
+        unsigned long lastByte = millis();
+        while (millis() - lastByte < 500) {
+            while (_instance->port.available()) {
+                response += (char)_instance->port.read();
+                lastByte = millis();
+            }
+        }
+    }
+
+    if (response.length() > 0) {
+        debugI("RX:\n%s", response.c_str());
+    } else {
+        debugI("RX: (no response)");
+    }
+
+    _instance->_resultRegistersDirty = true;
+}
+
 bool SpaInterface::setRB_TP_Pump1(int mode){
-    debugD("setRB_TP_Pump1 - %i",mode);
-    if (mode == getRB_TP_Pump1()) {
-        debugD("No Pump1 change detected - current %i, new %i", getRB_TP_Pump1(), mode);
+    debugD("setRB_TP_Pump1 - %i", mode);
+    if (mode < 0 || mode > 4) {
+        throw std::out_of_range("RB_TP_Pump1 value out of range (0..4)");
+    }
+    if (mode == RB_TP_Pump1.get()) {
+        debugD("No Pump1 change detected - current %i, new %i", RB_TP_Pump1.get(), mode);
         return true;
     }
 
     if (sendCommandCheckResult("S22:"+String(mode),"S22-OK")) {
-        update_RB_TP_Pump1(String(mode));
+        RB_TP_Pump1.update(mode);
         return true;
     }
     return false;
 }
 
 bool SpaInterface::setRB_TP_Pump2(int mode){
-    debugD("setRB_TP_Pump2 - %i",mode);
-    if (mode == getRB_TP_Pump2()) {
-        debugD("No Pump2 change detected - current %i, new %i", getRB_TP_Pump2(), mode);
+    debugD("setRB_TP_Pump2 - %i", mode);
+    if (mode < 0 || mode > 4) {
+        throw std::out_of_range("RB_TP_Pump2 value out of range (0..4)");
+    }
+    if (mode == RB_TP_Pump2.get()) {
+        debugD("No Pump2 change detected - current %i, new %i", RB_TP_Pump2.get(), mode);
         return true;
     }
 
     if (sendCommandCheckResult("S23:"+String(mode),"S23-OK")) {
-        update_RB_TP_Pump2(String(mode));
+        RB_TP_Pump2.update(mode);
         return true;
     }
     return false;
 }
 
 bool SpaInterface::setRB_TP_Pump3(int mode){
-    debugD("setRB_TP_Pump3 - %i",mode);
-    if (mode == getRB_TP_Pump3()) {
-        debugD("No Pump3 change detected - current %i, new %i", getRB_TP_Pump3(), mode);
+    debugD("setRB_TP_Pump3 - %i", mode);
+    if (mode < 0 || mode > 4) {
+        throw std::out_of_range("RB_TP_Pump3 value out of range (0..4)");
+    }
+    if (mode == RB_TP_Pump3.get()) {
+        debugD("No Pump3 change detected - current %i, new %i", RB_TP_Pump3.get(), mode);
         return true;
     }
 
     if (sendCommandCheckResult("S24:"+String(mode),"S24-OK")) {
-        update_RB_TP_Pump3(String(mode));
+        RB_TP_Pump3.update(mode);
         return true;
     }
     return false;
 }
 
 bool SpaInterface::setRB_TP_Pump4(int mode){
-    debugD("setRB_TP_Pump4 - %i",mode);
-    if (mode == getRB_TP_Pump4()) {
-        debugD("No Pump4 change detected - current %i, new %i", getRB_TP_Pump4(), mode);
+    debugD("setRB_TP_Pump4 - %i", mode);
+    if (mode < 0 || mode > 4) {
+        throw std::out_of_range("RB_TP_Pump4 value out of range (0..4)");
+    }
+    if (mode == RB_TP_Pump4.get()) {
+        debugD("No Pump4 change detected - current %i, new %i", RB_TP_Pump4.get(), mode);
         return true;
     }
 
     if (sendCommandCheckResult("S25:"+String(mode),"S25-OK")) {
-        update_RB_TP_Pump4(String(mode));
+        RB_TP_Pump4.update(mode);
         return true;
     }
     return false;
 }
 
 bool SpaInterface::setRB_TP_Pump5(int mode){
-    debugD("setRB_TP_Pump5 - %i",mode);
-    if (mode == getRB_TP_Pump5()) {
-        debugD("No Pump5 change detected - current %i, new %i", getRB_TP_Pump5(), mode);
+    debugD("setRB_TP_Pump5 - %i", mode);
+    if (mode < 0 || mode > 4) {
+        throw std::out_of_range("RB_TP_Pump5 value out of range (0..4)");
+    }
+    if (mode == RB_TP_Pump5.get()) {
+        debugD("No Pump5 change detected - current %i, new %i", RB_TP_Pump5.get(), mode);
         return true;
     }
 
     if (sendCommandCheckResult("S26:"+String(mode),"S26-OK")) {
-        update_RB_TP_Pump5(String(mode));
+        RB_TP_Pump5.update(mode);
         return true;
     }
     return false;
+}
+
+bool SpaInterface::setStatusResponse(String s) {
+    return true;
 }
 
 bool SpaInterface::setRB_TP_Light(int mode){
-    debugD("setRB_TP_Light - %i",mode);
-    if (mode == getRB_TP_Light()) {
-        debugD("No RB_TP_Light change detected - current %i, new %i", getRB_TP_Light(), mode);
+    debugD("setRB_TP_Light - %i", mode);
+    if (mode < 0 || mode > 1) throw std::out_of_range("RB_TP_Light value out of range (0..1)");
+    if (mode == RB_TP_Light.get()) {
+        debugD("No RB_TP_Light change detected - current %i, new %i", RB_TP_Light.get(), mode);
         return true;
     }
-
-    if (sendCommandCheckResult("W14","W14")) {
-        update_RB_TP_Light(String(mode));
+    if (sendCommandCheckResult("W14", "W14")) {
+        RB_TP_Light.update(mode);
         return true;
     }
     return false;
 }
 
-bool SpaInterface::setHELE(int mode){
+bool SpaInterface::setHELE(bool mode){
     debugD("setHELE - %i", mode);
-    if (mode == getHELE()) {
-        debugD("No HELE change detected - current %i, new %i", getHELE(), mode);
+    if (mode == HELE.get()) {
+        debugD("No HELE change detected - current %i, new %i", HELE.get(), mode);
         return true;
     }
 
-    if (sendCommandCheckResult("W98:"+String(mode),String(mode))) {
-        update_HELE(String(mode));
+    int v = mode ? 1 : 0;
+    if (sendCommandCheckResult("W98:"+String(v),String(v))) {
+        HELE.update(mode);
         return true;
     }
     return false;
 }
 
+bool SpaInterface::setCLMT(int mode){
+    debugD("setCLMT - %i", mode);
+    if (mode < 10 || mode > 60) {
+        throw std::out_of_range("CLMT value out of range (10..60)");
+    }
+
+    if (mode == CLMT.get()) {
+        debugD("No CLMT change detected - current %i, new %i", CLMT.get(), mode);
+        return true;
+    }
+
+    if (sendCommandCheckResult("W85:" + String(mode), String(mode))) {
+        CLMT.update(mode);
+        return true;
+    }
+    return false;
+}
+
+bool SpaInterface::setWCLNTime(int value){
+    debugD("setWCLNTime - %i", value);
+    if (value < 0 || value > 5947) {
+        throw std::out_of_range("WCLNTime value out of range (0..5947)");
+    }
+
+    if (value == WCLNTime.get()) {
+        debugD("No WCLNTime change detected - current %i, new %i", WCLNTime.get(), value);
+        return true;
+    }
+
+    if (sendCommandCheckResult("W73:" + String(value), String(value))) {
+        WCLNTime.update(value);
+        return true;
+    }
+    return false;
+}
+
+bool SpaInterface::setVMAX(int mode){
+    debugD("setVMAX - %i", mode);
+    if (mode == VMAX.get()) {
+        debugD("No VMAX change detected - current %i, new %i", VMAX.get(), mode);
+        return true;
+    }
+
+    if (sendCommandCheckResult("W95:" + String(mode), String(mode))) {
+        VMAX.update(mode);
+        return true;
+    }
+    return false;
+}
+
+
+bool SpaInterface::sendKey(SpaKey key) {
+    String cmd;
+    String expected;
+    switch (key) {
+        case SpaKey::Up:     cmd = "W08"; expected = "W8";  break;
+        case SpaKey::Ok:     cmd = "W09"; expected = "W9";  break;
+        case SpaKey::Down:   cmd = "W10"; expected = "W10"; break;
+        case SpaKey::Invert: cmd = "W11"; expected = "W11"; break;
+        default: return false;
+    }
+    return sendCommandCheckResult(cmd, expected);
+}
 
 /// @brief Set the water temperature set point * 10 (380 = 38.0)
-/// @param temp 
-/// @return 
+/// @param temp
+/// @return
 bool SpaInterface::setSTMP(int temp){
     debugD("setSTMP - %i", temp);
 
-    if (temp==getSTMP()) {
-        debugD("No STMP change detected - current %i, new %i", getSTMP(), temp);
+    if (temp < 50 || temp > 410) {
+        throw std::out_of_range("STMP value out of range (50..410)");
+    }
+
+    if (temp==STMP.get()) {  // todo: does this ever evaluate to true?
+        debugD("No STMP change detected - current %i, new %i", STMP.get(), temp);
         return true; // No change needed
     }
 
-    // check the temperate is within the valid range
-    if (temp < 50 || temp > 410) {
-        debugE("STMP out of range - %i", temp);
-        return false;
-    }
     if (temp % 2 != 0) {
         temp++;
     }
@@ -215,7 +337,7 @@ bool SpaInterface::setSTMP(int temp){
     String stemp = String(temp);
 
     if (sendCommandCheckResult("W40:" + stemp, stemp)) {
-        update_STMP(stemp);
+        STMP.update(temp);
         return true;
     }
     return false;
@@ -223,13 +345,24 @@ bool SpaInterface::setSTMP(int temp){
 
 bool SpaInterface::setL_1SNZ_DAY(int mode){
     debugD("setL_1SNZ_DAY - %i",mode);
-    if (mode == getL_1SNZ_DAY()) {
-        debugD("No L_1SNZ_DAY change detected - current %i, new %i", getL_1SNZ_DAY(), mode);
+    bool validMode = false;
+    for (size_t i = 0; i < array_count(SNZ_DAY_Map); i++) {
+        if (SNZ_DAY_Map[i].value == mode) {
+            validMode = true;
+            break;
+        }
+    }
+    if (!validMode) {
+        throw std::out_of_range("L_1SNZ_DAY value out of range");
+    }
+
+    if (mode == L_1SNZ_DAY.get()) {
+        debugD("No L_1SNZ_DAY change detected - current %i, new %i", L_1SNZ_DAY.get(), mode);
         return true;
     }
 
     if (sendCommandCheckResult(String("W67:")+mode,String(mode))) {
-        update_L_1SNZ_DAY(String(mode));
+        L_1SNZ_DAY.update(mode);
         return true;
     }
     return false;
@@ -237,13 +370,22 @@ bool SpaInterface::setL_1SNZ_DAY(int mode){
 
 bool SpaInterface::setL_1SNZ_BGN(int mode){
     debugD("setL_1SNZ_BGN - %i",mode);
-    if (mode == getL_1SNZ_BGN()) {
-        debugD("No L_1SNZ_BGN change detected - current %i, new %i", getL_1SNZ_BGN(), mode);
+    if (mode < 0) {
+        throw std::out_of_range("L_1SNZ_BGN value out of range");
+    }
+    int hour = mode / 256;
+    int minute = mode % 256;
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+        throw std::out_of_range("L_1SNZ_BGN value out of range");
+    }
+
+    if (mode == L_1SNZ_BGN.get()) {
+        debugD("No L_1SNZ_BGN change detected - current %i, new %i", L_1SNZ_BGN.get(), mode);
         return true;
     }
 
     if (sendCommandCheckResult(String("W68:")+mode,String(mode))) {
-        update_L_1SNZ_BGN(String(mode));
+        L_1SNZ_BGN.update(mode);
         return true;
     }
     return false;
@@ -251,13 +393,22 @@ bool SpaInterface::setL_1SNZ_BGN(int mode){
 
 bool SpaInterface::setL_1SNZ_END(int mode){
     debugD("setL_1SNZ_END - %i",mode);
-    if (mode == getL_1SNZ_END()) {
-        debugD("No L_1SNZ_END change detected - current %i, new %i", getL_1SNZ_END(), mode);
+    if (mode < 0) {
+        throw std::out_of_range("L_1SNZ_END value out of range");
+    }
+    int hour = mode / 256;
+    int minute = mode % 256;
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+        throw std::out_of_range("L_1SNZ_END value out of range");
+    }
+
+    if (mode == L_1SNZ_END.get()) {
+        debugD("No L_1SNZ_END change detected - current %i, new %i", L_1SNZ_END.get(), mode);
         return true;
     }
     
     if (sendCommandCheckResult(String("W69:")+mode,String(mode))) {
-        update_L_1SNZ_END(String(mode));
+        L_1SNZ_END.update(mode);
         return true;
     }
     return false;
@@ -265,13 +416,24 @@ bool SpaInterface::setL_1SNZ_END(int mode){
 
 bool SpaInterface::setL_2SNZ_DAY(int mode){
     debugD("setL_2SNZ_DAY - %i",mode);
-    if (mode == getL_2SNZ_DAY()) {
-        debugD("No L_2SNZ_DAY change detected - current %i, new %i", getL_2SNZ_DAY(), mode);
+    bool validMode = false;
+    for (size_t i = 0; i < array_count(SNZ_DAY_Map); i++) {
+        if (SNZ_DAY_Map[i].value == mode) {
+            validMode = true;
+            break;
+        }
+    }
+    if (!validMode) {
+        throw std::out_of_range("L_2SNZ_DAY value out of range");
+    }
+
+    if (mode == L_2SNZ_DAY.get()) {
+        debugD("No L_2SNZ_DAY change detected - current %i, new %i", L_2SNZ_DAY.get(), mode);
         return true;
     }
 
     if (sendCommandCheckResult(String("W70:")+mode,String(mode))) {
-        update_L_2SNZ_DAY(String(mode));
+        L_2SNZ_DAY.update(mode);
         return true;
     }
     return false;
@@ -279,13 +441,22 @@ bool SpaInterface::setL_2SNZ_DAY(int mode){
 
 bool SpaInterface::setL_2SNZ_BGN(int mode){
     debugD("setL_2SNZ_BGN - %i",mode);
-    if (mode == getL_2SNZ_BGN()) {
-        debugD("No L_2SNZ_BGN change detected - current %i, new %i", getL_2SNZ_BGN(), mode);
+    if (mode < 0) {
+        throw std::out_of_range("L_2SNZ_BGN value out of range");
+    }
+    int hour = mode / 256;
+    int minute = mode % 256;
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+        throw std::out_of_range("L_2SNZ_BGN value out of range");
+    }
+
+    if (mode == L_2SNZ_BGN.get()) {
+        debugD("No L_2SNZ_BGN change detected - current %i, new %i", L_2SNZ_BGN.get(), mode);
         return true;
     }
 
     if (sendCommandCheckResult(String("W71:")+mode,String(mode))) {
-        update_L_2SNZ_BGN(String(mode));
+        L_2SNZ_BGN.update(mode);
         return true;
     }
     return false;
@@ -293,79 +464,80 @@ bool SpaInterface::setL_2SNZ_BGN(int mode){
 
 bool SpaInterface::setL_2SNZ_END(int mode){
     debugD("setL_2SNZ_END - %i",mode);
-    if (mode == getL_2SNZ_END()) {
-        debugD("No L_2SNZ_END change detected - current %i, new %i", getL_2SNZ_END(), mode);
+    if (mode < 0) {
+        throw std::out_of_range("L_2SNZ_END value out of range");
+    }
+    int hour = mode / 256;
+    int minute = mode % 256;
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+        throw std::out_of_range("L_2SNZ_END value out of range");
+    }
+
+    if (mode == L_2SNZ_END.get()) {
+        debugD("No L_2SNZ_END change detected - current %i, new %i", L_2SNZ_END.get(), mode);
         return true;
     }
 
     if (sendCommandCheckResult(String("W72:")+mode,String(mode))) {
-        update_L_2SNZ_END(String(mode));
+        L_2SNZ_END.update(mode);
         return true;
     }
     return false;
 }
 
 bool SpaInterface::setHPMP(int mode){
+    // Internal writer for HPMP RWProperty.
     debugD("setHPMP - %i", mode);
-    if (mode == getHPMP()) {
-        debugD("No HPMP change detected - current %i, new %i", getHPMP(), mode);
+    if (mode < 0 || mode > 3) {
+        throw std::out_of_range("HPMP value out of range (0..3)");
+    }
+
+    if (mode == HPMP.get()) {
+        debugD("No HPMP change detected - current %i, new %i", HPMP.get(), mode);
         return true;
     }
 
     String smode = String(mode);
     if (sendCommandCheckResult("W99:"+smode,smode)) {
-        update_HPMP(smode);
+        HPMP.update(mode);
         return true;
-    }
-    return false;
-}
-
-bool SpaInterface::setHPMP(String mode){
-    debugD("setHPMP - %s", mode.c_str());
-
-    for (uint x=0; x<HPMPStrings.size(); x++) {
-        if (HPMPStrings[x] == mode) {
-            return setHPMP(x);
-        }
     }
     return false;
 }
 
 bool SpaInterface::setColorMode(int mode){
     debugD("setColorMode - %i", mode);
-    if (mode == getColorMode()) {
-        debugD("No ColorMode change detected - current %i, new %i", getColorMode(), mode);
+    if (mode < 0 || mode > 4) {
+        throw std::out_of_range("ColorMode value out of range (0..4)");
+    }
+
+    if (mode == ColorMode.get()) {
+        debugD("No ColorMode change detected - current %i, new %i", ColorMode.get(), mode);
         return true;
     }
 
     String smode = String(mode);
     if (sendCommandCheckResult("S07:"+smode,smode)) {
-        update_ColorMode(smode);
+        ColorMode.update(mode);
         return true;
-    }
-    return false;
-}
-
-bool SpaInterface::setColorMode(String mode){
-    debugD("setColorMode - %s", mode.c_str());
-    for (uint x=0; x<colorModeStrings.size(); x++) {
-        if (colorModeStrings[x] == mode) {
-            return setColorMode(x);
-        }
     }
     return false;
 }
 
 bool SpaInterface::setLBRTValue(int mode){
     debugD("setLBRTValue - %i", mode);
-    if (mode == getLBRTValue()) {
-        debugD("No LBRTValue change detected - current %i, new %i", getLBRTValue(), mode);
+    if (mode < 1 || mode > 5) {
+        throw std::out_of_range("LBRTValue value out of range (1..5)");
+    }
+
+    if (mode == LBRTValue.get()) {
+        debugD("No LBRTValue change detected - current %i, new %i", LBRTValue.get(), mode);
         return true;
     }
 
     String smode = String(mode);
     if (sendCommandCheckResult("S08:"+smode,smode)) {
-        update_LBRTValue(smode);
+        LBRTValue.update(mode);
         return true;
     }
     return false;
@@ -373,38 +545,37 @@ bool SpaInterface::setLBRTValue(int mode){
 
 bool SpaInterface::setLSPDValue(int mode){
     debugD("setLSPDValue - %i", mode);
-    if (mode == getLSPDValue()) {
-        debugD("No LSPDValue change detected - current %i, new %i", getLSPDValue(), mode);
+    if (mode < 1 || mode > 5) {
+        throw std::out_of_range("LSPDValue value out of range (1..5)");
+    }
+
+    if (mode == LSPDValue.get()) {
+        debugD("No LSPDValue change detected - current %i, new %i", LSPDValue.get(), mode);
         return true;
     }
 
     String smode = String(mode);
     if (sendCommandCheckResult("S09:"+smode,smode)) {
-        update_LSPDValue(smode);
+        LSPDValue.update(mode);
         return true;
-    }
-    return false;
-}
-
-bool SpaInterface::setLSPDValue(String mode){
-    debugD("setLSPDValue - %s", mode.c_str());
-    int x = atoi(mode.c_str());
-    if (x > 0 && x < 6) {
-        return setLSPDValue(x);
     }
     return false;
 }
 
 bool SpaInterface::setCurrClr(int mode){
     debugD("setCurrClr - %i", mode);
-    if (mode == getCurrClr()) {
-        debugD("No CurrClr change detected - current %i, new %i", getCurrClr(), mode);
+    if (mode < 0 || mode > 31) {
+        throw std::out_of_range("CurrClr value out of range (0..31)");
+    }
+
+    if (mode == CurrClr.get()) {
+        debugD("No CurrClr change detected - current %i, new %i", CurrClr.get(), mode);
         return true;
     }
 
     String smode = String(mode);
     if (sendCommandCheckResult("S10:"+smode,smode)) {
-        update_CurrClr(smode);
+        CurrClr.update(mode);
         return true;
     }
     return false;
@@ -412,14 +583,17 @@ bool SpaInterface::setCurrClr(int mode){
 
 bool SpaInterface::setSpaDayOfWeek(int d){
     debugD("setSpaDayOfWeek - %i", d);
-    if (d == getSpaDayOfWeek()) {
-        debugD("No SpaDayOfWeek change detected - current %i, new %i", getSpaDayOfWeek(), d);
+    if (d < 0 || d > 6) {
+        throw std::out_of_range("SpaDayOfWeek value out of range (0..6)");
+    }
+    if (d == SpaDayOfWeek.get()) {
+        debugD("No SpaDayOfWeek change detected - current %i, new %i", SpaDayOfWeek.get(), d);
         return true;
     }
 
     String sd = String(d);
     if (sendCommandCheckResult("S06:"+sd,sd)) {
-        update_SpaDayOfWeek(sd);
+        SpaDayOfWeek.update(d);
         return true;
     }
     return false;
@@ -431,7 +605,7 @@ bool SpaInterface::setSpaTime(time_t t){
     String tmp;
     bool outcome;
 
-    tmp = String(year(t));
+    tmp = String(year(t) % 100);
     outcome = sendCommandCheckResult("S01:"+tmp, tmp);
     delay(100);
 
@@ -442,35 +616,38 @@ bool SpaInterface::setSpaTime(time_t t){
     tmp = String(day(t));
     outcome = outcome && sendCommandCheckResult("S03:"+tmp,tmp);
     delay(100);
-    
+
     tmp = String(hour(t));
     outcome = outcome && sendCommandCheckResult("S04:"+tmp,tmp);
     delay(100);
-    
+
     tmp = String(minute(t));
     outcome = outcome && sendCommandCheckResult("S05:"+tmp,tmp);
     delay(100);
-    
+
     int weekDay = weekday(t); // day of the week (1-7), Sunday is day 1 (Arduino Time Library)
     // Convert to the format required by Spa: day of the week (0-6), Monday is day 0
     if (weekDay == 1) weekDay = 6;
     else weekDay -= 2;
     outcome = outcome && setSpaDayOfWeek(weekDay);
-    
-    return outcome;
 
+    if (outcome) SpaTime.update(t);
+    return outcome;
 }
 
 bool SpaInterface::setOutlet_Blower(int mode){
-    debugD("setOuput-Blower - %i", mode);
-    if (mode == getOutlet_Blower()) {
-        debugD("No Outlet_Blower change detected - current %i, new %i", getOutlet_Blower(), mode);
+    debugD("setOutlet_Blower - %i", mode);
+    if (mode < 0 || mode > 2) {
+        throw std::out_of_range("Outlet_Blower value out of range (0..2)");
+    }
+    if (mode == Outlet_Blower.get()) {
+        debugD("No Outlet_Blower change detected - current %i, new %i", Outlet_Blower.get(), mode);
         return true;
     }
 
     String smode = String(mode);
     if (sendCommandCheckResult("S28:"+smode,"S28-OK")) {
-        update_Outlet_Blower(smode);
+        Outlet_Blower.update(mode);
         return true;
     }
     return false;
@@ -478,69 +655,72 @@ bool SpaInterface::setOutlet_Blower(int mode){
 
 bool SpaInterface::setVARIValue(int mode){
     debugD("setVARIValue - %i", mode);
-    if (mode == getVARIValue()) {
-        debugD("No VARIValue change detected - current %i, new %i", getVARIValue(), mode);
+    if (mode < 1 || mode > 5) {
+        throw std::out_of_range("VARIValue out of range (1..5)");
+    }
+    if (mode == VARIValue.get()) {
+        debugD("No VARIValue change detected - current %i, new %i", VARIValue.get(), mode);
         return true;
     }
 
-    if (mode > 0 && mode < 6) {
-        String smode = String(mode);
-        if (sendCommandCheckResult("S13:"+smode,smode+"  S13")) {
-            update_VARIValue(smode);
-            return true;
-        }
+    String smode = String(mode);
+    if (sendCommandCheckResult("S13:"+smode,smode+"  S13")) {
+        VARIValue.update(mode);
+        return true;
     }
     return false;
 }
 
 bool SpaInterface::setMode(int mode){
     debugD("setMode - %i", mode);
-    if (mode == getModeIndex(getMode())) {
-        debugD("No Mode change detected - current %i, new %i", getModeIndex(getMode()), mode);
+    if (mode < 0 || mode > 3) {
+        throw std::out_of_range("Mode value out of range (0..3)");
+    }
+    if (mode == Mode.get()) {
+        debugD("No Mode change detected - current %i, new %i", Mode.get(), mode);
         return true;
     }
-    
+
     String smode = String(mode);
     if (sendCommandCheckResult("W66:"+smode,smode)) {
-        update_Mode(spaModeStrings[mode]);
+        Mode.update(mode);
         return true;
     }
     return false;
 }
 
-bool SpaInterface::setMode(String mode){
-    debugD("setMode - %s", mode.c_str());
-    for (uint x=0; x<spaModeStrings.size(); x++) {
-        if (spaModeStrings[x] == mode) {
-            return setMode(x);
-        }
+bool SpaInterface::setFiltBlockHrs(int mode){
+    debugD("setFiltBlockHrs - %i", mode);
+    static const int valid[] = {1, 2, 3, 4, 6, 8, 12, 24};
+    bool isValid = false;
+    for (int v : valid) {
+        if (mode == v) { isValid = true; break; }
+    }
+    if (!isValid) {
+        throw std::out_of_range("FiltBlockHrs value not in valid set (1,2,3,4,6,8,12,24)");
+    }
+    if (mode == FiltBlockHrs.get()) {
+        debugD("No FiltBlockHrs change detected - current %i, new %i", FiltBlockHrs.get(), mode);
+        return true;
+    }
+    if (sendCommandCheckResult("W90:"+String(mode), String(mode))) {
+        FiltBlockHrs.update(mode);
+        return true;
     }
     return false;
 }
 
-bool SpaInterface::setFiltBlockHrs(String duration){
-    debugD("setFiltBlockHrs - %s", duration);
-    for (int i = 0; i < FiltBlockHrsSelect.size(); i++) {
-        if (FiltBlockHrsSelect[i] == duration) {
-            if (sendCommandCheckResult("W90:"+FiltBlockHrsSelect[i],FiltBlockHrsSelect[i])) {
-                update_FiltBlockHrs(FiltBlockHrsSelect[i]);
-                return true;
-            }
-            return false;
-        }
+bool SpaInterface::setFiltHrs(int hrs){
+    debugD("setFiltHrs - %i", hrs);
+    if (hrs < 1 || hrs > 24) {
+        throw std::out_of_range("FiltHrs value out of range (1..24)");
     }
-    return false;
-}
-
-bool SpaInterface::setFiltHrs(String duration){
-    debugD("setFiltHrs - %s", duration);
-    int hrs = duration.toInt();
-    if (hrs<1 or hrs>24) {
-        debugE("FiltHrs out of range - %s", duration.c_str());
-        return false;
+    if (hrs == FiltHrs.get()) {
+        debugD("No FiltHrs change detected - current %i, new %i", FiltHrs.get(), hrs);
+        return true;
     }
     if (sendCommandCheckResult("W60:" + String(hrs), String(hrs))) {
-        update_FiltHrs(duration);
+        FiltHrs.update(hrs);
         return true;
     }
     return false;
@@ -548,18 +728,15 @@ bool SpaInterface::setFiltHrs(String duration){
 
 bool SpaInterface::setLockMode(int mode){
     debugD("setLockMode - %i", mode);
-    if (mode == getLockMode()) {
-        debugD("No LockMode change detected - current %i, new %i", getLockMode(), mode);
+    if (mode < 0 || mode > 2) {
+        throw std::out_of_range("LockMode value out of range (0..2)");
+    }
+    if (mode == LockMode.get()) {
+        debugD("No LockMode change detected - current %i, new %i", LockMode.get(), mode);
         return true;
     }
-
-    if (mode < 0 || mode > 2) {
-        debugE("LockMode out of range - %i", mode);
-        return false;
-    }
-
-    if (sendCommandCheckResult("S21:"+String(mode),String(mode))) {
-        update_LockMode(String(mode));
+    if (sendCommandCheckResult("S21:"+String(mode), String(mode))) {
+        LockMode.update(mode);
         return true;
     }
     return false;
@@ -583,11 +760,11 @@ bool SpaInterface::readStatus() {
     int majorFirmwarwVersion = 0;
 
     if (_initialised) {
-        uint spaceIndex = getSVER().indexOf(' ', 4);
+        uint spaceIndex = SVER.get().indexOf(' ', 4);
         if (spaceIndex != -1) {
-            majorFirmwarwVersion = getSVER().substring(4, spaceIndex).toInt(); // Skip the 'V' character
+            majorFirmwarwVersion = SVER.get().substring(4, spaceIndex).toInt(); // Skip the 'V' character
         }
-        debugV("Firmware: %s, majorFirmwareVersion: %i", getSVER().c_str(), majorFirmwarwVersion);
+        debugV("Firmware: %s, majorFirmwareVersion: %i", SVER.get().c_str(), majorFirmwarwVersion);
     }
 
     // read the first field and validate the response
@@ -696,7 +873,7 @@ bool SpaInterface::readStatus() {
     //Flush the remaining data from the buffer as the last field is meaningless
     statusResponseTmp = statusResponseTmp + flushSerialReadBuffer(true);
 
-    statusResponse.update_Value(statusResponseTmp);
+    statusResponse.update(statusResponseTmp);
 
     if ((majorFirmwarwVersion > 2 && registerCounter < 12) || (majorFirmwarwVersion < 3 && registerCounter < 11)) {
         debugE("Throwing exception - not enough registers, we only read: %i", registerCounter);
@@ -744,6 +921,12 @@ void SpaInterface::updateStatus() {
 
 
 void SpaInterface::loop(){
+    if (!_debugInitialised) {
+        Debug.setHelpProjectsCmds("ss <cmd> - Send raw command to spa serial and print response");
+        Debug.setCallBackProjectCmds(&SpaInterface::_processDebugCommand);
+        _debugInitialised = true;
+    }
+
     if ( _lastWaitMessage + 1000 < millis()) {
         debugV("Waiting...");
         _lastWaitMessage = millis();
@@ -772,206 +955,215 @@ void SpaInterface::clearUpdateCallback() {
 
 void SpaInterface::updateMeasures() {
     #pragma region R2
-    update_MainsCurrent(statusResponseRaw[R2+1]);
-    update_MainsVoltage(statusResponseRaw[R2+2]);
-    update_CaseTemperature(statusResponseRaw[R2+3]);
-    update_PortCurrent(statusResponseRaw[R2+4]);
-    update_SpaDayOfWeek(statusResponseRaw[R2+5]);
-    update_SpaTime(statusResponseRaw[R2+11], statusResponseRaw[R2+10], statusResponseRaw[R2+9], statusResponseRaw[R2+6], statusResponseRaw[R2+7], statusResponseRaw[R2+8]);
-    update_HeaterTemperature(statusResponseRaw[R2+12]);
-    update_PoolTemperature(statusResponseRaw[R2+13]);
-    update_WaterPresent(statusResponseRaw[R2+14]);
-    update_AwakeMinutesRemaining(statusResponseRaw[R2+16]);
-    update_FiltPumpRunTimeTotal(statusResponseRaw[R2+17]);
-    update_FiltPumpReqMins(statusResponseRaw[R2+18]);
-    update_LoadTimeOut(statusResponseRaw[R2+19]);
-    update_HourMeter(statusResponseRaw[R2+20]);
-    update_Relay1(statusResponseRaw[R2+21]);
-    update_Relay2(statusResponseRaw[R2+22]);
-    update_Relay3(statusResponseRaw[R2+23]);
-    update_Relay4(statusResponseRaw[R2+24]);
-    update_Relay5(statusResponseRaw[R2+25]);
-    update_Relay6(statusResponseRaw[R2+26]);
-    update_Relay7(statusResponseRaw[R2+27]);
-    update_Relay8(statusResponseRaw[R2+28]);
-    update_Relay9(statusResponseRaw[R2+29]); 
+    MainsCurrent.update(statusResponseRaw[R2+1].toInt());
+    MainsVoltage.update(statusResponseRaw[R2+2].toInt());
+    CaseTemperature.update(statusResponseRaw[R2+3].toInt());
+    PortCurrent.update(statusResponseRaw[R2+4].toInt());
+    SpaDayOfWeek.update(statusResponseRaw[R2+5].toInt());
+    {
+        tmElements_t tm;
+        tm.Year   = CalendarYrToTm(statusResponseRaw[R2+11].toInt());
+        tm.Month  = statusResponseRaw[R2+10].toInt();
+        tm.Day    = statusResponseRaw[R2+9].toInt();
+        tm.Hour   = statusResponseRaw[R2+6].toInt();
+        tm.Minute = statusResponseRaw[R2+7].toInt();
+        tm.Second = statusResponseRaw[R2+8].toInt();
+        SpaTime.update(makeTime(tm));
+    }
+    HeaterTemperature.update(statusResponseRaw[R2+12].toInt());
+    PoolTemperature.update(statusResponseRaw[R2+13].toInt());
+    WaterPresent.update(statusResponseRaw[R2+14] == "1");
+    AwakeMinutesRemaining.update(statusResponseRaw[R2+16].toInt());
+    FiltPumpRunTimeTotal.update(statusResponseRaw[R2+17].toInt());
+    FiltPumpReqMins.update(statusResponseRaw[R2+18].toInt());
+    LoadTimeOut.update(statusResponseRaw[R2+19].toInt());
+    HourMeter.update(statusResponseRaw[R2+20].toInt());
+    Relay1.update(statusResponseRaw[R2+21].toInt());
+    Relay2.update(statusResponseRaw[R2+22].toInt());
+    Relay3.update(statusResponseRaw[R2+23].toInt());
+    Relay4.update(statusResponseRaw[R2+24].toInt());
+    Relay5.update(statusResponseRaw[R2+25].toInt());
+    Relay6.update(statusResponseRaw[R2+26].toInt());
+    Relay7.update(statusResponseRaw[R2+27].toInt());
+    Relay8.update(statusResponseRaw[R2+28].toInt());
+    Relay9.update(statusResponseRaw[R2+29].toInt());
     #pragma endregion
     #pragma region R3
-    update_CLMT(statusResponseRaw[R3+1]);
-    update_PHSE(statusResponseRaw[R3+2]);
-    update_LLM1(statusResponseRaw[R3+3]);
-    update_LLM2(statusResponseRaw[R3+4]);
-    update_LLM3(statusResponseRaw[R3+5]);
-    update_SVER(statusResponseRaw[R3+6]);
-    update_Model(statusResponseRaw[R3+7]); 
-    update_SerialNo1(statusResponseRaw[R3+8]);
-    update_SerialNo2(statusResponseRaw[R3+9]); 
-    update_D1(statusResponseRaw[R3+10]);
-    update_D2(statusResponseRaw[R3+11]);
-    update_D3(statusResponseRaw[R3+12]);
-    update_D4(statusResponseRaw[R3+13]);
-    update_D5(statusResponseRaw[R3+14]);
-    update_D6(statusResponseRaw[R3+15]);
-    update_Pump(statusResponseRaw[R3+16]);
-    update_LS(statusResponseRaw[R3+17]);
-    update_HV(statusResponseRaw[R3+18]);
-    update_SnpMR(statusResponseRaw[R3+19]);
-    update_Status(statusResponseRaw[R3+20]);
-    update_PrimeCount(statusResponseRaw[R3+21]);
-    update_EC(statusResponseRaw[R3+22]);
-    update_HAMB(statusResponseRaw[R3+23]);
-    update_HCON(statusResponseRaw[R3+24]);
+    CLMT.update(statusResponseRaw[R3+1].toInt());
+    PHSE.update(statusResponseRaw[R3+2].toInt());
+    LLM1.update(statusResponseRaw[R3+3].toInt());
+    LLM2.update(statusResponseRaw[R3+4].toInt());
+    LLM3.update(statusResponseRaw[R3+5].toInt());
+    SVER.update(statusResponseRaw[R3+6]);
+    Model.update(statusResponseRaw[R3+7]);
+    SerialNo1.update(statusResponseRaw[R3+8]);
+    SerialNo2.update(statusResponseRaw[R3+9]);
+    D1.update(statusResponseRaw[R3+10] == "1");
+    D2.update(statusResponseRaw[R3+11] == "1");
+    D3.update(statusResponseRaw[R3+12] == "1");
+    D4.update(statusResponseRaw[R3+13] == "1");
+    D5.update(statusResponseRaw[R3+14] == "1");
+    D6.update(statusResponseRaw[R3+15] == "1");
+    Pump.update(statusResponseRaw[R3+16]);
+    LS.update(statusResponseRaw[R3+17].toInt());
+    HV.update(statusResponseRaw[R3+18] == "1");
+    SnpMR.update(statusResponseRaw[R3+19].toInt());
+    Status.update(statusResponseRaw[R3+20]);
+    PrimeCount.update(statusResponseRaw[R3+21].toInt());
+    EC.update(statusResponseRaw[R3+22].toInt());
+    HAMB.update(statusResponseRaw[R3+23].toInt());
+    HCON.update(statusResponseRaw[R3+24].toInt());
     // update_HV_2(statusResponseRaw[R3+25]);
     #pragma endregion
     #pragma region R4
-    update_Mode(statusResponseRaw[R4+1]);
-    update_Ser1_Timer(statusResponseRaw[R4+2]);
-    update_Ser2_Timer(statusResponseRaw[R4+3]);
-    update_Ser3_Timer(statusResponseRaw[R4+4]);
-    update_HeatMode(statusResponseRaw[R4+5]);
-    update_PumpIdleTimer(statusResponseRaw[R4+6]);
-    update_PumpRunTimer(statusResponseRaw[R4+7]);
-    update_AdtPoolHys(statusResponseRaw[R4+8]);
-    update_AdtHeaterHys(statusResponseRaw[R4+9]);
-    update_Power(statusResponseRaw[R4+10]);
-    update_Power_kWh(statusResponseRaw[R4+11]);
-    update_Power_Today(statusResponseRaw[R4+12]);
-    update_Power_Yesterday(statusResponseRaw[R4+13]);
-    update_ThermalCutOut(statusResponseRaw[R4+14]);
-    update_Test_D1(statusResponseRaw[R4+15]);
-    update_Test_D2(statusResponseRaw[R4+16]);
-    update_Test_D3(statusResponseRaw[R4+17]);
-    update_ElementHeatSourceOffset(statusResponseRaw[R4+18]);
-    update_Frequency(statusResponseRaw[R4+19]);
-    update_HPHeatSourceOffset_Heat(statusResponseRaw[R4+20]);
-    update_HPHeatSourceOffset_Cool(statusResponseRaw[R4+21]);
-    update_HeatSourceOffTime(statusResponseRaw[R4+22]);
-    update_Vari_Speed(statusResponseRaw[R4+24]);
-    update_Vari_Percent(statusResponseRaw[R4+25]);
-    update_Vari_Mode(statusResponseRaw[R4+23]);
+    try { Mode.updateFromLabel(statusResponseRaw[R4+1].c_str()); } catch (const std::exception& ex) { debugE("Mode update failed: %s", ex.what()); }
+    Ser1_Timer.update(statusResponseRaw[R4+2].toInt());
+    Ser2_Timer.update(statusResponseRaw[R4+3].toInt());
+    Ser3_Timer.update(statusResponseRaw[R4+4].toInt());
+    HeatMode.update(statusResponseRaw[R4+5].toInt());
+    PumpIdleTimer.update(statusResponseRaw[R4+6].toInt());
+    PumpRunTimer.update(statusResponseRaw[R4+7].toInt());
+    AdtPoolHys.update(statusResponseRaw[R4+8].toInt());
+    AdtHeaterHys.update(statusResponseRaw[R4+9].toInt());
+    Power.update(statusResponseRaw[R4+10].toInt());
+    Power_kWh.update(statusResponseRaw[R4+11].toInt());
+    Power_Today.update(statusResponseRaw[R4+12].toInt());
+    Power_Yesterday.update(statusResponseRaw[R4+13].toInt());
+    ThermalCutOut.update(statusResponseRaw[R4+14].toInt());
+    Test_D1.update(statusResponseRaw[R4+15].toInt());
+    Test_D2.update(statusResponseRaw[R4+16].toInt());
+    Test_D3.update(statusResponseRaw[R4+17].toInt());
+    ElementHeatSourceOffset.update(statusResponseRaw[R4+18].toInt());
+    Frequency.update(statusResponseRaw[R4+19].toInt());
+    HPHeatSourceOffset_Heat.update(statusResponseRaw[R4+20].toInt());
+    HPHeatSourceOffset_Cool.update(statusResponseRaw[R4+21].toInt());
+    HeatSourceOffTime.update(statusResponseRaw[R4+22].toInt());
+    Vari_Speed.update(statusResponseRaw[R4+24].toInt());
+    Vari_Percent.update(statusResponseRaw[R4+25].toInt());
+    Vari_Mode.update(statusResponseRaw[R4+23].toInt());
     #pragma endregion
     #pragma region R5
     //R5
     // Unknown encoding - TouchPad2.updateValue();
     // Unknown encoding - TouchPad1.updateValue();
     //RB_TP_Blower.updateValue(statusResponseRaw[R5 + 5]);
-    update_RB_TP_Sleep(statusResponseRaw[R5 + 10]);
-    update_RB_TP_Ozone(statusResponseRaw[R5 + 11]);
-    update_RB_TP_Heater(statusResponseRaw[R5 + 12]);
-    update_RB_TP_Auto(statusResponseRaw[R5 + 13]);
-    update_RB_TP_Light(statusResponseRaw[R5 + 14]);
-    update_WTMP(statusResponseRaw[R5 + 15]);
-    update_CleanCycle(statusResponseRaw[R5 + 16]);
-    update_RB_TP_Pump1(statusResponseRaw[R5 + 18]);
-    update_RB_TP_Pump2(statusResponseRaw[R5 + 19]);
-    update_RB_TP_Pump3(statusResponseRaw[R5 + 20]);
-    update_RB_TP_Pump4(statusResponseRaw[R5 + 21]);
-    update_RB_TP_Pump5(statusResponseRaw[R5 + 22]);
+    RB_TP_Sleep.update(statusResponseRaw[R5 + 10] == "1");
+    RB_TP_Ozone.update(statusResponseRaw[R5 + 11] == "1");
+    RB_TP_Heater.update(statusResponseRaw[R5 + 12] == "1");
+    RB_TP_Auto.update(statusResponseRaw[R5 + 13] == "1");
+    RB_TP_Light.update(statusResponseRaw[R5 + 14].toInt());
+    WTMP.update(statusResponseRaw[R5 + 15].toInt());
+    CleanCycle.update(statusResponseRaw[R5 + 16] == "1");
+    RB_TP_Pump1.update(statusResponseRaw[R5 + 18].toInt());
+    RB_TP_Pump2.update(statusResponseRaw[R5 + 19].toInt());
+    RB_TP_Pump3.update(statusResponseRaw[R5 + 20].toInt());
+    RB_TP_Pump4.update(statusResponseRaw[R5 + 21].toInt());
+    RB_TP_Pump5.update(statusResponseRaw[R5 + 22].toInt());
     #pragma endregion
     #pragma region R6
-    update_VARIValue(statusResponseRaw[R6 + 1]);
-    update_LBRTValue(statusResponseRaw[R6 + 2]);
-    update_CurrClr(statusResponseRaw[R6 + 3]);
-    update_ColorMode(statusResponseRaw[R6 + 4]);
-    update_LSPDValue(statusResponseRaw[R6 + 5]);
-    update_FiltHrs(statusResponseRaw[R6 + 6]);
-    update_FiltBlockHrs(statusResponseRaw[R6 + 7]);
-    update_STMP(statusResponseRaw[R6 + 8]);
-    update_L_24HOURS(statusResponseRaw[R6 + 9]);
-    update_PSAV_LVL(statusResponseRaw[R6 + 10]);
-    update_PSAV_BGN(statusResponseRaw[R6 + 11]);
-    update_PSAV_END(statusResponseRaw[R6 + 12]);
-    update_L_1SNZ_DAY(statusResponseRaw[R6 + 13]);
-    update_L_2SNZ_DAY(statusResponseRaw[R6 + 14]);
-    update_L_1SNZ_BGN(statusResponseRaw[R6 + 15]);
-    update_L_2SNZ_BGN(statusResponseRaw[R6 + 16]);
-    update_L_1SNZ_END(statusResponseRaw[R6 + 17]);
-    update_L_2SNZ_END(statusResponseRaw[R6 + 18]);
-    update_DefaultScrn(statusResponseRaw[R6 + 19]);
-    update_TOUT(statusResponseRaw[R6 + 20]);
-    update_VPMP(statusResponseRaw[R6 + 21]);
-    update_HIFI(statusResponseRaw[R6 + 22]);
-    update_BRND(statusResponseRaw[R6 + 23]);
+    VARIValue.update(statusResponseRaw[R6 + 1].toInt());
+    LBRTValue.update(statusResponseRaw[R6 + 2].toInt());
+    CurrClr.update(statusResponseRaw[R6 + 3].toInt());
+    ColorMode.update(statusResponseRaw[R6 + 4].toInt());
+    LSPDValue.update(statusResponseRaw[R6 + 5].toInt());
+    FiltHrs.update(statusResponseRaw[R6 + 6].toInt());
+    FiltBlockHrs.update(statusResponseRaw[R6 + 7].toInt());
+    STMP.update(statusResponseRaw[R6 + 8].toInt());
+    L_24HOURS.update(statusResponseRaw[R6 + 9].toInt());
+    PSAV_LVL.update(statusResponseRaw[R6 + 10].toInt());
+    PSAV_BGN.update(statusResponseRaw[R6 + 11].toInt());
+    PSAV_END.update(statusResponseRaw[R6 + 12].toInt());
+    L_1SNZ_DAY.update(statusResponseRaw[R6 + 13].toInt());
+    L_2SNZ_DAY.update(statusResponseRaw[R6 + 14].toInt());
+    L_1SNZ_BGN.update(statusResponseRaw[R6 + 15].toInt());
+    L_2SNZ_BGN.update(statusResponseRaw[R6 + 16].toInt());
+    L_1SNZ_END.update(statusResponseRaw[R6 + 17].toInt());
+    L_2SNZ_END.update(statusResponseRaw[R6 + 18].toInt());
+    DefaultScrn.update(statusResponseRaw[R6 + 19].toInt());
+    TOUT.update(statusResponseRaw[R6 + 20].toInt());
+    VPMP.update(statusResponseRaw[R6 + 21] == "1");
+    HIFI.update(statusResponseRaw[R6 + 22] == "1");
+    BRND.update(statusResponseRaw[R6 + 23].toInt());
     // Note: We only have 23 registers in V2 firmware
     if (R6 > 23) {
-        update_PRME(statusResponseRaw[R6 + 24]);
-        update_ELMT(statusResponseRaw[R6 + 25]);
-        update_TYPE(statusResponseRaw[R6 + 26]);
-        update_GAS(statusResponseRaw[R6 + 27]);
+        PRME.update(statusResponseRaw[R6 + 24].toInt());
+        ELMT.update(statusResponseRaw[R6 + 25].toInt());
+        TYPE.update(statusResponseRaw[R6 + 26].toInt());
+        GAS.update(statusResponseRaw[R6 + 27].toInt());
     }
     #pragma endregion
     #pragma region R7
-    update_WCLNTime(statusResponseRaw[R7 + 1]);
+    WCLNTime.update(statusResponseRaw[R7 + 1].toInt());
     // The following 2 may be reversed
-    update_TemperatureUnits(statusResponseRaw[R7 + 3]);
-    update_OzoneOff(statusResponseRaw[R7 + 2]);
-    update_Ozone24(statusResponseRaw[R7 + 4]);
-    update_Circ24(statusResponseRaw[R7 + 6]);
-    update_CJET(statusResponseRaw[R7 + 5]);
+    TemperatureUnits.update(statusResponseRaw[R7 + 3] == "1");
+    OzoneOff.update(statusResponseRaw[R7 + 2] == "1");
+    Ozone24.update(statusResponseRaw[R7 + 4] == "1");
+    Circ24.update(statusResponseRaw[R7 + 6] == "1");
+    CJET.update(statusResponseRaw[R7 + 5] == "1");
     // 0 = off, 1 = step, 2 = variable
-    update_VELE(statusResponseRaw[R7 + 7]);
+    VELE.update(statusResponseRaw[R7 + 7] == "1");
     //update_StartDD(statusResponseRaw[R7 + 8]);
     //update_StartMM(statusResponseRaw[R7 + 9]);
     //update_StartYY(statusResponseRaw[R7 + 10]);
-    update_V_Max(statusResponseRaw[R7 + 11]);
-    update_V_Min(statusResponseRaw[R7 + 12]);
-    update_V_Max_24(statusResponseRaw[R7 + 13]);
-    update_V_Min_24(statusResponseRaw[R7 + 14]);
-    update_CurrentZero(statusResponseRaw[R7 + 15]);
-    update_CurrentAdjust(statusResponseRaw[R7 + 16]);
-    update_VoltageAdjust(statusResponseRaw[R7 + 17]);
+    V_Max.update(statusResponseRaw[R7 + 11].toInt());
+    V_Min.update(statusResponseRaw[R7 + 12].toInt());
+    V_Max_24.update(statusResponseRaw[R7 + 13].toInt());
+    V_Min_24.update(statusResponseRaw[R7 + 14].toInt());
+    CurrentZero.update(statusResponseRaw[R7 + 15].toInt());
+    CurrentAdjust.update(statusResponseRaw[R7 + 16].toInt());
+    VoltageAdjust.update(statusResponseRaw[R7 + 17].toInt());
     // 168 is unknown
-    update_Ser1(statusResponseRaw[R7 + 19]);
-    update_Ser2(statusResponseRaw[R7 + 20]);
-    update_Ser3(statusResponseRaw[R7 + 21]);
-    update_VMAX(statusResponseRaw[R7 + 22]);
-    update_AHYS(statusResponseRaw[R7 + 23]);
-    update_HUSE(statusResponseRaw[R7 + 24]);
-    update_HELE(statusResponseRaw[R7 + 25]);
-    update_HPMP(statusResponseRaw[R7 + 26]);
-    update_PMIN(statusResponseRaw[R7 + 27]);
-    update_PFLT(statusResponseRaw[R7 + 28]);
-    update_PHTR(statusResponseRaw[R7 + 29]);
-    update_PMAX(statusResponseRaw[R7 + 30]);
+    Ser1.update(statusResponseRaw[R7 + 19].toInt());
+    Ser2.update(statusResponseRaw[R7 + 20].toInt());
+    Ser3.update(statusResponseRaw[R7 + 21].toInt());
+    VMAX.update(statusResponseRaw[R7 + 22].toInt());
+    AHYS.update(statusResponseRaw[R7 + 23].toInt());
+    HUSE.update(statusResponseRaw[R7 + 24] == "1");
+    HELE.update(statusResponseRaw[R7 + 25] == "1");
+    HPMP.update(statusResponseRaw[R7 + 26].toInt());
+    PMIN.update(statusResponseRaw[R7 + 27].toInt());
+    PFLT.update(statusResponseRaw[R7 + 28].toInt());
+    PHTR.update(statusResponseRaw[R7 + 29].toInt());
+    PMAX.update(statusResponseRaw[R7 + 30].toInt());
     #pragma endregion
     #pragma region R9
-    update_F1_HR(statusResponseRaw[R9 + 2]);
-    update_F1_Time(statusResponseRaw[R9 + 3]);
-    update_F1_ER(statusResponseRaw[R9 + 4]);
-    update_F1_I(statusResponseRaw[R9 + 5]);
-    update_F1_V(statusResponseRaw[R9 + 6]);
-    update_F1_PT(statusResponseRaw[R9 + 7]);
-    update_F1_HT(statusResponseRaw[R9 + 8]);
-    update_F1_CT(statusResponseRaw[R9 + 9]);
-    update_F1_PU(statusResponseRaw[R9 + 10]);
-    update_F1_VE(statusResponseRaw[R9 + 11]);
-    update_F1_ST(statusResponseRaw[R9 + 12]);
+    F1_HR.update(statusResponseRaw[R9 + 2].toInt());
+    F1_Time.update(statusResponseRaw[R9 + 3].toInt());
+    F1_ER.update(statusResponseRaw[R9 + 4].toInt());
+    F1_I.update(statusResponseRaw[R9 + 5].toInt());
+    F1_V.update(statusResponseRaw[R9 + 6].toInt());
+    F1_PT.update(statusResponseRaw[R9 + 7].toInt());
+    F1_HT.update(statusResponseRaw[R9 + 8].toInt());
+    F1_CT.update(statusResponseRaw[R9 + 9].toInt());
+    F1_PU.update(statusResponseRaw[R9 + 10].toInt());
+    F1_VE.update(statusResponseRaw[R9 + 11] == "1");
+    F1_ST.update(statusResponseRaw[R9 + 12].toInt());
     #pragma endregion
     #pragma region RA
-    update_F2_HR(statusResponseRaw[RA + 2]);
-    update_F2_Time(statusResponseRaw[RA + 3]);
-    update_F2_ER(statusResponseRaw[RA + 4]);
-    update_F2_I(statusResponseRaw[RA + 5]);
-    update_F2_V(statusResponseRaw[RA + 6]);
-    update_F2_PT(statusResponseRaw[RA + 7]);
-    update_F2_HT(statusResponseRaw[RA + 8]);
-    update_F2_CT(statusResponseRaw[RA + 9]);
-    update_F2_PU(statusResponseRaw[RA + 10]);
-    update_F2_VE(statusResponseRaw[RA + 11]);
-    update_F2_ST(statusResponseRaw[RA + 12]);
+    F2_HR.update(statusResponseRaw[RA + 2].toInt());
+    F2_Time.update(statusResponseRaw[RA + 3].toInt());
+    F2_ER.update(statusResponseRaw[RA + 4].toInt());
+    F2_I.update(statusResponseRaw[RA + 5].toInt());
+    F2_V.update(statusResponseRaw[RA + 6].toInt());
+    F2_PT.update(statusResponseRaw[RA + 7].toInt());
+    F2_HT.update(statusResponseRaw[RA + 8].toInt());
+    F2_CT.update(statusResponseRaw[RA + 9].toInt());
+    F2_PU.update(statusResponseRaw[RA + 10].toInt());
+    F2_VE.update(statusResponseRaw[RA + 11] == "1");
+    F2_ST.update(statusResponseRaw[RA + 12].toInt());
     #pragma endregion
     #pragma region RB
-    update_F3_HR(statusResponseRaw[RB + 2]);
-    update_F3_Time(statusResponseRaw[RB + 3]);
-    update_F3_ER(statusResponseRaw[RB + 4]);
-    update_F3_I(statusResponseRaw[RB + 5]);
-    update_F3_V(statusResponseRaw[RB + 6]);
-    update_F3_PT(statusResponseRaw[RB + 7]);
-    update_F3_HT(statusResponseRaw[RB + 8]);
-    update_F3_CT(statusResponseRaw[RB + 9]);
-    update_F3_PU(statusResponseRaw[RB + 10]);
-    update_F3_VE(statusResponseRaw[RB + 11]);
-    update_F3_ST(statusResponseRaw[RB + 12]);
+    F3_HR.update(statusResponseRaw[RB + 2].toInt());
+    F3_Time.update(statusResponseRaw[RB + 3].toInt());
+    F3_ER.update(statusResponseRaw[RB + 4].toInt());
+    F3_I.update(statusResponseRaw[RB + 5].toInt());
+    F3_V.update(statusResponseRaw[RB + 6].toInt());
+    F3_PT.update(statusResponseRaw[RB + 7].toInt());
+    F3_HT.update(statusResponseRaw[RB + 8].toInt());
+    F3_CT.update(statusResponseRaw[RB + 9].toInt());
+    F3_PU.update(statusResponseRaw[RB + 10].toInt());
+    F3_VE.update(statusResponseRaw[RB + 11] == "1");
+    F3_ST.update(statusResponseRaw[RB + 12].toInt());
     #pragma endregion
     #pragma region RC
     //Outlet_Heater.updateValue(statusResponseRaw[]);
@@ -981,10 +1173,10 @@ void SpaInterface::updateMeasures() {
     //Outlet_Pump2.updateValue(statusResponseRaw[]);
     //Outlet_Pump4.updateValue(statusResponseRaw[]);
     //Outlet_Pump5.updateValue(statusResponseRaw[]);
-    update_Outlet_Blower(statusResponseRaw[RC + 10]);
+    Outlet_Blower.update(statusResponseRaw[RC + 10].toInt());
     #pragma endregion
     #pragma region RE
-    update_HP_Present(statusResponseRaw[RE + 1]);
+    HP_Present.update(statusResponseRaw[RE + 1].toInt());
     //HP_FlowSwitch.updateValue(statusResponseRaw[]);
     //HP_HighSwitch.updateValue(statusResponseRaw[]);
     //HP_LowSwitch.updateValue(statusResponseRaw[]);
@@ -993,27 +1185,27 @@ void SpaInterface::updateMeasures() {
     //HP_D1.updateValue(statusResponseRaw[]);
     //HP_D2.updateValue(statusResponseRaw[]);
     //HP_D3.updateValue(statusResponseRaw[]);
-    update_HP_Ambient(statusResponseRaw[RE + 10]);
-    update_HP_Condensor(statusResponseRaw[RE + 11]);
-    update_HP_Compressor_State(statusResponseRaw[RE + 12]);
-    update_HP_Fan_State(statusResponseRaw[RE + 13]);
-    update_HP_4W_Valve(statusResponseRaw[RE + 14]);
-    update_HP_Heater_State(statusResponseRaw[RE + 15]);
-    update_HP_State(statusResponseRaw[RE + 16]);
-    update_HP_Mode(statusResponseRaw[RE + 17]);
-    update_HP_Defrost_Timer(statusResponseRaw[RE + 18]);
-    update_HP_Comp_Run_Timer(statusResponseRaw[RE + 19]);
-    update_HP_Low_Temp_Timer(statusResponseRaw[RE + 20]);
-    update_HP_Heat_Accum_Timer(statusResponseRaw[RE + 21]);
-    update_HP_Sequence_Timer(statusResponseRaw[RE + 22]);
-    update_HP_Warning(statusResponseRaw[RE + 23]);
-    update_FrezTmr(statusResponseRaw[RE + 24]);
-    update_DBGN(statusResponseRaw[RE + 25]);
-    update_DEND(statusResponseRaw[RE + 26]);
-    update_DCMP(statusResponseRaw[RE + 27]);
-    update_DMAX(statusResponseRaw[RE + 28]);
-    update_DELE(statusResponseRaw[RE + 29]);
-    update_DPMP(statusResponseRaw[RE + 30]);
+    HP_Ambient.update(statusResponseRaw[RE + 10].toInt());
+    HP_Condensor.update(statusResponseRaw[RE + 11].toInt());
+    HP_Compressor_State.update(statusResponseRaw[RE + 12] == "1");
+    HP_Fan_State.update(statusResponseRaw[RE + 13] == "1");
+    HP_4W_Valve.update(statusResponseRaw[RE + 14] == "1");
+    HP_Heater_State.update(statusResponseRaw[RE + 15] == "1");
+    HP_State.update(statusResponseRaw[RE + 16].toInt());
+    HP_Mode.update(statusResponseRaw[RE + 17].toInt());
+    HP_Defrost_Timer.update(statusResponseRaw[RE + 18].toInt());
+    HP_Comp_Run_Timer.update(statusResponseRaw[RE + 19].toInt());
+    HP_Low_Temp_Timer.update(statusResponseRaw[RE + 20].toInt());
+    HP_Heat_Accum_Timer.update(statusResponseRaw[RE + 21].toInt());
+    HP_Sequence_Timer.update(statusResponseRaw[RE + 22].toInt());
+    HP_Warning.update(statusResponseRaw[RE + 23].toInt());
+    FrezTmr.update(statusResponseRaw[RE + 24].toInt());
+    DBGN.update(statusResponseRaw[RE + 25].toInt());
+    DEND.update(statusResponseRaw[RE + 26].toInt());
+    DCMP.update(statusResponseRaw[RE + 27].toInt());
+    DMAX.update(statusResponseRaw[RE + 28].toInt());
+    DELE.update(statusResponseRaw[RE + 29].toInt());
+    DPMP.update(statusResponseRaw[RE + 30].toInt());
     //CMAX.updateValue(statusResponseRaw[]);
     //HP_Compressor.updateValue(statusResponseRaw[]);
     //HP_Pump_State.updateValue(statusResponseRaw[]);
@@ -1024,17 +1216,17 @@ void SpaInterface::updateMeasures() {
     if (RG < 0) return;
 
     #pragma region RG
-    update_Pump1InstallState(statusResponseRaw[RG + 7]);
-    update_Pump2InstallState(statusResponseRaw[RG + 8]);
-    update_Pump3InstallState(statusResponseRaw[RG + 9]);
-    update_Pump4InstallState(statusResponseRaw[RG + 10]);
-    update_Pump5InstallState(statusResponseRaw[RG + 11]);
-    update_Pump1OkToRun(statusResponseRaw[RG + 1]);
-    update_Pump2OkToRun(statusResponseRaw[RG + 2]);
-    update_Pump3OkToRun(statusResponseRaw[RG + 3]);
-    update_Pump4OkToRun(statusResponseRaw[RG + 4]);
-    update_Pump5OkToRun(statusResponseRaw[RG + 5]);
-    update_LockMode(statusResponseRaw[RG + 12]);
+    Pump1InstallState.update(statusResponseRaw[RG + 7]);
+    Pump2InstallState.update(statusResponseRaw[RG + 8]);
+    Pump3InstallState.update(statusResponseRaw[RG + 9]);
+    Pump4InstallState.update(statusResponseRaw[RG + 10]);
+    Pump5InstallState.update(statusResponseRaw[RG + 11]);
+    Pump1OkToRun.update(statusResponseRaw[RG + 1] == "1");
+    Pump2OkToRun.update(statusResponseRaw[RG + 2] == "1");
+    Pump3OkToRun.update(statusResponseRaw[RG + 3] == "1");
+    Pump4OkToRun.update(statusResponseRaw[RG + 4] == "1");
+    Pump5OkToRun.update(statusResponseRaw[RG + 5] == "1");
+    LockMode.update(statusResponseRaw[RG + 12].toInt());
     #pragma endregion
 
 };
