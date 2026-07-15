@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.0.0]
+- Rewrite SpaInterface class to be more efficient
+- Add settable CLMT and sanitize cycle start time handling
+- Add `ss` debug command for sending raw serial payloads to the spa controller and extended timeouts for long-running commands
+- Add heat element current measurement and support W01-W07 commands in register map
+- Add keyboard button press support for waking the spa
+- Add CLMT & VMAX as settable properties
+
 ## [1.0.18]
 - Add v2 boards
 - Fix string conversion for sleep timers
