@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.0.18]
+- Add v2 boards
+- Fix string conversion for sleep timers
+   
 ## [1.0.17]
 - Fix typo in Lock Mode autodiscovery
 
