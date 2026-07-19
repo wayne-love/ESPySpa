@@ -11,9 +11,7 @@ SpaInterface* SpaInterface::_instance = nullptr;
  * framework is fully initialized. Serial initialization in constructors causes
  * crashes. The begin() method must be called from setup() instead.
  */
-SpaInterface::SpaInterface() : port(SPA_SERIAL) {
-}
-
+SpaInterface::SpaInterface() : port(SPA_SERIAL) {}
 /**
  * @brief Initialize serial communication with the spa controller.
  * 

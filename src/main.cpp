@@ -55,7 +55,7 @@ String mqttStatusTopic = "";
 String mqttSet = "";
 String mqttAvailability = "";
 
-String spaSerialNumber = "";
+// String spaSerialNumber = "";
 
 
 /// @brief Flag to indicate that the mqtt configuration has changed and therefore the MQTT
@@ -184,10 +184,10 @@ void mqttHaAutoDiscovery() {
 
   SpaADInformationTemplate spa;
   spa.spaName = config.SpaName.getValue();
-  spa.spaSerialNumber = spaSerialNumber;
+  spa.spaSerialNumber = si.SerialNo1.get()+"-"+si.SerialNo2.get();
   spa.stateTopic = mqttStatusTopic;
   spa.availabilityTopic = mqttAvailability;
-  spa.manufacturer = "sn_esp32";
+  spa.manufacturer = "eSpa";
   spa.model = xstr(PIOENV);
   spa.sw_version = xstr(BUILD_INFO);
   spa.configuration_url = "http://" + wifi.localIP().toString();
@@ -840,6 +840,15 @@ void wifiRestored() {
 
 #pragma endregion
 
+static String getUID() {
+    uint64_t mac = ESP.getEfuseMac();
+    char buf[13];
+    snprintf(buf, sizeof(buf), "%012llX", mac);
+    return String(buf);
+}
+
+
+
 void setup() {
   #if defined(EN_PIN)
     pinMode(EN_PIN, INPUT_PULLUP);
@@ -931,6 +940,12 @@ void setup() {
   config.setCallback(configChangeCallbackInt);
   config.setCallback(configChangeCallbackBool);
 
+  mqttBase = String("eSpa/") + getUID() + String("/");
+  mqttStatusTopic = mqttBase + "status";
+  mqttSet = mqttBase + "set";
+  mqttAvailability = mqttBase+"available";
+  debugI("MQTT base topic is %s",mqttBase.c_str());
+
 }
 
 void loop() {  
@@ -990,18 +1005,18 @@ void loop() {
         // set status lights to indicate we are waiting for spa connection before we proceed
         blinker.setState(STATE_WAITING_FOR_SPA);
       } else {
+
+/*
         if ( spaSerialNumber=="" ) {
           debugI("Initialising...");
       
           spaSerialNumber = si.SerialNo1.get()+"-"+si.SerialNo2.get();
           debugI("Spa serial number is %s",spaSerialNumber.c_str());
 
-          mqttBase = String("sn_esp32/") + spaSerialNumber + String("/");
-          mqttStatusTopic = mqttBase + "status";
-          mqttSet = mqttBase + "set";
-          mqttAvailability = mqttBase+"available";
-          debugI("MQTT base topic is %s",mqttBase.c_str());
+
         }
+*/
+
         if (!mqttClient.connected()) {  // MQTT broker reconnect if not connected
           long now=millis();
           if (now - mqttLastConnect > 1000) {
@@ -1009,11 +1024,11 @@ void loop() {
             
             debugW("MQTT not connected, attempting connection to %s:%i", config.MqttServer.getValue(), config.MqttPort.getValue());
             mqttLastConnect = now;
-
+/*
             String macAddress = WiFi.macAddress();
             macAddress.replace(':', 'X'); // Replace colons with 'X' to avoid issues with MQTT topic names
-
-            if (mqttClient.connect(macAddress.c_str(), config.MqttUsername.getValue(), config.MqttPassword.getValue(), mqttAvailability.c_str(),2,true,"offline")) {
+*/
+            if (mqttClient.connect(getUID().c_str(), config.MqttUsername.getValue(), config.MqttPassword.getValue(), mqttAvailability.c_str(),2,true,"offline")) {
               debugI("MQTT connected");
     
               String subTopic = mqttBase+"set/#";
@@ -1028,7 +1043,7 @@ void loop() {
 
           }
         } else {
-          if (!autoDiscoveryPublished) {  // This is the setup area, gets called once when communication with Spa and MQTT broker have been established.
+          if (!autoDiscoveryPublished && si.isInitialised()) {  // This is the setup area, gets called once when communication with Spa and MQTT broker have been established.
             debugI("Publish autodiscovery information");
             mqttHaAutoDiscovery();
             autoDiscoveryPublished = true;

@@ -284,6 +284,9 @@ class SpaInterface {
 
         ~SpaInterface();
 
+        String UID;
+
+
         // Read-only value holder synced from the spa; external code can only read.
         template <typename T>
         class ROProperty {
