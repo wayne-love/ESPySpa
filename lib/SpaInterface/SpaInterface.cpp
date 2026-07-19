@@ -1015,7 +1015,7 @@ void SpaInterface::updateMeasures() {
     SpaDayOfWeek.update(statusResponseRaw[R2+5].toInt());
     {
         tmElements_t tm;
-        tm.Year   = CalendarYrToTm(statusResponseRaw[R2+11].toInt());
+        tm.Year   = y2kYearToTm(statusResponseRaw[R2+11].toInt());
         tm.Month  = statusResponseRaw[R2+10].toInt();
         tm.Day    = statusResponseRaw[R2+9].toInt();
         tm.Hour   = statusResponseRaw[R2+6].toInt();
