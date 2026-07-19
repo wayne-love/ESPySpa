@@ -232,6 +232,21 @@ class SpaInterface {
         /// the cached property value when the command succeeds.
         /// Throws std::out_of_range for invalid values (0..5947).
         bool setWCLNTime(int value);
+        /// @brief Internal writer used by `PSAV_LVL` RWProperty.
+        /// @details Sends `W63:<mode>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        /// Throws std::out_of_range for invalid values (0..2).
+        bool setPSAV_LVL(int mode);
+        /// @brief Internal writer used by `PSAV_BGN` RWProperty.
+        /// @details Sends `W64:<value>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        /// Value encoded as h*256+m. Throws std::out_of_range for invalid values (0..5947).
+        bool setPSAV_BGN(int value);
+        /// @brief Internal writer used by `PSAV_END` RWProperty.
+        /// @details Sends `W65:<value>` to the controller and only updates
+        /// the cached property value when the command succeeds.
+        /// Value encoded as h*256+m. Throws std::out_of_range for invalid values (0..5947).
+        bool setPSAV_END(int value);
         /// @brief Internal writer used by `CLMT` RWProperty.
         /// @details Sends `W85:<mode>` to the controller and only updates
         /// the cached property value when the command succeeds.
@@ -531,6 +546,11 @@ class SpaInterface {
             {"Partially Locked", 1},
             {"Locked",           2},
         };
+        static constexpr ROProperty<int>::LabelValue PSAV_LVL_Map[] = {
+            {"Off", 0},
+            {"Low", 1},
+            {"High",2},
+        };
 
     public:
         /// @brief configure how often the spa is polled in seconds.
@@ -769,11 +789,13 @@ class SpaInterface {
         /// @brief 24-hour operation flag (0=Off, 1=On).
         ROProperty<int> L_24HOURS;
         /// @brief Power save level (0=Off, 1=Low, 2=High).
-        ROProperty<int> PSAV_LVL;
+        RWProperty<int> PSAV_LVL{this, &SpaInterface::setPSAV_LVL, PSAV_LVL_Map};
         /// @brief Power save start time encoded as h*256+m.
-        ROProperty<int> PSAV_BGN;
+        /// @details Read/write. Writes `W64:<value>` where value is h*256+m.
+        RWProperty<int> PSAV_BGN{this, &SpaInterface::setPSAV_BGN};
         /// @brief Power save end time encoded as h*256+m.
-        ROProperty<int> PSAV_END;
+        /// @details Read/write. Writes `W65:<value>` where value is h*256+m.
+        RWProperty<int> PSAV_END{this, &SpaInterface::setPSAV_END};
         /// @brief Sleep timer 1 day mode bitmap.
         /// @details Read/write. Typical values: 128=Off, 127=Everyday, 96=Weekends, 31=Weekdays.
         RWProperty<int> L_1SNZ_DAY{this, &SpaInterface::setL_1SNZ_DAY, SNZ_DAY_Map};

@@ -390,6 +390,30 @@ void mqttHaAutoDiscovery() {
   generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.LSPDValue);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
+  ADConf.displayName = "Power Save Level";
+  ADConf.valueTemplate = "{{ value_json.powerSave.level }}";
+  ADConf.propertyId = "powerSave_level";
+  ADConf.deviceClass = "";
+  ADConf.entityCategory = "config";
+  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.PSAV_LVL);
+  mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
+
+  ADConf.displayName = "Power Save Begin";
+  ADConf.valueTemplate = "{{ value_json.powerSave.begin }}";
+  ADConf.propertyId = "powerSave_begin";
+  ADConf.deviceClass = "";
+  ADConf.entityCategory = "config";
+  generateTextAdJSON(output, ADConf, spa, discoveryTopic, "[0-2][0-9]:[0-9]{2}");
+  mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
+
+  ADConf.displayName = "Power Save End";
+  ADConf.valueTemplate = "{{ value_json.powerSave.end }}";
+  ADConf.propertyId = "powerSave_end";
+  ADConf.deviceClass = "";
+  ADConf.entityCategory = "config";
+  generateTextAdJSON(output, ADConf, spa, discoveryTopic, "[0-2][0-9]:[0-9]{2}");
+  mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
+
   ADConf.displayName = "Sleep Timer 1";
   ADConf.valueTemplate = "{{ value_json.sleepTimers.timer1.state }}";
   ADConf.propertyId = "sleepTimers_1_state";
@@ -541,6 +565,12 @@ void setSpaProperty(String property, String p) {
       si.HPMP.setLabel(p.c_str());
     } catch (const std::exception& ex) {
       debugE("Failed to set HPMP label: %s", ex.what());
+    }
+  } else if (property == "powerSave_level") {
+    try {
+      si.PSAV_LVL.setLabel(p.c_str());
+    } catch (const std::exception& ex) {
+      debugE("Failed to set PSAV_LVL from label '%s': %s", p.c_str(), ex.what());
     }
   // note single speed pumps should never trigger a mode or speed events
   } else if (property.startsWith("pump") && property.endsWith("_speed")) {
@@ -712,6 +742,18 @@ void setSpaProperty(String property, String p) {
       si.L_2SNZ_END = convertToInteger(p);
     } catch (const std::exception& ex) {
       debugE("Failed to set L_2SNZ_END: %s", ex.what());
+    }
+  } else if (property == "powerSave_begin") {
+    try {
+      si.PSAV_BGN = convertToInteger(p);
+    } catch (const std::exception& ex) {
+      debugE("Failed to set PSAV_BGN: %s", ex.what());
+    }
+  } else if (property == "powerSave_end") {
+    try {
+      si.PSAV_END = convertToInteger(p);
+    } catch (const std::exception& ex) {
+      debugE("Failed to set PSAV_END: %s", ex.what());
     }
   } else if (property == "status_spaMode") {
     try {

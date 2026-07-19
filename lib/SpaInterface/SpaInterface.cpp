@@ -253,6 +253,57 @@ bool SpaInterface::setHELE(bool mode){
     return false;
 }
 
+bool SpaInterface::setPSAV_LVL(int mode) {
+    debugD("setPSAV_LVL - %i", mode);
+    if (mode < 0 || mode > 2) {
+        throw std::out_of_range("PSAV_LVL value out of range (0..2)");
+    }
+    if (mode == PSAV_LVL.get()) {
+        debugD("No PSAV_LVL change detected - current %i, new %i", PSAV_LVL.get(), mode);
+        return true;
+    }
+
+    if (sendCommandCheckResult("W63:" + String(mode), String(mode))) {
+        PSAV_LVL.update(mode);
+        return true;
+    }
+    return false;
+}
+
+bool SpaInterface::setPSAV_BGN(int value) {
+    debugD("setPSAV_BGN - %i", value);
+    if (value < 0 || value > 5947) {
+        throw std::out_of_range("PSAV_BGN value out of range (0..5947)");
+    }
+    if (value == PSAV_BGN.get()) {
+        debugD("No PSAV_BGN change detected - current %i, new %i", PSAV_BGN.get(), value);
+        return true;
+    }
+
+    if (sendCommandCheckResult("W64:" + String(value), String(value))) {
+        PSAV_BGN.update(value);
+        return true;
+    }
+    return false;
+}
+
+bool SpaInterface::setPSAV_END(int value) {
+    debugD("setPSAV_END - %i", value);
+    if (value < 0 || value > 5947) {
+        throw std::out_of_range("PSAV_END value out of range (0..5947)");
+    }
+    if (value == PSAV_END.get()) {
+        debugD("No PSAV_END change detected - current %i, new %i", PSAV_END.get(), value);
+        return true;
+    }
+
+    if (sendCommandCheckResult("W65:" + String(value), String(value))) {
+        PSAV_END.update(value);
+        return true;
+    }
+    return false;
+}
+
 bool SpaInterface::setCLMT(int mode){
     debugD("setCLMT - %i", mode);
     if (mode < 10 || mode > 60) {
@@ -874,6 +925,8 @@ bool SpaInterface::readStatus() {
 
     //Flush the remaining data from the buffer as the last field is meaningless
     statusResponseTmp = statusResponseTmp + flushSerialReadBuffer(true);
+  
+    debugD("Response String: %s", statusResponseTmp.c_str());
 
     statusResponse.update(statusResponseTmp);
 

@@ -1,6 +1,11 @@
 # Changelog
+-
+## [2.0.1-beta]
+- Feature: Make `PSAV_LVL` a read-write property and implement writer (`W63:<0-2>`) to set Off/Low/High.
+- Feature: Add read-write properties `PSAV_BGN` and `PSAV_END` and implement writers (`W64:<value>`, `W65:<value>`) for power-save start/end times (encoded as h*256+m).
+- Fix: Simplfy Debug logging output to reduce noise.
 
-## [2.0.0]
+## [2.0.0-beta]
 - Rewrite SpaInterface class to be more efficient
 - Add settable CLMT and sanitize cycle start time handling
 - Add `ss` debug command for sending raw serial payloads to the spa controller and extended timeouts for long-running commands

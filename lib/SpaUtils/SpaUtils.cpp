@@ -203,6 +203,11 @@ bool generateStatusJson(SpaInterface &si, MQTTClientWrapper &mqttClient, String 
   json["sleepTimers"]["timer2"]["begin"]=convertToTime(si.L_2SNZ_BGN.get());
   json["sleepTimers"]["timer2"]["end"]=convertToTime(si.L_2SNZ_END.get());
 
+  // Power save status
+  json["powerSave"]["level"] = si.PSAV_LVL.getLabel();
+  json["powerSave"]["begin"] = convertToTime(si.PSAV_BGN.get());
+  json["powerSave"]["end"] = convertToTime(si.PSAV_END.get());
+
   json["lights"]["speed"] = si.LSPDValue.get();
   json["lights"]["state"] = si.RB_TP_Light.get()? "ON": "OFF";
   json["lights"]["effect"] = si.ColorMode.getLabel();
