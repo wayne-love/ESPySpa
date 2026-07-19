@@ -438,7 +438,7 @@ void mqttHaAutoDiscovery() {
   generateTextAdJSON(output, ADConf, spa, discoveryTopic, "[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}");
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
-  // Simply used to populate the select options for filtration hours 1 to 24
+  // Simply used to populate the select options for days of week
   const std::array<String, 7> DaysOfWeekStrings = {"Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"};
   ADConf.displayName = "Day of Week";
   ADConf.valueTemplate = "{{ value_json.status.dayOfWeek }}";
