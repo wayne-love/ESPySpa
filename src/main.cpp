@@ -960,16 +960,9 @@ void loop() {
   Debug.handle();
 
   if (setSpaCallbackReady) {
-    if (spaCallbackProperty == "reboot") {
-      debugI("Rebooting ESP after %d ms", spaCallbackValue.toInt());
-      delay(spaCallbackValue.toInt()); // Wait for the specified time before rebooting
-      WiFi.disconnect(true); // Force teardown of all socket connections
-      ESP.restart();
-    } else {
-      debugD("Setting Spa Properties...");
-      setSpaCallbackReady = false;
-      setSpaProperty(spaCallbackProperty, spaCallbackValue);
-    }
+    debugD("Setting Spa Properties...");
+    setSpaCallbackReady = false;
+    setSpaProperty(spaCallbackProperty, spaCallbackValue);
   }
 
   if (WiFi.status() != WL_CONNECTED) {

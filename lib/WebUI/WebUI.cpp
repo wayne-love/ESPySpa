@@ -16,19 +16,14 @@ void WebUI::begin() {
     server.on("/reboot", HTTP_GET, [&](AsyncWebServerRequest *request) {
         debugD("uri: %s", request->url().c_str());
 
-        if (_setSpaCallback != nullptr) {
-            _setSpaCallback("reboot", "200");
-            request->send(200, "text/html", "Called setSpaCallback for reboot...");
-        } else {
-            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "Rebooting ESP...");
-            response->addHeader("Connection", "close");
-            request->send(response);
-            debugD("Rebooting...");
-            delay(200);
-            request->client()->setNoDelay(true);
-            request->client()->stop();
-            ESP.restart();
-        }
+        AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "Rebooting ESP...");
+        response->addHeader("Connection", "close");
+        request->client()->setNoDelay(true);
+        request->send(response);
+        request->client()->stop();
+        debugD("Rebooting...");
+        delay(200);
+        ESP.restart();
     });
 
     server.on("/fota", HTTP_GET, [&](AsyncWebServerRequest *request) {
@@ -331,7 +326,7 @@ bool WebUI::processDebugCommand(
         if (Debug.isWebSilenced()) {
             client->text("WebSocket logging resumed");
         } else {
-        client->text("WebSocket logging silenced");
+            client->text("WebSocket logging silenced");
         }
         Debug.setWebSilenced(!Debug.isWebSilenced());
         return true;
@@ -349,7 +344,7 @@ bool WebUI::processDebugCommand(
         if (normalisedCommand.length() > 1) {
             requestedLevel = normalisedCommand.substring(6);
 
-        requestedLevel.trim();
+            requestedLevel.trim();
         } else {
             requestedLevel = normalisedCommand;
         }
