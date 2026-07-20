@@ -302,7 +302,7 @@ bool WebUI::processDebugCommand(
         client->text(
             "Commands: help, status, level verbose, "
             "level debug, level info, level warning, "
-            "level error, level any, silence, resume"
+            "level error, level any, silence, reboot"
         );
 
         return true;
@@ -324,26 +324,35 @@ bool WebUI::processDebugCommand(
         return true;
     }
 
-    if (normalisedCommand == "silence") {
+    if (normalisedCommand == "silence" || normalisedCommand == "s") {
         /*
         * Send the acknowledgement before silencing.
         */
+        if (Debug.isWebSilenced()) {
+            client->text("WebSocket logging resumed");
+        } else {
         client->text("WebSocket logging silenced");
-        Debug.setWebSilenced(true);
+        }
+        Debug.setWebSilenced(!Debug.isWebSilenced());
         return true;
     }
 
-    if (normalisedCommand == "resume") {
-        Debug.setWebSilenced(false);
-        client->text("WebSocket logging resumed");
+    if (normalisedCommand == "reboot") {
+        client->text("Rebooting ESP32...");
+        delay(200);
+        ESP.restart();
         return true;
     }
 
-    if (normalisedCommand.startsWith("level ")) {
-        String requestedLevel =
-            normalisedCommand.substring(6);
+    if (normalisedCommand.startsWith("level ") || normalisedCommand.length() == 1) {
+        String requestedLevel;
+        if (normalisedCommand.length() > 1) {
+            requestedLevel = normalisedCommand.substring(6);
 
         requestedLevel.trim();
+        } else {
+            requestedLevel = normalisedCommand;
+        }
 
         const int parsedLevel =
             WebRemoteDebug::parseLevel(requestedLevel);

@@ -55,7 +55,7 @@
         </select>
 
         <button id="silence">Silence</button>
-        <button id="resume">Resume</button>
+        <button id="reboot">Reboot</button>
 
         <input
             id="command"
@@ -153,8 +153,8 @@
             sendCommand("silence");
         };
 
-        document.getElementById("resume").onclick = () => {
-            sendCommand("resume");
+        document.getElementById("reboot").onclick = () => {
+            sendCommand("reboot");
         };
 
         document.getElementById("send").onclick = () => {

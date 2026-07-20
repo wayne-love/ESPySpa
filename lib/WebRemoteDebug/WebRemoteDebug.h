@@ -367,27 +367,27 @@ public:
             return RemoteDebug::PROFILER;
         }
 
-        if (level == "verbose") {
+        if (level == "verbose" || level == "v") {
             return RemoteDebug::VERBOSE;
         }
 
-        if (level == "debug") {
+        if (level == "debug" || level == "d") {
             return RemoteDebug::DEBUG;
         }
 
-        if (level == "info") {
+        if (level == "info" || level == "i") {
             return RemoteDebug::INFO;
         }
 
-        if (level == "warning" || level == "warn") {
+        if (level == "warning" || level == "warn" || level == "w") {
             return RemoteDebug::WARNING;
         }
 
-        if (level == "error") {
+        if (level == "error" || level == "e") {
             return RemoteDebug::ERROR;
         }
 
-        if (level == "any") {
+        if (level == "any" || level == "a") {
             return RemoteDebug::ANY;
         }
 
