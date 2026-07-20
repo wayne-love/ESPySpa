@@ -23,14 +23,14 @@
  */
 
 #include <Arduino.h>
-#include <RemoteDebug.h>
+#include "WebRemoteDebug.h"
 
 #if defined(ESPA_V2) && defined(RGB_LED_PIN)
     #include <Adafruit_NeoPixel.h>
     #define USE_RGB_LED
 #endif
 
-extern RemoteDebug Debug;
+extern WebRemoteDebug Debug;
 
 // These are the four LEDs on the PCB (for ESPA_V1 and legacy boards)
 #if defined(ESPA_V1)

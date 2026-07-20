@@ -11,6 +11,8 @@ const char * WebUI::getError() {
 }
 
 void WebUI::begin() {
+    configureDebugWebSocket();
+
     server.on("/reboot", HTTP_GET, [&](AsyncWebServerRequest *request) {
         debugD("uri: %s", request->url().c_str());
 
@@ -170,10 +172,201 @@ void WebUI::begin() {
         request->send(response);
     });
 
+    server.on("/debug", HTTP_GET, [&](AsyncWebServerRequest *request) {
+        debugD("uri: %s", request->url().c_str());
+        request->send(SPIFFS, "/www/debug.htm");
+    });
+
     // As a fallback we try to load from /www any requested URL
     server.serveStatic("/", SPIFFS, "/www/");
 
     server.begin();
 
     initialised = true;
+}
+
+void WebUI::configureDebugWebSocket() {
+    /*
+    * Give WebRemoteDebug access to the WebSocket, without giving it
+    * ownership of the web server.
+    */
+    Debug.attachWebSocket(&_debugSocket);
+
+    _debugSocket.onEvent(
+        [this](
+            AsyncWebSocket* server,
+            AsyncWebSocketClient* client,
+            AwsEventType type,
+            void* arg,
+            uint8_t* data,
+            size_t len
+        ) {
+            handleDebugWebSocketEvent(
+                server,
+                client,
+                type,
+                arg,
+                data,
+                len
+            );
+        }
+    );
+
+    server.addHandler(&_debugSocket);
+
+}
+
+void WebUI::handleDebugWebSocketEvent(
+    AsyncWebSocket* server,
+    AsyncWebSocketClient* client,
+    AwsEventType type,
+    void* arg,
+    uint8_t* data,
+    size_t len
+) {
+    (void)server;
+
+    switch (type) {
+        case WS_EVT_CONNECT: {
+            String message =
+                "Connected to ESP32 debug WebSocket; level=";
+
+            message += WebRemoteDebug::levelName(
+                Debug.getWebDebugLevel()
+            );
+
+            message += ". Send 'help' for commands.";
+
+            client->text(message);
+            break;
+        }
+
+        case WS_EVT_DATA:
+            handleDebugWebSocketData(
+                client,
+                static_cast<AwsFrameInfo*>(arg),
+                data,
+                len
+            );
+            break;
+
+        case WS_EVT_DISCONNECT:
+        case WS_EVT_PONG:
+        case WS_EVT_ERROR:
+        default:
+            break;
+    }
+}
+
+void WebUI::handleDebugWebSocketData(
+    AsyncWebSocketClient* client,
+    AwsFrameInfo* info,
+    uint8_t* data,
+    size_t len
+) {
+    if (
+        info == nullptr ||
+        !info->final ||
+        info->index != 0 ||
+        info->len != len ||
+        info->opcode != WS_TEXT
+    ) {
+        return;
+    }
+
+    String command;
+    command.reserve(len);
+
+    for (size_t i = 0; i < len; ++i) {
+        command += static_cast<char>(data[i]);
+    }
+
+    command.trim();
+
+    if (!processDebugCommand(command, client)) {
+        client->text(
+            "Unknown command: " + command
+        );
+    }
+}
+
+bool WebUI::processDebugCommand(
+    const String& command,
+    AsyncWebSocketClient* client
+) {
+    String normalisedCommand = command;
+    normalisedCommand.trim();
+    normalisedCommand.toLowerCase();
+
+    if (normalisedCommand == "help") {
+        client->text(
+            "Commands: help, status, level verbose, "
+            "level debug, level info, level warning, "
+            "level error, level any, silence, resume"
+        );
+
+        return true;
+    }
+
+    if (normalisedCommand == "status") {
+        String response = "WebSocket clients=";
+        response += String(Debug.webClientCount());
+        response += ", level=";
+        response += WebRemoteDebug::levelName(
+            Debug.getWebDebugLevel()
+        );
+        response += ", silenced=";
+        response += Debug.isWebSilenced()
+            ? "yes"
+            : "no";
+
+        client->text(response);
+        return true;
+    }
+
+    if (normalisedCommand == "silence") {
+        /*
+        * Send the acknowledgement before silencing.
+        */
+        client->text("WebSocket logging silenced");
+        Debug.setWebSilenced(true);
+        return true;
+    }
+
+    if (normalisedCommand == "resume") {
+        Debug.setWebSilenced(false);
+        client->text("WebSocket logging resumed");
+        return true;
+    }
+
+    if (normalisedCommand.startsWith("level ")) {
+        String requestedLevel =
+            normalisedCommand.substring(6);
+
+        requestedLevel.trim();
+
+        const int parsedLevel =
+            WebRemoteDebug::parseLevel(requestedLevel);
+
+        if (parsedLevel < 0) {
+            client->text("Unknown debug level");
+            return true;
+        }
+
+        Debug.setWebDebugLevel(
+            static_cast<uint8_t>(parsedLevel)
+        );
+
+        String response =
+            "WebSocket debug level set to ";
+
+        response += WebRemoteDebug::levelName(
+            Debug.getWebDebugLevel()
+        );
+
+        client->text(response);
+        return true;
+    }
+
+    return false;
 }

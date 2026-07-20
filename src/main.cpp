@@ -3,7 +3,7 @@
 
 #include <WiFiClient.h>
 #include <exception>
-#include <RemoteDebug.h>
+#include "WebRemoteDebug.h"
 #include <WiFiManager.h>
 #include <ESPmDNS.h>
 #include <SPIFFS.h>
@@ -16,10 +16,10 @@
 #include "SpaUtils.h"
 #include "HAAutoDiscovery.h"
 #include "MQTTClientWrapper.h"
-
+#include "ESPAsyncWebServer.h"
 
 unsigned long bootStartMillis;  // To track when the device started
-RemoteDebug Debug;
+WebRemoteDebug Debug;
 
 SpaInterface si;
 Config config;
@@ -920,9 +920,14 @@ void setup() {
     }
   }
 
-  Debug.begin(WiFi.getHostname());  // Hostname seems to be for display purposes only, no functional impact.
+  Debug.begin(WiFi.getHostname(), WebRemoteDebug::DEBUG);  // Hostname seems to be for display purposes only, no functional impact.
   Debug.setResetCmdEnabled(true);  // This seems to be not needed to be in Setup.
-  Debug.showProfiler(true); // This seems to be not needed to be in Setup.
+  Debug.showTime(true);
+  Debug.showProfiler(true);
+  Debug.showDebugLevel(true);
+
+  Debug.showWebProfiler(true);
+  Debug.showWebDebugLevel(true);
 
   mqttClient.setServer(config.MqttServer.getValue(), config.MqttPort.getValue());
   mqttClient.setCallback(mqttCallback);

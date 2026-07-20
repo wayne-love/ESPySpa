@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+    <title>ESP32 Debug</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 1rem;
+            background: #111;
+            color: #ddd;
+            font-family: monospace;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            padding: 0.5rem 0;
+            background: #111;
+        }
+
+        button,
+        select,
+        input {
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        #status {
+            margin-left: 0.5rem;
+        }
+
+        #log {
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <button id="clear">Clear</button>
+
+        <select id="level">
+            <option value="verbose">Verbose</option>
+            <option value="debug" selected>Debug</option>
+            <option value="info">Info</option>
+            <option value="warning">Warning</option>
+            <option value="error">Error</option>
+        </select>
+
+        <button id="silence">Silence</button>
+        <button id="resume">Resume</button>
+
+        <input
+            id="command"
+            type="text"
+            placeholder="WebSocket command"
+        >
+
+        <button id="send">Send</button>
+
+        <span id="status">Connecting...</span>
+    </header>
+
+    <div id="log"></div>
+
+    <script>
+        const logElement = document.getElementById("log");
+        const statusElement = document.getElementById("status");
+        const commandElement = document.getElementById("command");
+
+        let socket;
+
+        const maxLogLines = 2000;
+        let logLines = [];
+
+        function appendLog(message) {
+            const incomingLines = message
+                .replace(/\r/g, "")
+                .split("\n")
+                .filter(line => line.length > 0);
+
+            logLines.push(...incomingLines);
+
+            if (logLines.length > maxLogLines) {
+                logLines = logLines.slice(-maxLogLines);
+            }
+
+            logElement.textContent = logLines.join("\n") + "\n";
+
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        function connect() {
+            const protocol =
+                window.location.protocol === "https:"
+                    ? "wss:"
+                    : "ws:";
+
+            socket = new WebSocket(
+                protocol +
+                "//" +
+                window.location.host +
+                "/debug/ws"
+            );
+
+            socket.onopen = () => {
+                statusElement.textContent = "Connected";
+                socket.send("status");
+            };
+
+            socket.onmessage = event => {
+                appendLog(event.data);
+            };
+
+            socket.onclose = () => {
+                statusElement.textContent =
+                    "Disconnected; reconnecting...";
+
+                setTimeout(connect, 2000);
+            };
+
+            socket.onerror = () => {
+                socket.close();
+            };
+        }
+
+        function sendCommand(command) {
+            if (
+                socket &&
+                socket.readyState === WebSocket.OPEN
+            ) {
+                socket.send(command);
+            }
+        }
+
+        document.getElementById("clear").onclick = () => {
+            logLines = [];
+            logElement.textContent = "";
+        };
+
+        document.getElementById("level").onchange = event => {
+            sendCommand("level " + event.target.value);
+        };
+
+        document.getElementById("silence").onclick = () => {
+            sendCommand("silence");
+        };
+
+        document.getElementById("resume").onclick = () => {
+            sendCommand("resume");
+        };
+
+        document.getElementById("send").onclick = () => {
+            sendCommand(commandElement.value);
+            commandElement.value = "";
+        };
+
+        commandElement.addEventListener(
+            "keydown",
+            event => {
+                if (event.key === "Enter") {
+                    sendCommand(commandElement.value);
+                    commandElement.value = "";
+                }
+            }
+        );
+
+        connect();
+    </script>
+</body>
+</html>
