@@ -42,7 +42,7 @@ WebUI ui(&si, &config, &mqttClient);
 
 
 bool WMsaveConfig = false;
-ulong mqttLastConnect = 0;
+ulong mqttLastConnect = millis();
 ulong wifiLastConnect = millis();
 ulong bootTime = millis();
 ulong statusLastPublish = millis();
@@ -1023,12 +1023,11 @@ void loop() {
 */
 
         if (!mqttClient.connected()) {  // MQTT broker reconnect if not connected
-          long now=millis();
-          if (now - mqttLastConnect > 1000) {
+          if (millis() - mqttLastConnect > 1000) {
             blinker.setState(STATE_MQTT_NOT_CONNECTED);
             
             debugW("MQTT not connected, attempting connection to %s:%i", config.MqttServer.getValue(), config.MqttPort.getValue());
-            mqttLastConnect = now;
+            mqttLastConnect = millis();
 /*
             String macAddress = WiFi.macAddress();
             macAddress.replace(':', 'X'); // Replace colons with 'X' to avoid issues with MQTT topic names
