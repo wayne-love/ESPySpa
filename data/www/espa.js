@@ -6,6 +6,79 @@
 const repo_owner = 'wayne-love';
 const repo = 'ESPySpa';
 
+
+let appSocket = null;
+let appSocketReconnectTimer = null;
+let latestStatusJson = null;
+let jsonModalOpen = false;
+
+function appSocketIsOpen() {
+    return appSocket && appSocket.readyState === WebSocket.OPEN;
+}
+
+function sendAppSocket(command) {
+    if (!appSocketIsOpen()) return false;
+    appSocket.send(command);
+    return true;
+}
+
+function connectAppSocket() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    appSocket = new WebSocket(`${protocol}//${window.location.host}/ws`);
+
+    appSocket.onopen = function () {
+        if (appSocketReconnectTimer) {
+            clearTimeout(appSocketReconnectTimer);
+            appSocketReconnectTimer = null;
+        }
+        sendAppSocket('get:status');
+    };
+
+    appSocket.onmessage = function (event) {
+        let envelope;
+
+        try {
+            envelope = JSON.parse(event.data);
+        } catch (error) {
+            console.error('Invalid WebSocket JSON message:', event.data, error);
+            return;
+        }
+
+        switch (envelope.type) {
+            case 'status':
+                handleStatusJson(envelope.data);
+                break;
+
+            case 'config':
+                populateConfigForm(envelope.data);
+                break;
+
+            case 'ack':
+                console.log(envelope.message || 'WebSocket command completed');
+                break;
+
+            case 'error':
+                console.error('WebSocket error:', envelope.message || 'Unknown error');
+                break;
+
+            default:
+                console.warn('Unknown WebSocket message type:', envelope);
+                break;
+        }
+    };
+
+    appSocket.onclose = function () {
+        appSocket = null;
+        if (!appSocketReconnectTimer) {
+            appSocketReconnectTimer = setTimeout(connectAppSocket, 2000);
+        }
+    };
+
+    appSocket.onerror = function () {
+        appSocket.close();
+    };
+}
+
 /************************************************************************************************
  * 
  * Utility Methods
@@ -62,6 +135,13 @@ function copyToClipboard(element) {
 }
 
 function reboot(message) {
+    if (sendAppSocket('reboot')) {
+        showAlert(message, 'alert-success', 'Reboot');
+        setTimeout(() => location.href = '/', 2000);
+        return;
+    }
+
+    // HTTP fallback if the WebSocket is unavailable.
     $.ajax({
       url: '/reboot',
       type: 'GET',
@@ -80,42 +160,50 @@ function reboot(message) {
 
 let fetchStatusFailed = false;
 
-function fetchStatus() {
-    fetch('/json')
-        .then(response => response.json())
-        .then(value_json => {
-            if (fetchStatusFailed) {
-                clearAlert();
-                fetchStatusFailed = false;
-            }
-            updateStatusElement('status_state', value_json.status.state);
-            updateStatusElement('temperatures_water', value_json.temperatures.water + "\u00B0C");
-            updateStatusElement('temperatures_setPoint', value_json.temperatures.setPoint);
-            updateStatusElement('status_controller', value_json.status.controller);
-            updateStatusElement('status_firmware', value_json.status.firmware);
-            updateStatusElement('status_serial', value_json.status.serial);
-            updateStatusElement('status_siInitialised', value_json.status.siInitialised);
-            updateStatusElement('status_mqtt', value_json.status.mqtt);
-            updateStatusElement('espa_model', value_json.eSpa.model);
-            updateStatusElement('espa_build', value_json.eSpa.update.installed_version);
-        })
-        .catch(error => {
-            console.error('Error fetching status:', error);
-            showAlert('Error connecting to the spa. If this persists, take a look at our <a class="alert-link" href="https://espa.diy/troubleshooting.html">troubleshooting docs</a>.', 'alert-danger', "Error");
-            fetchStatusFailed = true;
-            handleStatusError('status_state');
-            handleStatusError('temperatures_water');
-            handleStatusError('temperatures_setPoint');
-            handleStatusError('status_controller');
-            handleStatusError('status_firmware');
-            handleStatusError('status_serial');
-            handleStatusError('status_siInitialised');
-            handleStatusError('status_mqtt');
-            handleStatusError('espa_model');
-            handleStatusError('espa_build');
-        });
+function handleStatusJson(value_json) {
+    latestStatusJson = value_json;
+
+    if (fetchStatusFailed) {
+        clearAlert();
+        fetchStatusFailed = false;
+    }
+
+    updateStatusElement('status_state', value_json.status.state);
+    updateStatusElement('temperatures_water', value_json.temperatures.water + "\u00B0C");
+    updateStatusElement('temperatures_setPoint', value_json.temperatures.setPoint);
+    updateStatusElement('status_controller', value_json.status.controller);
+    updateStatusElement('status_firmware', value_json.status.firmware);
+    updateStatusElement('status_serial', value_json.status.serial);
+    updateStatusElement('status_siInitialised', value_json.status.siInitialised);
+    updateStatusElement('status_mqtt', value_json.status.mqtt);
+    updateStatusElement('espa_model', value_json.eSpa.model);
+    updateStatusElement('espa_build', value_json.eSpa.update.installed_version);
+    document.getElementById('installedVersion').innerText = value_json.eSpa.update.installed_version;
+
+    // Keep the JSON modal live while it is visible.
+    if (jsonModalOpen) {
+        renderJsonModal(value_json);
+    }
 }
 
+function handleStatusFailure(error) {
+    console.error('Error fetching status:', error);
+    showAlert('Error connecting to the spa. If this persists, take a look at our <a class="alert-link" href="https://espa.diy/troubleshooting.html">troubleshooting docs</a>.', 'alert-danger', 'Error');
+    fetchStatusFailed = true;
+    ['status_state', 'temperatures_water', 'temperatures_setPoint', 'status_controller',
+     'status_firmware', 'status_serial', 'status_siInitialised', 'status_mqtt',
+     'espa_model', 'espa_build'].forEach(handleStatusError);
+}
+
+function fetchStatus() {
+    if (sendAppSocket('get:status')) return;
+
+    // HTTP fallback if the WebSocket is unavailable.
+    fetch('/json')
+        .then(response => response.json())
+        .then(handleStatusJson)
+        .catch(handleStatusFailure);
+}
 function updateStatusElement(elementId, value) {
     const element = document.getElementById(elementId);
     element.classList.remove('badge', 'text-bg-warning', 'text-bg-danger');
@@ -147,9 +235,9 @@ function clearAlert() {
 }
 
 window.onload = function () {
+    connectAppSocket();
     fetchStatus();
     loadFotaData();
-    setInterval(fetchStatus, 10000);
 }
 
 
@@ -159,59 +247,66 @@ window.onload = function () {
  * 
  ***********************************************************************************************/
 
-function updateTempSetPoint() {
-    const temperatures_setPoint = document.getElementById('temperatures_setPoint').value;
+function sendSpaSetting(name, value) {
+    const encoded = encodeURIComponent(name) + '=' + encodeURIComponent(value);
+    if (sendAppSocket('set:' + encoded)) return;
+
+    // HTTP fallback if the WebSocket is unavailable.
     fetch('/set', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'temperatures_setPoint=' + temperatures_setPoint
+        body: encoded
     })
         .then(response => response.text())
         .then(result => console.log(result))
-        .catch(error => console.error('Error setting temperature:', error));
+        .catch(error => console.error('Error setting spa value:', error));
+}
+
+function updateTempSetPoint() {
+    sendSpaSetting(
+        'temperatures_setPoint',
+        document.getElementById('temperatures_setPoint').value
+    );
 }
 
 function sendCurrentTime() {
-    const status_datetime = new Date(Date() + " UTC").toISOString().slice(0, 19).replace("T", " ");
-    fetch('/set', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'status_datetime=' + status_datetime
-    })
-        .then(response => response.text())
-        .then(result => console.log(result))
-        .catch(error => console.error('Error setting datetime:', error));
+    const status_datetime = new Date(Date() + ' UTC').toISOString().slice(0, 19).replace('T', ' ');
+    sendSpaSetting('status_datetime', status_datetime);
 }
 
 // Retrieving and updating the configured settings, so they can be displayed in the modal popup
-function loadConfig() {
+function populateConfigForm(data) {
+    document.getElementById('spaName').value = data.spaName;
+    document.getElementById('softAPPassword').value = data.softAPPassword;
+    document.getElementById('softAPAlwaysOn').checked = data.softAPAlwaysOn;
+    document.getElementById('mqttServer').value = data.mqttServer;
+    document.getElementById('mqttPort').value = data.mqttPort;
+    document.getElementById('mqttUsername').value = data.mqttUsername;
+    document.getElementById('mqttPassword').value = data.mqttPassword;
+    document.getElementById('spaPollFrequency').value = data.spaPollFrequency;
+
+    $('#config_form input').prop('disabled', false);
+    $('#saveConfigButton').prop('disabled', false);
     $('#configErrorAlert').hide();
-    fetch('/json/config')
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('spaName').value = data.spaName;
-            document.getElementById('softAPPassword').value = data.softAPPassword;
-            document.getElementById('softAPAlwaysOn').checked = data.softAPAlwaysOn
-            document.getElementById('mqttServer').value = data.mqttServer;
-            document.getElementById('mqttPort').value = data.mqttPort;
-            document.getElementById('mqttUsername').value = data.mqttUsername;
-            document.getElementById('mqttPassword').value = data.mqttPassword;
-            document.getElementById('spaPollFrequency').value = data.spaPollFrequency;
-
-            // Enable form fields and save button
-            $('#config_form input').prop('disabled', false);
-            $('#saveConfigButton').prop('disabled', false);
-        })
-        .catch(error => {
-            console.error('Error loading config:', error);
-            $('#configErrorAlert').text('Error loading configuration. Please try again.').show();
-
-            // Make form fields read-only and disable save button
-            $('#config_form input').prop('disabled', true);
-            $('#saveConfigButton').prop('disabled', true);
-        });
 }
 
+function handleConfigError(error) {
+    console.error('Error loading config:', error);
+    $('#configErrorAlert').text('Error loading configuration. Please try again.').show();
+    $('#config_form input').prop('disabled', true);
+    $('#saveConfigButton').prop('disabled', true);
+}
+
+function loadConfig() {
+    $('#configErrorAlert').hide();
+    if (sendAppSocket('get:config')) return;
+
+    // HTTP fallback if the WebSocket is unavailable.
+    fetch('/json/config')
+        .then(response => response.json())
+        .then(populateConfigForm)
+        .catch(handleConfigError);
+}
 // Configuration modal 
 $(document).ready(function () {
     // configuration settings modal
@@ -231,13 +326,20 @@ $(document).ready(function () {
     });
 
     function submitConfigForm() {
+        const formData = $('#config_form').serialize();
+        if (sendAppSocket('config:' + formData)) {
+            showAlert('Configuration updated successfully!', 'alert-success', 'Success');
+            $('#configModal').modal('hide');
+            return;
+        }
+
+        // HTTP fallback if the WebSocket is unavailable.
         $.ajax({
             url: '/config',
             type: 'POST',
-            data: $('#config_form').serialize(),
+            data: formData,
             success: function () {
                 showAlert('Configuration updated successfully!', 'alert-success', 'Success');
-                loadConfig();
                 $('#configModal').modal('hide');
             },
             error: function () {
@@ -404,9 +506,11 @@ $(document).ready(function () {
 );
 
 function loadFotaData() {
-    fetch('/json')
-        .then(response => response.json())
-        .then(value_json => {
+    const statusPromise = latestStatusJson
+        ? Promise.resolve(latestStatusJson)
+        : fetch('/json').then(response => response.json());
+
+    statusPromise.then(value_json => {
             document.getElementById('espa_model').innerText = value_json.eSpa.model;
             document.getElementById('installedVersion').innerText = value_json.eSpa.update.installed_version;
             console.log('model: ' + value_json.eSpa.model);
@@ -470,36 +574,134 @@ function loadFotaData() {
  * 
  ***********************************************************************************************/
 
+function renderJsonModal(data) {
+    $('#infoModalTitle').text('Spa JSON');
+    let pre = document.getElementById('infoModelPre');
+    if (!pre) {
+        $('#infoModalBody').html('<pre id="infoModelPre"></pre>');
+        pre = document.getElementById('infoModelPre');
+    }
+    pre.textContent = JSON.stringify(data, null, 2);
+}
+
 $(document).ready(function () {
-    // JSON dump modal
     $('#jsonLink').click(function (event) {
         event.preventDefault();
-        fetch('/json').then(response => response.json()).then(data => {
-            $('#infoModalTitle').html("Spa JSON");
-            $('#infoModalBody').html('<pre id="infoModelPre">' + JSON.stringify(data, null, 2) + '</pre>');
-            $('#infoModal').modal('show');
-        })
-        .catch(error => {
-            console.error('Error fetching JSON:', error);
-            showAlert('Error connecting to the spa.  If this persists, take a look at our <a class="alert-link" href="https://espa.diy/troubleshooting.html">troubleshooting docs</a>.', 'alert-danger', "Error");
-        });
+        jsonModalOpen = true;
+        $('#infoModal').modal('show');
+
+        if (latestStatusJson) {
+            renderJsonModal(latestStatusJson);
+        }
+        fetchStatus();
     });
 
-    // spa status modal
+    $('#infoModal').on('hidden.bs.modal', function () {
+        jsonModalOpen = false;
+    });
+
+    // spa status modal remains HTTP because it is raw controller text, not status JSON.
     $('#statusLink').click(function (event) {
         event.preventDefault();
         fetch('/status').then(response => response.text()).then(data => {
-            $('#infoModalTitle').html("Spa Status");
-            $('#infoModalBody').html('<pre>' + data + '</pre>');
+            $('#infoModalTitle').text('Spa Status');
+            $('#infoModalBody').html('<pre></pre>');
+            $('#infoModalBody pre').text(data);
             $('#infoModal').modal('show');
         })
         .catch(error => {
             console.error('Error fetching status:', error);
-            showAlert('Error connecting to the spa.  If this persists, take a look at our <a class="alert-link" href="https://espa.diy/troubleshooting.html">troubleshooting docs</a>.', 'alert-danger', "Error");
+            showAlert('Error connecting to the spa. If this persists, take a look at our <a class="alert-link" href="https://espa.diy/troubleshooting.html">troubleshooting docs</a>.', 'alert-danger', 'Error');
         });
     });
 });
 
+/************************************************************************************************
+ *
+ * Debug log modal
+ *
+ ***********************************************************************************************/
+
+let debugSocket = null;
+let debugReconnectTimer = null;
+const maxDebugLogLines = 2000;
+let debugLogLines = [];
+
+function appendDebugLog(message) {
+    const incomingLines = message.replace(/\r/g, '').split('\n').filter(line => line.length > 0);
+    debugLogLines.push(...incomingLines);
+    if (debugLogLines.length > maxDebugLogLines) {
+        debugLogLines = debugLogLines.slice(-maxDebugLogLines);
+    }
+
+    const logElement = document.getElementById('debugLog');
+    logElement.textContent = debugLogLines.join('\n') + '\n';
+    logElement.scrollTop = logElement.scrollHeight;
+}
+
+function connectDebugSocket() {
+    if (debugSocket && (debugSocket.readyState === WebSocket.OPEN || debugSocket.readyState === WebSocket.CONNECTING)) return;
+
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    debugSocket = new WebSocket(`${protocol}//${window.location.host}/debug/ws`);
+
+    debugSocket.onopen = function () {
+        $('#debugStatus').text('Connected');
+        sendDebugCommand('status');
+    };
+    debugSocket.onmessage = event => appendDebugLog(event.data);
+    debugSocket.onclose = function () {
+        debugSocket = null;
+        $('#debugStatus').text('Disconnected; reconnecting...');
+        if ($('#debugModal').hasClass('show') && !debugReconnectTimer) {
+            debugReconnectTimer = setTimeout(function () {
+                debugReconnectTimer = null;
+                connectDebugSocket();
+            }, 2000);
+        }
+    };
+    debugSocket.onerror = () => debugSocket.close();
+}
+
+function sendDebugCommand(command) {
+    if (debugSocket && debugSocket.readyState === WebSocket.OPEN && command) {
+        debugSocket.send(command);
+    }
+}
+
+$(document).ready(function () {
+    $('#debugLink').click(function (event) {
+        event.preventDefault();
+        $('#debugModal').modal('show');
+    });
+
+    $('#debugModal').on('shown.bs.modal', connectDebugSocket);
+    $('#debugModal').on('hidden.bs.modal', function () {
+        if (debugReconnectTimer) {
+            clearTimeout(debugReconnectTimer);
+            debugReconnectTimer = null;
+        }
+        if (debugSocket) debugSocket.close();
+    });
+
+    $('#debugClear').click(function () {
+        debugLogLines = [];
+        $('#debugLog').text('');
+    });
+    $('#debugLevel').change(event => sendDebugCommand('level ' + event.target.value));
+    $('#debugSilence').click(() => sendDebugCommand('silence'));
+    $('#debugReboot').click(() => sendDebugCommand('reboot'));
+    $('#debugSend').click(function () {
+        sendDebugCommand($('#debugCommand').val());
+        $('#debugCommand').val('');
+    });
+    $('#debugCommand').keydown(function (event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            $('#debugSend').click();
+        }
+    });
+});
 
 /************************************************************************************************
  * 

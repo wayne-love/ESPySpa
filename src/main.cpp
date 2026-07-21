@@ -548,6 +548,7 @@ void mqttPublishStatus() {
   } else {
     debugD("Error generating json");
   }
+  ui.notifySpaUpdated();
 }
 
 void setSpaProperty(String property, String p) {
