@@ -981,7 +981,7 @@ void SpaInterface::loop(){
     }
 
     if ( _lastWaitMessage + 1000 < millis()) {
-        debugV("Waiting...");
+        debugV("Waiting... %u ms", millis());
         _lastWaitMessage = millis();
     }
 

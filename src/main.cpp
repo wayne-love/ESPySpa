@@ -3,7 +3,7 @@
 
 #include <WiFiClient.h>
 #include <exception>
-#include <RemoteDebug.h>
+#include "WebRemoteDebug.h"
 #include <WiFiManager.h>
 #include <ESPmDNS.h>
 #include <SPIFFS.h>
@@ -16,10 +16,10 @@
 #include "SpaUtils.h"
 #include "HAAutoDiscovery.h"
 #include "MQTTClientWrapper.h"
-
+#include "ESPAsyncWebServer.h"
 
 unsigned long bootStartMillis;  // To track when the device started
-RemoteDebug Debug;
+WebRemoteDebug Debug;
 
 SpaInterface si;
 Config config;
@@ -42,7 +42,7 @@ WebUI ui(&si, &config, &mqttClient);
 
 
 bool WMsaveConfig = false;
-ulong mqttLastConnect = 0;
+ulong mqttLastConnect = millis();
 ulong wifiLastConnect = millis();
 ulong bootTime = millis();
 ulong statusLastPublish = millis();
@@ -438,7 +438,7 @@ void mqttHaAutoDiscovery() {
   generateTextAdJSON(output, ADConf, spa, discoveryTopic, "[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}");
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
-  // Simply used to populate the select options for filtration hours 1 to 24
+  // Simply used to populate the select options for days of week
   const std::array<String, 7> DaysOfWeekStrings = {"Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"};
   ADConf.displayName = "Day of Week";
   ADConf.valueTemplate = "{{ value_json.status.dayOfWeek }}";
@@ -920,9 +920,14 @@ void setup() {
     }
   }
 
-  Debug.begin(WiFi.getHostname());  // Hostname seems to be for display purposes only, no functional impact.
+  Debug.begin(WiFi.getHostname(), WebRemoteDebug::DEBUG);  // Hostname seems to be for display purposes only, no functional impact.
   Debug.setResetCmdEnabled(true);  // This seems to be not needed to be in Setup.
-  Debug.showProfiler(true); // This seems to be not needed to be in Setup.
+  Debug.showTime(true);
+  Debug.showProfiler(true);
+  Debug.showDebugLevel(true);
+
+  Debug.showWebProfiler(true);
+  Debug.showWebDebugLevel(true);
 
   mqttClient.setServer(config.MqttServer.getValue(), config.MqttPort.getValue());
   mqttClient.setCallback(mqttCallback);
@@ -955,16 +960,9 @@ void loop() {
   Debug.handle();
 
   if (setSpaCallbackReady) {
-    if (spaCallbackProperty == "reboot") {
-      debugI("Rebooting ESP after %d ms", spaCallbackValue.toInt());
-      delay(spaCallbackValue.toInt()); // Wait for the specified time before rebooting
-      WiFi.disconnect(true); // Force teardown of all socket connections
-      ESP.restart();
-    } else {
-      debugD("Setting Spa Properties...");
-      setSpaCallbackReady = false;
-      setSpaProperty(spaCallbackProperty, spaCallbackValue);
-    }
+    debugD("Setting Spa Properties...");
+    setSpaCallbackReady = false;
+    setSpaProperty(spaCallbackProperty, spaCallbackValue);
   }
 
   if (WiFi.status() != WL_CONNECTED) {
@@ -1018,12 +1016,11 @@ void loop() {
 */
 
         if (!mqttClient.connected()) {  // MQTT broker reconnect if not connected
-          long now=millis();
-          if (now - mqttLastConnect > 1000) {
+          if (millis() - mqttLastConnect > 1000) {
             blinker.setState(STATE_MQTT_NOT_CONNECTED);
             
             debugW("MQTT not connected, attempting connection to %s:%i", config.MqttServer.getValue(), config.MqttPort.getValue());
-            mqttLastConnect = now;
+            mqttLastConnect = millis();
 /*
             String macAddress = WiFi.macAddress();
             macAddress.replace(':', 'X'); // Replace colons with 'X' to avoid issues with MQTT topic names
