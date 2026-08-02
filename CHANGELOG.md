@@ -2,6 +2,7 @@
 
 ## [unpublished]
 - Breaking Change : MQTT base topic is now eSpa/unique_id eg eSpa/844F6033E864
+- Fix : Conversion of 2 digit year
 
 ## [2.0.1-beta]
 - Feature: Make `PSAV_LVL` a read-write property and implement writer (`W63:<0-2>`) to set Off/Low/High.
