@@ -1,7 +1,7 @@
 # Changelog
-
 ## [unpublished]
 - Breaking Change : MQTT base topic is now eSpa/unique_id eg eSpa/844F6033E864
+- Breaking Change : File system update is required
 - Fix : Conversion of 2 digit year
 
 ## [2.0.1-beta]
