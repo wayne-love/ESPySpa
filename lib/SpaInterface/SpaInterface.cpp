@@ -11,9 +11,7 @@ SpaInterface* SpaInterface::_instance = nullptr;
  * framework is fully initialized. Serial initialization in constructors causes
  * crashes. The begin() method must be called from setup() instead.
  */
-SpaInterface::SpaInterface() : port(SPA_SERIAL) {
-}
-
+SpaInterface::SpaInterface() : port(SPA_SERIAL) {}
 /**
  * @brief Initialize serial communication with the spa controller.
  * 
@@ -983,7 +981,7 @@ void SpaInterface::loop(){
     }
 
     if ( _lastWaitMessage + 1000 < millis()) {
-        debugV("Waiting...");
+        debugV("Waiting... %u ms", millis());
         _lastWaitMessage = millis();
     }
 
@@ -1017,13 +1015,23 @@ void SpaInterface::updateMeasures() {
     SpaDayOfWeek.update(statusResponseRaw[R2+5].toInt());
     {
         tmElements_t tm;
-        tm.Year   = CalendarYrToTm(statusResponseRaw[R2+11].toInt());
+        int rawYear = statusResponseRaw[R2+11].toInt();
+        if (rawYear >= 100) {
+            tm.Year = CalendarYrToTm(rawYear);   // full year, e.g. 2024
+        } else {
+            tm.Year = y2kYearToTm(rawYear);      // 2-digit year, e.g. 26 -> 2026
+        }
         tm.Month  = statusResponseRaw[R2+10].toInt();
         tm.Day    = statusResponseRaw[R2+9].toInt();
         tm.Hour   = statusResponseRaw[R2+6].toInt();
         tm.Minute = statusResponseRaw[R2+7].toInt();
         tm.Second = statusResponseRaw[R2+8].toInt();
         SpaTime.update(makeTime(tm));
+        debugV("Updated SpaTime to %04d-%02d-%02d %02d:%02d:%02d", tm.Year + 1970, tm.Month, tm.Day, tm.Hour, tm.Minute, tm.Second);
+        {
+            time_t spaTime = SpaTime.get();
+            debugV("Updated SpaTime to %s", ctime(&spaTime));
+        }
     }
     HeaterTemperature.update(statusResponseRaw[R2+12].toInt());
     PoolTemperature.update(statusResponseRaw[R2+13].toInt());

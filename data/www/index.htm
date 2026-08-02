@@ -49,6 +49,7 @@
             <div class="dropdown-menu">
               <a class="dropdown-item" href="#" id="jsonLink">Show Spa JSON</a>
               <a class="dropdown-item" href="#" id="statusLink">Show Spa Response</a>
+              <a class="dropdown-item" href="/debug" id="debugLink">Debug Logs</a>
             </div>
           </li>
 
@@ -255,6 +256,12 @@
             <label for="lastestRelease" class="col-sm-4 col-form-label">Latest version:</label>
             <div class="col-sm-8">
               <span id="lastestRelease" class="form-control-plaintext">Loading...</span>
+            </div>
+          </div>
+          <div class="mb-0 row">
+            <label for="downloadFirmware" class="col-sm-4 col-form-label">Download firmware:</label>
+            <div class="col-sm-8">
+              <span id="downloadFirmware" class="form-control-plaintext"><a href="https://github.com/wayne-love/espyspa/releases" id="firmwareLink" target="_blank">eSpa Releases</a></span>
             </div>
           </div>
           <div class="mb-0 row" style="display: none;">

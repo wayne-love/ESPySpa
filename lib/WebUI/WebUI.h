@@ -4,14 +4,14 @@
 #include <Arduino.h>
 #include <SPIFFS.h>
 #include <Update.h>
+#include <ESPAsyncWebServer.h>
 
 #include "SpaInterface.h"
 #include "SpaUtils.h"
 #include "Config.h"
 #include "MQTTClientWrapper.h"
-#include "ESPAsyncWebServer.h"
 
-extern RemoteDebug Debug;
+extern WebRemoteDebug Debug;
 
 class WebUI {
     public:
@@ -35,10 +35,35 @@ class WebUI {
         SpaInterface *_spa;
         Config *_config;
         MQTTClientWrapper *_mqttClient;
+        AsyncWebSocket _debugSocket{"/debug/ws"};
+
         void (*_wifiManagerCallback)() = nullptr;
         void (*_setSpaCallback)(const String, const String) = nullptr;
 
         const char* getError();
+
+        void configureDebugWebSocket();
+
+        void handleDebugWebSocketEvent(
+            AsyncWebSocket* server,
+            AsyncWebSocketClient* client,
+            AwsEventType type,
+            void* arg,
+            uint8_t* data,
+            size_t len
+        );
+
+        void handleDebugWebSocketData(
+            AsyncWebSocketClient* client,
+            AwsFrameInfo* info,
+            uint8_t* data,
+            size_t len
+        );
+
+        bool processDebugCommand(
+            const String& command,
+            AsyncWebSocketClient* client
+        );
 
         // hard-coded FOTA page in case file system gets wiped
         static constexpr const char *fotaPage PROGMEM = R"(

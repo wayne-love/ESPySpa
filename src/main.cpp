@@ -3,7 +3,7 @@
 
 #include <WiFiClient.h>
 #include <exception>
-#include <RemoteDebug.h>
+#include "WebRemoteDebug.h"
 #include <WiFiManager.h>
 #include <ESPmDNS.h>
 #include <SPIFFS.h>
@@ -16,10 +16,10 @@
 #include "SpaUtils.h"
 #include "HAAutoDiscovery.h"
 #include "MQTTClientWrapper.h"
-
+#include "ESPAsyncWebServer.h"
 
 unsigned long bootStartMillis;  // To track when the device started
-RemoteDebug Debug;
+WebRemoteDebug Debug;
 
 SpaInterface si;
 Config config;
@@ -42,7 +42,7 @@ WebUI ui(&si, &config, &mqttClient);
 
 
 bool WMsaveConfig = false;
-ulong mqttLastConnect = 0;
+ulong mqttLastConnect = millis();
 ulong wifiLastConnect = millis();
 ulong bootTime = millis();
 ulong statusLastPublish = millis();
@@ -55,7 +55,7 @@ String mqttStatusTopic = "";
 String mqttSet = "";
 String mqttAvailability = "";
 
-String spaSerialNumber = "";
+// String spaSerialNumber = "";
 
 
 /// @brief Flag to indicate that the mqtt configuration has changed and therefore the MQTT
@@ -184,10 +184,10 @@ void mqttHaAutoDiscovery() {
 
   SpaADInformationTemplate spa;
   spa.spaName = config.SpaName.getValue();
-  spa.spaSerialNumber = spaSerialNumber;
+  spa.spaSerialNumber = si.SerialNo1.get()+"-"+si.SerialNo2.get();
   spa.stateTopic = mqttStatusTopic;
   spa.availabilityTopic = mqttAvailability;
-  spa.manufacturer = "sn_esp32";
+  spa.manufacturer = "eSpa";
   spa.model = xstr(PIOENV);
   spa.sw_version = xstr(BUILD_INFO);
   spa.configuration_url = "http://" + wifi.localIP().toString();
@@ -430,23 +430,23 @@ void mqttHaAutoDiscovery() {
   generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.L_2SNZ_DAY);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
-  /*
   ADConf.displayName = "Date Time";
   ADConf.valueTemplate = "{{ value_json.status.datetime }}";
   ADConf.propertyId = "status_datetime";
   ADConf.deviceClass = "";
   ADConf.entityCategory = "config";
-  generateTextAdJSON(output, ADConf, spa, discoveryTopic, "[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}");
+  generateTextAdJSON(output, ADConf, spa, discoveryTopic, "[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}");
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
+  // Simply used to populate the select options for days of week
+  const std::array<String, 7> DaysOfWeekStrings = {"Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"};
   ADConf.displayName = "Day of Week";
   ADConf.valueTemplate = "{{ value_json.status.dayOfWeek }}";
   ADConf.propertyId = "status_dayOfWeek";
   ADConf.deviceClass = "";
   ADConf.entityCategory = "config";
-  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.spaDayOfWeekStrings);
+  generateSelectAdJSON(output, ADConf, spa, discoveryTopic, DaysOfWeekStrings);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
-  */
   
   ADConf.displayName = "Sleep Timer 1 Begin";
   ADConf.valueTemplate = "{{ value_json.sleepTimers.timer1.begin }}";
@@ -840,6 +840,15 @@ void wifiRestored() {
 
 #pragma endregion
 
+static String getUID() {
+    uint64_t mac = ESP.getEfuseMac();
+    char buf[13];
+    snprintf(buf, sizeof(buf), "%012llX", mac);
+    return String(buf);
+}
+
+
+
 void setup() {
   #if defined(EN_PIN)
     pinMode(EN_PIN, INPUT_PULLUP);
@@ -911,9 +920,14 @@ void setup() {
     }
   }
 
-  Debug.begin(WiFi.getHostname());  // Hostname seems to be for display purposes only, no functional impact.
+  Debug.begin(WiFi.getHostname(), WebRemoteDebug::DEBUG);  // Hostname seems to be for display purposes only, no functional impact.
   Debug.setResetCmdEnabled(true);  // This seems to be not needed to be in Setup.
-  Debug.showProfiler(true); // This seems to be not needed to be in Setup.
+  Debug.showTime(true);
+  Debug.showProfiler(true);
+  Debug.showDebugLevel(true);
+
+  Debug.showWebProfiler(true);
+  Debug.showWebDebugLevel(true);
 
   mqttClient.setServer(config.MqttServer.getValue(), config.MqttPort.getValue());
   mqttClient.setCallback(mqttCallback);
@@ -931,6 +945,12 @@ void setup() {
   config.setCallback(configChangeCallbackInt);
   config.setCallback(configChangeCallbackBool);
 
+  mqttBase = String("eSpa/") + getUID() + String("/");
+  mqttStatusTopic = mqttBase + "status";
+  mqttSet = mqttBase + "set";
+  mqttAvailability = mqttBase+"available";
+  debugI("MQTT base topic is %s",mqttBase.c_str());
+
 }
 
 void loop() {  
@@ -940,16 +960,9 @@ void loop() {
   Debug.handle();
 
   if (setSpaCallbackReady) {
-    if (spaCallbackProperty == "reboot") {
-      debugI("Rebooting ESP after %d ms", spaCallbackValue.toInt());
-      delay(spaCallbackValue.toInt()); // Wait for the specified time before rebooting
-      WiFi.disconnect(true); // Force teardown of all socket connections
-      ESP.restart();
-    } else {
-      debugD("Setting Spa Properties...");
-      setSpaCallbackReady = false;
-      setSpaProperty(spaCallbackProperty, spaCallbackValue);
-    }
+    debugD("Setting Spa Properties...");
+    setSpaCallbackReady = false;
+    setSpaProperty(spaCallbackProperty, spaCallbackValue);
   }
 
   if (WiFi.status() != WL_CONNECTED) {
@@ -990,30 +1003,29 @@ void loop() {
         // set status lights to indicate we are waiting for spa connection before we proceed
         blinker.setState(STATE_WAITING_FOR_SPA);
       } else {
+
+/*
         if ( spaSerialNumber=="" ) {
           debugI("Initialising...");
       
           spaSerialNumber = si.SerialNo1.get()+"-"+si.SerialNo2.get();
           debugI("Spa serial number is %s",spaSerialNumber.c_str());
 
-          mqttBase = String("sn_esp32/") + spaSerialNumber + String("/");
-          mqttStatusTopic = mqttBase + "status";
-          mqttSet = mqttBase + "set";
-          mqttAvailability = mqttBase+"available";
-          debugI("MQTT base topic is %s",mqttBase.c_str());
+
         }
+*/
+
         if (!mqttClient.connected()) {  // MQTT broker reconnect if not connected
-          long now=millis();
-          if (now - mqttLastConnect > 1000) {
+          if (millis() - mqttLastConnect > 1000) {
             blinker.setState(STATE_MQTT_NOT_CONNECTED);
             
             debugW("MQTT not connected, attempting connection to %s:%i", config.MqttServer.getValue(), config.MqttPort.getValue());
-            mqttLastConnect = now;
-
+            mqttLastConnect = millis();
+/*
             String macAddress = WiFi.macAddress();
             macAddress.replace(':', 'X'); // Replace colons with 'X' to avoid issues with MQTT topic names
-
-            if (mqttClient.connect(macAddress.c_str(), config.MqttUsername.getValue(), config.MqttPassword.getValue(), mqttAvailability.c_str(),2,true,"offline")) {
+*/
+            if (mqttClient.connect(getUID().c_str(), config.MqttUsername.getValue(), config.MqttPassword.getValue(), mqttAvailability.c_str(),2,true,"offline")) {
               debugI("MQTT connected");
     
               String subTopic = mqttBase+"set/#";
@@ -1028,7 +1040,7 @@ void loop() {
 
           }
         } else {
-          if (!autoDiscoveryPublished) {  // This is the setup area, gets called once when communication with Spa and MQTT broker have been established.
+          if (!autoDiscoveryPublished && si.isInitialised()) {  // This is the setup area, gets called once when communication with Spa and MQTT broker have been established.
             debugI("Publish autodiscovery information");
             mqttHaAutoDiscovery();
             autoDiscoveryPublished = true;

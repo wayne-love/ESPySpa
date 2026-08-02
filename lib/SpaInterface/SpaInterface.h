@@ -5,12 +5,12 @@
 #include <functional>
 #include <stdexcept>
 #include <vector>
-#include <RemoteDebug.h>
+#include "WebRemoteDebug.h"
 #include <time.h>
 #include <TimeLib.h>
 
 
-extern RemoteDebug Debug;
+extern WebRemoteDebug Debug;
 #define FAILEDREADFREQUENCY 1000 //(ms) Frequency to retry on a failed read of the status registers.
 #define V2FIRMWARE_STRING "SW V2" // String to identify V2 firmware
 template <typename T, size_t N>
@@ -283,6 +283,9 @@ class SpaInterface {
         void begin();
 
         ~SpaInterface();
+
+        String UID;
+
 
         // Read-only value holder synced from the spa; external code can only read.
         template <typename T>
