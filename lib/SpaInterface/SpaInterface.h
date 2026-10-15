@@ -702,7 +702,7 @@ class SpaInterface {
         /// @brief Instantaneous power consumption x10 (W). e.g. 35 = 3.5 kW.
         ROProperty<int> Power;
         /// @brief Cumulative energy consumption x100 (kWh).
-        ROProperty<int> Power_kWh;
+        ROProperty<uint> Power_kWh;
         /// @brief Energy consumed today x10 (Wh).
         ROProperty<int> Power_Today;
         /// @brief Energy consumed yesterday x10 (Wh).
