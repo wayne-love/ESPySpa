@@ -49,7 +49,7 @@
             <div class="dropdown-menu">
               <a class="dropdown-item" href="#" id="jsonLink">Show Spa JSON</a>
               <a class="dropdown-item" href="#" id="statusLink">Show Spa Response</a>
-              <a class="dropdown-item" href="/debug" id="debugLink">Debug Logs</a>
+              <a class="dropdown-item" href="#" id="debugLink">Debug Logs</a>
             </div>
           </li>
 
@@ -231,6 +231,40 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
           <button type="button" class="btn btn-primary" id="saveConfigButton">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Modal for debug logs -->
+  <div id="debugModal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Debug Logs</h5>
+          <span id="debugStatus" class="ms-3 text-muted">Disconnected</span>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="d-flex flex-wrap gap-2 mb-2">
+            <button type="button" class="btn btn-secondary btn-sm" id="debugClear">Clear</button>
+            <select class="form-select form-select-sm w-auto" id="debugLevel">
+              <option value="verbose">Verbose</option>
+              <option value="debug" selected>Debug</option>
+              <option value="info">Info</option>
+              <option value="warning">Warning</option>
+              <option value="error">Error</option>
+            </select>
+            <button type="button" class="btn btn-secondary btn-sm" id="debugSilence">Silence</button>
+            <button type="button" class="btn btn-danger btn-sm" id="debugReboot">Reboot</button>
+            <input class="form-control form-control-sm flex-grow-1" id="debugCommand" type="text" placeholder="WebSocket command">
+            <button type="button" class="btn btn-primary btn-sm" id="debugSend">Send</button>
+          </div>
+          <pre id="debugLog" class="bg-body-tertiary border rounded p-2 mb-0" style="height: 60vh; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere;"></pre>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
         </div>
       </div>
     </div>
