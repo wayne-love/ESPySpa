@@ -1,0 +1,2 @@
+# PlatformIO Core — firmware build tool
+platformio==6.2.0

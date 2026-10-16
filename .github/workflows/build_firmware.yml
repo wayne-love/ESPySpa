@@ -8,56 +8,88 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    env:
+      PLATFORM: ${{ inputs.platform }}
+      PYTHON_VERSION: "3.13"
+      PLATFORMIO_VERSION: "6.2.0"
+
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
-      - name: Cache pip
-        uses: actions/cache@v4
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
       - name: Cache PlatformIO
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.platformio
-          key: ${{ runner.os }}-platformio-${{ inputs.platform }}-${{ hashFiles('**/platformio.ini', '**/lib_deps/*') }}
+          key: >-
+            ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-platformio${{ env.PLATFORMIO_VERSION }}-${{ env.PLATFORM }}-${{ hashFiles('requirements.txt', '**/platformio.ini', '**/lib_deps/**') }}
           restore-keys: |
-            ${{ runner.os }}-platformio-${{ inputs.platform }}-
-      - name: Cache PlatformIO Build Directory
-        uses: actions/cache@v4
-        with:
-          path: .pio
-          key: ${{ runner.os }}-pio-${{ inputs.platform }}-${{ hashFiles('**/platformio.ini', '**/lib_deps/*') }}
-          restore-keys: |
-            ${{ runner.os }}-pio-${{ inputs.platform }}-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-      - name: Install PlatformIO
-        run: pip install platformio
-      - name: Update PlatformIO
-        run: pio update
-      - name: Build file system image for ${{ inputs.platform }}
-        run: pio run --target buildfs -e ${{ inputs.platform }}
-      - name: Build for ${{ inputs.platform }}
-        run: pio run -e ${{ inputs.platform }} -v -t mergebin
-      #- name: Display firmware files
-      #  run: ls -la .pio/build/${{ inputs.platform }}/firmware*.bin
-      - name: Rename and move firmware files
+            ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-platformio${{ env.PLATFORMIO_VERSION }}-${{ env.PLATFORM }}-
+
+      - name: Install Python dependencies
         run: |
-          ls -la .pio/build/${{ inputs.platform }}/*.bin
-          mv .pio/build/${{ inputs.platform }}/firmware.bin firmware_${{ inputs.platform }}_ota.bin
-          mv .pio/build/${{ inputs.platform }}/firmware_factory.bin firmware_${{ inputs.platform }}_factory.bin
-          mv .pio/build/${{ inputs.platform }}/spiffs.bin spiffs_${{ inputs.platform }}.bin
-          ls -la *.bin
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          pio --version
+
+      - name: Build file system image for ${{ inputs.platform }}
+        run: pio run --target buildfs -e "$PLATFORM"
+
+      - name: Build firmware for ${{ inputs.platform }}
+        run: pio run -e "$PLATFORM" -v -t mergebin
+
+      - name: Validate firmware files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          build_dir=".pio/build/$PLATFORM"
+
+          for file in firmware.bin firmware_factory.bin spiffs.bin; do
+            if [[ ! -f "$build_dir/$file" ]]; then
+              echo "::error::Expected firmware file not found: $build_dir/$file"
+              echo "Files present in build directory:"
+              ls -la "$build_dir"
+              exit 1
+            fi
+          done
+
+      - name: Rename and move firmware files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          build_dir=".pio/build/$PLATFORM"
+
+          mv "$build_dir/firmware.bin" \
+             "firmware_${PLATFORM}_ota.bin"
+
+          mv "$build_dir/firmware_factory.bin" \
+             "firmware_${PLATFORM}_factory.bin"
+
+          mv "$build_dir/spiffs.bin" \
+             "spiffs_${PLATFORM}.bin"
+
+          ls -lh *_${PLATFORM}*.bin
+
       - name: Archive Firmware
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: firmware_${{ inputs.platform }}
           path: "*_${{ inputs.platform }}*.bin"
+          if-no-files-found: error
+          retention-days: 14
