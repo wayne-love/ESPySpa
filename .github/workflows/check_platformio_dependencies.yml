@@ -1,0 +1,172 @@
+# .github/workflows/check_platformio_dependencies.yml
+name: Check PlatformIO Dependencies
+
+on:
+  schedule:
+    # Every Monday at 06:00 UTC
+    - cron: "0 6 * * 1"
+
+  workflow_dispatch:
+
+  pull_request:
+    paths:
+      - "platformio.ini"
+      - "requirements.txt"
+      - ".github/workflows/check_platformio_dependencies.yml"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-dependencies:
+    name: Check PlatformIO dependencies
+    runs-on: ubuntu-latest
+
+    env:
+      PYTHON_VERSION: "3.13"
+      REPORT_FILE: platformio-dependency-report.md
+      REPORT_BRANCH: automation/platformio-dependency-report
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          pio --version
+
+      - name: Check for updates
+        id: check
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          environments=(
+            esp32dev
+            espa-v1
+            espa-v2
+          )
+
+          report="$REPORT_FILE"
+          raw_output="$(mktemp)"
+          trap 'rm -f "$raw_output"' EXIT
+
+          has_updates=false
+
+          # Start a temporary report. It will only be kept if updates exist.
+          {
+            echo "# PlatformIO dependency update report"
+            echo
+            echo "Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            echo
+            echo "This report checks the dependencies declared in"
+            echo "\`platformio.ini\` using \`pio pkg outdated\`."
+            echo
+          } > "$report"
+
+          for environment in "${environments[@]}"; do
+            echo "::group::Checking $environment"
+
+            if ! pio pkg outdated -e "$environment" \
+                > "$raw_output" 2>&1; then
+              cat "$raw_output"
+              echo "::error::PlatformIO dependency check failed for $environment"
+              exit 1
+            fi
+
+            cat "$raw_output"
+
+            if grep -Fq "Everything is up-to-date!" "$raw_output"; then
+              echo "No updates for $environment."
+
+            elif grep -Eq \
+              'Package[[:space:]]+Current[[:space:]]+Wanted[[:space:]]+Latest' \
+              "$raw_output"; then
+
+              echo "Updates found for $environment."
+              has_updates=true
+
+              {
+                echo "## Environment: \`$environment\`"
+                echo
+                echo '```text'
+                # Exclude PlatformIO's promotional banner.
+                sed -n '/^Checking/,$p' "$raw_output"
+                echo '```'
+                echo
+              } >> "$report"
+
+            else
+              cat "$raw_output"
+              echo "::error::Could not determine dependency status for $environment"
+              exit 1
+            fi
+
+            echo "::endgroup::"
+          done
+
+          if [[ "$has_updates" == true ]]; then
+            echo "has_updates=true" >> "$GITHUB_OUTPUT"
+            echo "Dependency updates found."
+          else
+            rm -f "$report"
+            echo "has_updates=false" >> "$GITHUB_OUTPUT"
+            echo "All environments are up to date."
+          fi
+
+      - name: Create or update dependency report PR
+        if: steps.check.outputs.has_updates == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          branch: automation/platformio-dependency-report
+          delete-branch: true
+          commit-message: "docs: update PlatformIO dependency report"
+          title: "chore: PlatformIO dependency updates available"
+          body: |
+            The scheduled PlatformIO dependency check found updates.
+
+            This pull request contains the generated report for the
+            `esp32dev`, `espa-v1`, and `espa-v2` environments.
+
+            This report does not update `platformio.ini` automatically.
+            Review the available versions and test any dependency changes
+            before merging them.
+          add-paths: platformio-dependency-report.md
+
+      - name: Close stale dependency report PR
+        if: steps.check.outputs.has_updates == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          prs="$(gh pr list \
+            --repo "$GH_REPO" \
+            --state open \
+            --head "$REPORT_BRANCH" \
+            --json number \
+            --jq '.[].number')"
+
+          if [[ -n "$prs" ]]; then
+            while IFS= read -r pr; do
+              [[ -z "$pr" ]] && continue
+
+              gh pr close "$pr" \
+                --repo "$GH_REPO" \
+                --delete-branch \
+                --comment "Automatically closed: all PlatformIO environments are up to date."
+            done <<< "$prs"
+          else
+            echo "No open dependency report PR to close."
+          fi

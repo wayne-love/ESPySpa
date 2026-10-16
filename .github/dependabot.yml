@@ -1,0 +1,27 @@
+# .github/dependabot.yml
+version: 2
+
+updates:
+  # Keep GitHub Actions used by CI workflows up to date.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - github-actions
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  # Keep Python dependencies up to date where dependency manifests exist.
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - python
+    open-pull-requests-limit: 5
