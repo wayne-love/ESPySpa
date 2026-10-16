@@ -1,5 +1,5 @@
 # Changelog
-## [2.0.3-beta]
+## [2.0.3]
 - Fix build for pio 6.2.0
 - Update dependencies
 - Fix cumulative energy when value is larger than signed int
