@@ -1,5 +1,11 @@
 # Changelog
-## [unpublished]
+## [2.0.3-beta]
+- Fix build for pio 6.2.0
+- Update dependencies
+- Fix cumulative energy when value is larger than signed int
+- implement websocket on webui
+
+## [2.0.2-beta]
 - Breaking Change : MQTT base topic is now eSpa/unique_id eg eSpa/844F6033E864
 - Breaking Change : File system update is required
 - Feature : Add web-based debug log viewer (`/debug`) with live WebSocket console and remote reboot/level controls
