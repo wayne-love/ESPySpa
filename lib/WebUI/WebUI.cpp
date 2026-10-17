@@ -372,16 +372,19 @@ void WebUI::sendConfig(AsyncWebSocketClient* client) {
 }
 
 String WebUI::buildConfigJson() const {
-    String configJson = "{";
-    configJson += "\"spaName\":\"" + jsonEscape(_config->SpaName.getValue()) + "\",";
-    configJson += "\"softAPAlwaysOn\":" + String(_config->SoftAPAlwaysOn.getValue() ? "true" : "false") + ",";
-    configJson += "\"softAPPassword\":\"" + jsonEscape(_config->SoftAPPassword.getValue()) + "\",";
-    configJson += "\"mqttServer\":\"" + jsonEscape(_config->MqttServer.getValue()) + "\",";
-    configJson += "\"mqttPort\":" + String(_config->MqttPort.getValue()) + ",";
-    configJson += "\"mqttUsername\":\"" + jsonEscape(_config->MqttUsername.getValue()) + "\",";
-    configJson += "\"mqttPassword\":\"" + jsonEscape(_config->MqttPassword.getValue()) + "\",";
-    configJson += "\"spaPollFrequency\":" + String(_config->SpaPollFrequency.getValue());
-    configJson += "}";
+    JsonDocument json;
+    json["spaName"] = _config->SpaName.getValue();
+    json["softAPAlwaysOn"] = _config->SoftAPAlwaysOn.getValue();
+    json["softAPPassword"] = _config->SoftAPPassword.getValue();
+    json["mqttServer"] = _config->MqttServer.getValue();
+    json["mqttPort"] = _config->MqttPort.getValue();
+    json["mqttUsername"] = _config->MqttUsername.getValue();
+    json["mqttPassword"] = _config->MqttPassword.getValue();
+    json["spaPollFrequency"] = _config->SpaPollFrequency.getValue();
+
+    String configJson;
+    configJson.reserve(measureJson(json) + 1);
+    serializeJson(json, configJson);
     return configJson;
 }
 
@@ -394,10 +397,20 @@ String WebUI::jsonEscape(const String& value) const {
         switch (c) {
             case '\\': escaped += "\\\\"; break;
             case '"': escaped += "\\\""; break;
+            case '\b': escaped += "\\b"; break;
+            case '\f': escaped += "\\f"; break;
             case '\n': escaped += "\\n"; break;
             case '\r': escaped += "\\r"; break;
             case '\t': escaped += "\\t"; break;
-            default: escaped += c; break;
+            default:
+                if (static_cast<uint8_t>(c) < 0x20) {
+                    char unicodeEscape[7];
+                    snprintf(unicodeEscape, sizeof(unicodeEscape), "\\u%04x", static_cast<uint8_t>(c));
+                    escaped += unicodeEscape;
+                } else {
+                    escaped += c;
+                }
+                break;
         }
     }
 
