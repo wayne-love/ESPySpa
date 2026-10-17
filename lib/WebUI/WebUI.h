@@ -111,111 +111,98 @@ class WebUI {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <meta name="color-scheme" content="dark light">
 <title>Firmware Update</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:760px;margin:2rem auto;padding:0 1rem}
+fieldset{margin:1rem 0;padding:1rem}label{display:block;margin:.75rem 0 .25rem}
+button{padding:.6rem 1rem}.status{margin-top:1rem;white-space:pre-wrap}
+progress{width:100%;height:1.25rem;margin-top:1rem}
+.error{color:#c62828}.success{color:#2e7d32}
+</style>
 </head>
 <body>
 <h1>Firmware Update</h1>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-<form method="POST" action="" enctype="multipart/form-data" id="upload_form">
-<table>
-<tr>
-<td><label for="appFile">Application Update File:</label></td>
-<td><input type="file" accept=".bin,.bin.gz" name="appFile" id="appFile"></td>
-</tr>
-<tr>
-<td><label for="fsFile">Filesystem Update File:</label></td>
-<td><input type="file" accept=".bin,.bin.gz" name="fsFile" id="fsFile"></td>
-</tr>
-<tr><td><input type="submit" value="Update"></td><tr>
-</table>
+<p>Firmware Over The Air - Recovery page.</p>
+<form id="uploadForm">
+<fieldset>
+<legend>Select update images</legend>
+<label for="appFile">Application firmware</label>
+<input type="file" accept=".bin,.bin.gz" id="appFile">
+<label for="fsFile">Filesystem image</label>
+<input type="file" accept=".bin,.bin.gz" id="fsFile">
+</fieldset>
+<button type="submit" id="uploadButton">Upload and reboot</button>
 </form>
-<div id="prg">progress: 0%</div>
-<div id="msg"></div>
+<progress id="progress" max="100" value="0" hidden></progress>
+<div id="status" class="status" role="status" aria-live="polite"></div>
 <script>
-$(function() {
-  $('form').submit(async function(e) {
-    e.preventDefault();
-    const appFile = $('#appFile')[0].files[0];
-    const fsFile = $('#fsFile')[0].files[0];
-    let appSuccess = false, fsSuccess = false;
+(() => {
+  const form = document.getElementById('uploadForm');
+  const button = document.getElementById('uploadButton');
+  const progress = document.getElementById('progress');
+  const status = document.getElementById('status');
 
-    if (!appFile && !fsFile) {
-      msg('Error: Please select either an application or filesystem update file.', 'red');
-      console.error('No files selected for upload.');
+  function setStatus(message, className = '') {
+    status.textContent = message;
+    status.className = `status ${className}`;
+  }
+
+  function upload(file, updateType, fileNumber, fileCount) {
+    return new Promise((resolve, reject) => {
+      const data = new FormData();
+      data.append('updateType', updateType);
+      data.append('update', file);
+
+      const request = new XMLHttpRequest();
+      request.open('POST', '/fota');
+      request.upload.addEventListener('progress', event => {
+        if (!event.lengthComputable) return;
+        const fileProgress = event.loaded / event.total;
+        progress.value = Math.round(((fileNumber - 1 + fileProgress) / fileCount) * 100);
+        setStatus(`Uploading ${fileNumber} of ${fileCount}: ${file.name}`);
+      });
+      request.addEventListener('load', () => {
+        if (request.status >= 200 && request.status < 300) resolve();
+        else reject(new Error(request.responseText || `HTTP ${request.status}`));
+      });
+      request.addEventListener('error', () => reject(new Error('Network error during upload')));
+      request.send(data);
+    });
+  }
+
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    const updates = [];
+    const appFile = document.getElementById('appFile').files[0];
+    const fsFile = document.getElementById('fsFile').files[0];
+    if (appFile) updates.push({file: appFile, type: 'application'});
+    if (fsFile) updates.push({file: fsFile, type: 'filesystem'});
+
+    if (updates.length === 0) {
+      setStatus('Select at least one update image.', 'error');
       return;
     }
 
-    // Upload application file if provided
-    if (appFile) {
-      const appData = new FormData();
-      appData.append('updateType', 'application');
-      appData.append('update', appFile);
-      appSuccess = await uploadFileAsync(appData, '/fota');
+    button.disabled = true;
+    progress.hidden = false;
+    progress.value = 0;
+    try {
+      for (let index = 0; index < updates.length; index++) {
+        await upload(updates[index].file, updates[index].type, index + 1, updates.length);
+      }
+      progress.value = 100;
+    } catch (error) {
+      setStatus(`Update failed: ${error.message}`, 'error');
+      button.disabled = false;
     }
-
-    // Upload filesystem file if provided
-    if (fsFile) {
-      const fsData = new FormData();
-      fsData.append('updateType', 'filesystem');
-      fsData.append('update', fsFile);
-      fsSuccess = await uploadFileAsync(fsData, '/fota');
-    }
-
-    // Trigger reboot only if all provided uploads were successful
-    if ((!appFile || appSuccess) && (!fsFile || fsSuccess)) {
-      reboot();
-    } else {
-      msg('One or more uploads failed. Reboot canceled.', 'red');
-    }
+    setStatus('Update completed. Rebooting...', 'success');
+    fetch('/reboot');
+    setTimeout(() => location.href = '/', 2000);
   });
-
-  async function uploadFileAsync(data, url) {
-    return new Promise((resolve) => {
-      $.ajax({
-        url,
-        type: 'POST',
-        data,
-        contentType: false,
-        processData: false,
-        xhr: function() {
-          const xhr = new XMLHttpRequest();
-          xhr.upload.addEventListener('progress', function(e) {
-            if (e.lengthComputable) {
-              const progress = Math.round((e.loaded / e.total) * 100);
-              $('#prg').text('progress: ' + progress + '%');
-              msg(progress < 100 ? 'Uploading...' : 'Flashing...', 'blue');
-            }
-          });
-          return xhr;
-        },
-        success: () => {
-          msg('Update successful!', 'green');
-          resolve(true);
-        },
-        error: () => {
-          msg('Update failed! Please try again.', 'red');
-          resolve(false);
-        }
-      });
-    });
-  }
-
-  function reboot() {
-    $.ajax({
-      url: '/reboot',
-      type: 'GET',
-      success: () => msg('Reboot initiated.', 'blue'),
-      error: () => msg('Failed to initiate reboot.', 'red'),
-      complete: () => setTimeout(() => location.href = '/', 2000)
-    });
-  }
-
-  function msg(message, color) {
-    $('#msg').html(`<p style="color:${color};">${message}</p>`);
-  }
-});
+})();
 </script>
 </body>
 </html>
