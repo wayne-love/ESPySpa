@@ -270,7 +270,12 @@ function updateTempSetPoint() {
 }
 
 function sendCurrentTime() {
-    const status_datetime = new Date(Date() + ' UTC').toISOString().slice(0, 19).replace('T', ' ');
+    const now = new Date();
+    const pad2 = value => String(value).padStart(2, '0');
+    const status_datetime =
+        `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())} ` +
+        `${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`;
+
     sendSpaSetting('status_datetime', status_datetime);
 }
 
