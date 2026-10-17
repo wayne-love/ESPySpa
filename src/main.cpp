@@ -63,6 +63,7 @@ String mqttAvailability = "";
 bool updateMqtt = false;
 /// @brief Flag to indicate that the Wi-Fi configuration has changed and therefore the Wi-Fi
 bool updateSoftAP = false;
+bool updateSpaIdentity = false;
 bool setSpaCallbackReady = false;
 String spaCallbackProperty;
 String spaCallbackValue;
@@ -161,8 +162,7 @@ void configChangeCallbackString(const char* name, String value) {
   else if (strcmp(name, "MqttPort") == 0) updateMqtt = true;
   else if (strcmp(name, "MqttUsername") == 0) updateMqtt = true;
   else if (strcmp(name, "MqttPassword") == 0) updateMqtt = true;
-  else if (strcmp(name, "SpaName") == 0) { } //TODO - Changing the SpaName currently requires the user to:
-                                  // delete the entities in MQTT then reboot the ESP
+  else if (strcmp(name, "SpaName") == 0) updateSpaIdentity = true;
   else if (strcmp(name, "SoftAPPassword") == 0) updateSoftAP = true;
 }
 
@@ -848,6 +848,35 @@ static String getUID() {
     return String(buf);
 }
 
+void applySpaIdentityChange() {
+  String hostname = sanitizeHostname(config.SpaName.getValue());
+  if (hostname.length() == 0) {
+    hostname = "eSpa";
+  }
+
+  debugI("Applying new spa identity: %s", hostname.c_str());
+
+  // Stop services that advertise or depend on the old hostname.
+  MDNS.end();
+  mqttClient.disconnect();
+  WiFi.softAPdisconnect(true);
+  WiFi.disconnect();
+
+  WiFi.setHostname(hostname.c_str());
+  if (config.SoftAPAlwaysOn.getValue()) {
+    WiFi.mode(WIFI_AP_STA);
+    WiFi.softAPConfig(IPAddress(169,254,1,1), IPAddress(169,254,1,1), IPAddress(255,255,255,0));
+    WiFi.softAP(hostname.c_str(), config.SoftAPPassword.getValue().c_str());
+  } else {
+    WiFi.mode(WIFI_STA);
+  }
+
+  WiFi.begin();
+  wifiRestoredFlag = false;
+  autoDiscoveryPublished = false;
+  mqttLastConnect = 0;
+}
+
 
 
 void setup() {
@@ -1063,6 +1092,13 @@ void loop() {
     mqttClient.disconnect();
     mqttClient.setServer(config.MqttServer.getValue(), config.MqttPort.getValue());
     updateMqtt = false;
+  }
+
+  if (updateSpaIdentity) {
+    applySpaIdentityChange();
+    updateSpaIdentity = false;
+    // applySpaIdentityChange() already recreates the SoftAP with the new name.
+    updateSoftAP = false;
   }
 
   if (updateSoftAP) {
