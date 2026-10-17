@@ -70,10 +70,10 @@ void SpaInterface::sendCommand(String cmd) {
     port.printf("%s\n", cmd.c_str());
     port.flush();
 
-    ulong timeout = millis() + 1000; // wait up to 1 sec for a response
-
     debugV("Start waiting for a response");
-    while (port.available()==0 and millis()<timeout) {}
+    const ulong start = millis();
+    // wait for port to be available for a max of 1 second
+    while (port.available()==0 and (millis() - start < 1000)) { delay(10); }
     debugV("Finish waiting");
 
     _resultRegistersDirty = true; // we're trying to write to the registers so we can assume that they will now be dirty
@@ -112,10 +112,10 @@ void SpaInterface::_processDebugCommand() {
 
     // Wait up to 2s for first byte, then collect until 500ms gap
     String response = "";
-    unsigned long start = millis();
-    while (!_instance->port.available() && millis() - start < 2000) {}
+    ulong start = millis();
+    while (!_instance->port.available() && millis() - start < 2000) { delay(10); }
     if (_instance->port.available()) {
-        unsigned long lastByte = millis();
+        ulong lastByte = millis();
         while (millis() - lastByte < 500) {
             while (_instance->port.available()) {
                 response += (char)_instance->port.read();
@@ -957,16 +957,14 @@ bool SpaInterface::isInitialised() {
 
 
 void SpaInterface::updateStatus() {
-
-    flushSerialReadBuffer();
-
     debugD("Update status called");
     sendCommand("RF");
 
-    _nextUpdateDue = millis() + FAILEDREADFREQUENCY;    
+    _nextUpdateDelay = FAILEDREADFREQUENCY;    
     if (readStatus()) {
         debugD("readStatus returned true");
-        _nextUpdateDue = millis() + (_updateFrequency * 1000);
+        _nextUpdateDelay = _updateFrequency * 1000;
+        _lastUpdate = millis();
         _initialised = true;
         if (updateCallback != nullptr) { updateCallback(); }
     }
@@ -980,17 +978,18 @@ void SpaInterface::loop(){
         _debugInitialised = true;
     }
 
-    if ( _lastWaitMessage + 1000 < millis()) {
+    const ulong now = millis();
+    if (now - _lastWaitMessage >= 1000) {
         debugV("Waiting... %u ms", millis());
         _lastWaitMessage = millis();
     }
 
     if (_resultRegistersDirty) {
-        _nextUpdateDue = millis() + 500;  // if we need to read the registers, pause a bit to see if there are more commands coming.
+        _nextUpdateDelay = 500;  // if we need to read the registers, pause a bit to see if there are more commands coming.
         _resultRegistersDirty = false;
     }
 
-    if (millis()>_nextUpdateDue) {
+    if ((now - _lastUpdate) >= _nextUpdateDelay) {
         updateStatus();    
     }
 }

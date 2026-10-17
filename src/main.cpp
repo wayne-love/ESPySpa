@@ -996,7 +996,7 @@ void loop() {
       wifiRestored();
     }
     if (delayedStart) {
-      delayedStart = !(bootTime + 10000 < millis());
+      delayedStart = !(millis() - bootTime > 10000);
     } else {
       si.loop();
 

@@ -100,8 +100,11 @@ class SpaInterface {
         /// serial port and prints the response via RemoteDebug.
         static void _processDebugCommand();
 
-        /// @brief Stores millis time at which next update should occur
-        unsigned long _nextUpdateDue = 0;
+        /// @brief Used to adjust the delay between status updates if we have been sending commands to the spa.
+        unsigned long _nextUpdateDelay = 0;
+
+        /// @brief Stores millis time when last update was performed.  Used to determine if next update is due.
+        unsigned long _lastUpdate = 0;
 
         /// @brief False until first successful read of the registers.
         bool _initialised = false;
