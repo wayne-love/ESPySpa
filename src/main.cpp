@@ -55,7 +55,9 @@ String mqttStatusTopic = "";
 String mqttSet = "";
 String mqttAvailability = "";
 
-// String spaSerialNumber = "";
+ulong mqttReconnectDelayMs = 1000;
+constexpr ulong MQTT_RECONNECT_INITIAL_MS = 1000;
+constexpr ulong MQTT_RECONNECT_MAX_MS = 60000;
 
 
 /// @brief Flag to indicate that the mqtt configuration has changed and therefore the MQTT
@@ -962,6 +964,7 @@ void setup() {
   mqttClient.setServer(config.MqttServer.getValue(), config.MqttPort.getValue());
   mqttClient.setCallback(mqttCallback);
   mqttClient.setBufferSize(2048);
+  mqttClient.setSocketTimeout(2);
 
   bootStartMillis = millis();  // Record the current boot time in milliseconds
 
@@ -1046,10 +1049,15 @@ void loop() {
 */
 
         if (!mqttClient.connected()) {  // MQTT broker reconnect if not connected
-          if (millis() - mqttLastConnect > 1000) {
+          if (millis() - mqttLastConnect >= mqttReconnectDelayMs) {
             blinker.setState(STATE_MQTT_NOT_CONNECTED);
             
-            debugW("MQTT not connected, attempting connection to %s:%i", config.MqttServer.getValue(), config.MqttPort.getValue());
+            debugW(
+              "MQTT not connected, attempting connection to %s:%i (retry delay %lu ms)",
+              config.MqttServer.getValue().c_str(),
+              config.MqttPort.getValue(),
+              mqttReconnectDelayMs
+            );
             mqttLastConnect = millis();
 /*
             String macAddress = WiFi.macAddress();
@@ -1057,6 +1065,7 @@ void loop() {
 */
             if (mqttClient.connect(getUID().c_str(), config.MqttUsername.getValue(), config.MqttPassword.getValue(), mqttAvailability.c_str(),2,true,"offline")) {
               debugI("MQTT connected");
+              mqttReconnectDelayMs = MQTT_RECONNECT_INITIAL_MS;
     
               String subTopic = mqttBase+"set/#";
               debugI("Subscribing to topic %s", subTopic.c_str());
@@ -1065,7 +1074,10 @@ void loop() {
               mqttClient.publish(mqttAvailability.c_str(),"online",true);
               autoDiscoveryPublished = false;
             } else {
-              debugW("MQTT connection failed");
+              debugW("MQTT connection failed, state: %i", mqttClient.state());
+              mqttReconnectDelayMs = mqttReconnectDelayMs >= MQTT_RECONNECT_MAX_MS / 2
+                ? MQTT_RECONNECT_MAX_MS
+                : mqttReconnectDelayMs * 2;
             }
 
           }
@@ -1091,6 +1103,8 @@ void loop() {
     debugD("Changing MQTT settings...");
     mqttClient.disconnect();
     mqttClient.setServer(config.MqttServer.getValue(), config.MqttPort.getValue());
+    mqttReconnectDelayMs = MQTT_RECONNECT_INITIAL_MS;
+    mqttLastConnect = 0;
     updateMqtt = false;
   }
 
