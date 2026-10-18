@@ -161,6 +161,15 @@ void WebUI::begin() {
 
     // As a fallback we try to load from /www any requested URL
     server.serveStatic("/", SPIFFS, "/www/");
+    server.onNotFound([](AsyncWebServerRequest *request) {
+        if (SPIFFS.totalBytes() == 0) {
+            AsyncWebServerResponse *response = request->beginResponse(302, "text/plain", "Redirecting to firmware update page");
+            response->addHeader("Location", "/fota");
+            request->send(response);
+        } else {
+            request->send(404, "text/plain", "Not found");
+        }
+    });
 
     server.begin();
 
