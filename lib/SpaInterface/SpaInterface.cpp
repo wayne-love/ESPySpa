@@ -361,6 +361,7 @@ bool SpaInterface::sendKey(SpaKey key) {
         case SpaKey::Ok:     cmd = "W09"; expected = "W9";  break;
         case SpaKey::Down:   cmd = "W10"; expected = "W10"; break;
         case SpaKey::Invert: cmd = "W11"; expected = "W11"; break;
+        case SpaKey::Sanitise: cmd = "W12"; expected = "W12"; break;
         default: return false;
     }
     return sendCommandCheckResult(cmd, expected);

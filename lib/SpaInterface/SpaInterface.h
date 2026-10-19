@@ -568,7 +568,8 @@ class SpaInterface {
             Up,       ///< W08 — Keypad Up
             Ok,       ///< W09 — Keypad OK / Confirm
             Down,     ///< W10 — Keypad Down
-            Invert    ///< W11 — Keypad Invert display
+            Invert,   ///< W11 — Keypad Invert display
+            Sanitise, ///< W12 — Keypad Sanitise
         };
 
         /// @brief Simulate a keypad button press on the spa controller.

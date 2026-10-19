@@ -533,6 +533,14 @@ void mqttHaAutoDiscovery() {
   generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.LockMode);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
+  ADConf.displayName = "Sanitise";
+  ADConf.valueTemplate = "{{ 'ON' if value_json.status.state == 'W.CLN' else 'OFF' }}";
+  ADConf.propertyId = "sanitise";
+  ADConf.deviceClass = "";
+  ADConf.entityCategory = "";
+  generateSwitchAdJSON(output, ADConf, spa, discoveryTopic);
+  mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
+
 }
 
 #pragma region MQTT Publish / Subscribe
@@ -787,6 +795,12 @@ void setSpaProperty(String property, String p) {
       si.sendKey(SpaInterface::SpaKey::Up);
     } catch (const std::exception& ex) {
       debugE("Failed to send keypad up: %s", ex.what());
+    }
+  } else if (property == "sanitise") {
+    try {
+      si.sendKey(SpaInterface::SpaKey::Sanitise);
+    } catch (const std::exception& ex) {
+      debugE("Failed to send sanitise key: %s", ex.what());
     }
   } else {
     debugE("Unhandled property - %s",property.c_str());
