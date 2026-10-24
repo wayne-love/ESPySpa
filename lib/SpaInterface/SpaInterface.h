@@ -5,12 +5,12 @@
 #include <functional>
 #include <stdexcept>
 #include <vector>
-#include "WebRemoteDebug.h"
+#include <RemoteDebug.h>
 #include <time.h>
 #include <TimeLib.h>
 
 
-extern WebRemoteDebug Debug;
+extern RemoteDebug Debug;
 #define FAILEDREADFREQUENCY 1000 //(ms) Frequency to retry on a failed read of the status registers.
 #define V2FIRMWARE_STRING "SW V2" // String to identify V2 firmware
 template <typename T, size_t N>

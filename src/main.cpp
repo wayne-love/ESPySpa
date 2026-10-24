@@ -3,7 +3,7 @@
 
 #include <WiFiClient.h>
 #include <exception>
-#include "WebRemoteDebug.h"
+#include <RemoteDebug.h>
 #include <WiFiManager.h>
 #include <ESPmDNS.h>
 #include <SPIFFS.h>
@@ -19,7 +19,7 @@
 #include "ESPAsyncWebServer.h"
 
 unsigned long bootStartMillis;  // To track when the device started
-WebRemoteDebug Debug;
+RemoteDebug Debug;
 
 SpaInterface si;
 Config config;
@@ -966,7 +966,7 @@ void setup() {
     }
   }
 
-  Debug.begin(WiFi.getHostname(), WebRemoteDebug::DEBUG);  // Hostname seems to be for display purposes only, no functional impact.
+  Debug.begin(WiFi.getHostname(), RemoteDebug::DEBUG);  // Hostname seems to be for display purposes only, no functional impact.
   Debug.setResetCmdEnabled(true);  // This seems to be not needed to be in Setup.
   Debug.showTime(true);
   Debug.showProfiler(true);
@@ -974,6 +974,9 @@ void setup() {
 
   Debug.showWebProfiler(true);
   Debug.showWebDebugLevel(true);
+  Debug.beginWebSocket(ui.getWebServer(), "", "/debug");
+
+  //Debug.setPassword("eSpaDebug");  // Set a password for the telnet server.
 
   mqttClient.setServer(config.MqttServer.getValue(), config.MqttPort.getValue());
   mqttClient.setCallback(mqttCallback);

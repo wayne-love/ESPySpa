@@ -652,7 +652,6 @@ function connectDebugSocket() {
 
     debugSocket.onopen = function () {
         $('#debugStatus').text('Connected');
-        sendDebugCommand('status');
     };
     debugSocket.onmessage = event => appendDebugLog(event.data);
     debugSocket.onclose = function () {
@@ -693,9 +692,9 @@ $(document).ready(function () {
         debugLogLines = [];
         $('#debugLog').text('');
     });
-    $('#debugLevel').change(event => sendDebugCommand('level ' + event.target.value));
-    $('#debugSilence').click(() => sendDebugCommand('silence'));
-    $('#debugReboot').click(() => sendDebugCommand('reboot'));
+    $('#debugLevel').change(event => sendDebugCommand(event.target.value.charAt(0)));
+    $('#debugSilence').click(() => sendDebugCommand('s'));
+    $('#debugReboot').click(() => sendDebugCommand('reset'));
     $('#debugSend').click(function () {
         sendDebugCommand($('#debugCommand').val());
         $('#debugCommand').val('');

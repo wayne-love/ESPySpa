@@ -11,7 +11,7 @@
 #include "Config.h"
 #include "MQTTClientWrapper.h"
 
-extern WebRemoteDebug Debug;
+extern RemoteDebug Debug;
 
 class WebUI {
     public:
@@ -32,6 +32,7 @@ class WebUI {
         /// @brief Push the latest spa status to all connected SPA WebSocket clients.
         /// Call this from the main application whenever spa state changes.
         void notifySpaUpdated();
+        AsyncWebServer* getWebServer() { return &server; }
 
         bool initialised = false;
 
