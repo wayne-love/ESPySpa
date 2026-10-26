@@ -101,6 +101,7 @@ void SpaInterface::_processDebugCommand() {
     if (!cmd.startsWith("ss ") && !cmd.startsWith("SS ")) return;
 
     String payload = cmd.substring(3);
+    payload.trim();
     debugI("TX: %s", payload.c_str());
 
     _instance->flushSerialReadBuffer();
