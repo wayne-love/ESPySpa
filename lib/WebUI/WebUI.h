@@ -159,17 +159,40 @@ progress{width:100%;height:1.25rem;margin-top:1rem}
 
       const request = new XMLHttpRequest();
       request.open('POST', '/fota');
+      request.timeout = 10 * 60 * 1000; // 10 minutes
       request.upload.addEventListener('progress', event => {
         if (!event.lengthComputable) return;
         const fileProgress = event.loaded / event.total;
-        progress.value = Math.round(((fileNumber - 1 + fileProgress) / fileCount) * 100);
-        setStatus(`Uploading ${fileNumber} of ${fileCount}: ${file.name}`);
+        progress.value = Math.round(
+          ((fileNumber - 1 + fileProgress) / fileCount) * 100
+        );
+
+        setStatus(
+          `Uploading ${fileNumber} of ${fileCount}: ${file.name}`
+        );
       });
       request.addEventListener('load', () => {
-        if (request.status >= 200 && request.status < 300) resolve();
-        else reject(new Error(request.responseText || `HTTP ${request.status}`));
+        if (request.status >= 200 && request.status < 300) {
+          resolve();
+        } else {
+          reject(new Error(
+            request.responseText || `HTTP ${request.status}`
+          ));
+        }
       });
-      request.addEventListener('error', () => reject(new Error('Network error during upload')));
+
+      request.addEventListener('error', () => {
+        reject(new Error('Network error during upload.'));
+      });
+
+      request.addEventListener('timeout', () => {
+        reject(new Error('Upload timed out.'));
+      });
+
+      request.addEventListener('abort', () => {
+        reject(new Error('Upload was cancelled.'));
+      });
+
       request.send(data);
     });
   }
@@ -179,9 +202,12 @@ progress{width:100%;height:1.25rem;margin-top:1rem}
     const updates = [];
     const appFile = document.getElementById('appFile').files[0];
     const fsFile = document.getElementById('fsFile').files[0];
-    if (appFile) updates.push({file: appFile, type: 'application'});
-    if (fsFile) updates.push({file: fsFile, type: 'filesystem'});
-
+    if (appFile) {
+      updates.push({ file: appFile, type: 'application' });
+    }
+    if (fsFile) {
+      updates.push({ file: fsFile, type: 'filesystem' });
+    }
     if (updates.length === 0) {
       setStatus('Select at least one update image.', 'error');
       return;
@@ -192,16 +218,27 @@ progress{width:100%;height:1.25rem;margin-top:1rem}
     progress.value = 0;
     try {
       for (let index = 0; index < updates.length; index++) {
-        await upload(updates[index].file, updates[index].type, index + 1, updates.length);
+        const update = updates[index];
+        await upload(
+          update.file,
+          update.type,
+          index + 1,
+          updates.length
+        );
       }
       progress.value = 100;
+      setStatus('Update completed successfully. Rebooting...', 'success');
+      // Allow the status message to render before requesting reboot.
+      await new Promise(resolve => setTimeout(resolve, 500));
+      // The ESP32 may disconnect before returning a response.
+      fetch('/reboot').catch(() => {});
+      setTimeout(() => {
+        location.href = '/';
+      }, 2000);
     } catch (error) {
       setStatus(`Update failed: ${error.message}`, 'error');
       button.disabled = false;
     }
-    setStatus('Update completed. Rebooting...', 'success');
-    fetch('/reboot');
-    setTimeout(() => location.href = '/', 2000);
   });
 })();
 </script>

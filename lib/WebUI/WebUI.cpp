@@ -36,10 +36,23 @@ void WebUI::begin() {
         request->send(SPIFFS, "/www/config.htm");
     });
 
+    struct FotaUploadState {
+        int updateType = U_FLASH;
+        String error;
+    };
+
     server.on("/fota", HTTP_POST, [this](AsyncWebServerRequest *request) {
         debugD("uri: %s, client IP: %s", request->url().c_str(), request->client()->remoteIP().toString().c_str());
-        if (Update.hasError()) {
-            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", String("Update error: ") + String(this->getError()));
+        FotaUploadState *state = static_cast<FotaUploadState *>(request->_tempObject);
+        String error = state != nullptr ? state->error : String();
+        if (error.length() == 0 && Update.hasError()) {
+            error = String("Update error: ") + String(this->getError());
+        }
+        delete state;
+        request->_tempObject = nullptr;
+
+        if (error.length() > 0) {
+            AsyncWebServerResponse *response = request->beginResponse(500, "text/plain", error);
             response->addHeader("Connection", "close");
             request->send(response);
         } else {
@@ -49,39 +62,70 @@ void WebUI::begin() {
             request->send(response);
         }
     }, [this](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
-        if (index == 0) {
-            static int updateType = U_FLASH; // Default to firmware update
+        FotaUploadState *state = static_cast<FotaUploadState *>(request->_tempObject);
+        if (state == nullptr) {
+            state = new FotaUploadState();
+            request->_tempObject = state;
+        }
+        if (state->error.length() > 0) return;
 
+        auto failUpload = [state](const String &message) {
+            state->error = message;
+            Update.abort();
+        };
+
+        if (index == 0) {
             if (request->hasArg("updateType")) {
                 String type = request->arg("updateType");
                 if (type == "filesystem") {
-                    updateType = U_SPIFFS;
+                    state->updateType = U_SPIFFS;
                     debugD("Filesystem update selected.");
                 } else if (type == "application") {
-                    updateType = U_FLASH;
+                    state->updateType = U_FLASH;
                     debugD("Application (firmware) update selected.");
                 } else {
                     debugD("Unknown update type: %s", type.c_str());
-                    //server->send(400, "text/plain", "Invalid update type");
-                    //return;
+                    failUpload(String("Unknown update type: ") + type);
+                    return;
                 }
             } else {
                 debugD("No update type specified. Defaulting to application update.");
             }
 
             debugD("Update: %s", filename.c_str());
-            if (!Update.begin(UPDATE_SIZE_UNKNOWN, updateType)) { // start with max available size
-                debugD("Update Error: %s", this->getError());
+            if (!Update.begin(UPDATE_SIZE_UNKNOWN, state->updateType)) { // start with max available size
+                if (Update.getError() == UPDATE_ERROR_NO_PARTITION && state->updateType == U_SPIFFS) {
+                    debugD("Filesystem update failed due to missing partition. Attempting to format SPIFFS...");
+                    if (SPIFFS.format()) {
+                        debugD("File system formatted successfully. Retrying update...");
+                        if (!Update.begin(UPDATE_SIZE_UNKNOWN, state->updateType)) {
+                            debugD("Update Begin Error after formatting: %s", this->getError());
+                            failUpload(String("Update Begin Error after formatting: ") + String(this->getError()));
+                            return;
+                        }
+                    } else {
+                        debugD("Failed to format FS.");
+                        failUpload("Failed to format FS.");
+                        return;
+                    }
+                } else {
+                    debugD("Update Begin Error: %s", this->getError());
+                    failUpload(String("Update Begin Error: ") + String(this->getError()));
+                    return;
+                }
             }
         }
         if (Update.write(data, len) != len) {
-            debugD("Update Error: %s", this->getError());
+            debugD("Update Write Error: %s", this->getError());
+            failUpload(String("Update Write Error: ") + String(this->getError()));
+            return;
         }
         if (final) {
             if (Update.end(true)) { // true to set the size to the current progress
                 debugD("Update Success: %u\n", index + len);
             } else {
-                debugD("Update Error: %s", this->getError());
+                debugD("Update End Error: %s", this->getError());
+                failUpload(String("Update End Error: ") + String(this->getError()));
             }
         }
     });
@@ -118,7 +162,7 @@ void WebUI::begin() {
         if (generateStatusJson(*_spa, *_mqttClient, json, true)) {
             response = request->beginResponse(200, "application/json", json);
         } else {
-            response = request->beginResponse(200, "text/plain", "Error generating json");
+            response = request->beginResponse(500, "text/plain", "Error generating json");
         }
         response->addHeader("Connection", "close");
         request->send(response);
@@ -161,7 +205,7 @@ void WebUI::begin() {
     // As a fallback we try to load from /www any requested URL
     server.serveStatic("/", SPIFFS, "/www/");
     server.onNotFound([](AsyncWebServerRequest *request) {
-        if (SPIFFS.totalBytes() == 0) {
+        if (SPIFFS.totalBytes() == 0 || request->url() == "/") {
             AsyncWebServerResponse *response = request->beginResponse(302, "text/plain", "Redirecting to firmware update page");
             response->addHeader("Location", "/fota");
             request->send(response);

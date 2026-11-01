@@ -428,12 +428,9 @@ $(document).ready(function () {
 
         // Trigger reboot only if all provided uploads were successful
         if ((!appFile || appSuccess) && (!fsFile || fsSuccess)) {
-            $('#fotaModal').modal('hide');
             setTimeout(() => reboot('The firmware has been updated successfully. The spa will now restart to apply the changes.'), 500);
-        } else {
-            showAlert('One or more uploads failed.', 'alert-danger', 'Error');
         }
-
+        $('#fotaModal').modal('hide');
         document.getElementById('updateForm').reset();
       });
 
@@ -459,12 +456,13 @@ $(document).ready(function () {
                 }, false);
                 return xhr;
             },
-            success: function (data) {
+            success: function () {
                 showAlert('The firmware has been uploaded.', 'alert-success', 'Firmware uploaded');
                 resolve(true);
             },
-            error: function () {
-                showAlert('The firmware update failed. Please try again.', 'alert-danger', 'Error');
+            error: function (data) {
+                data.responseText = data.responseText || 'Unknown error';
+                showAlert('The firmware update failed. ' + data.responseText, 'alert-danger', 'Error');
                 resolve(false);
             }
             });
