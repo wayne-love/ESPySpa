@@ -20,10 +20,13 @@ void WebUI::begin() {
         response->addHeader("Connection", "close");
         request->client()->setNoDelay(true);
         request->send(response);
-        request->client()->close();
         debugD("Rebooting...");
-        delay(200);
-        ESP.restart();
+        if (_setSpaCallback == nullptr) {
+            delay(200);
+            ESP.restart();
+        } else {
+            _setSpaCallback("ESP.restart", "true");
+        }
     });
 
     server.on("/fota", HTTP_GET, [&](AsyncWebServerRequest *request) {
@@ -331,8 +334,12 @@ void WebUI::processAppCommand(
 
     if (command == "reboot") {
         sendMessage("ack", "null", "Rebooting ESP...", client);
-        delay(200);
-        ESP.restart();
+        if (_setSpaCallback == nullptr) {
+            delay(200);
+            ESP.restart();
+        } else {
+            _setSpaCallback("ESP.restart", "true");
+        }
         return;
     }
 

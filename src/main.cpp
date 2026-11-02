@@ -802,6 +802,14 @@ void setSpaProperty(String property, String p) {
     } catch (const std::exception& ex) {
       debugE("Failed to send sanitise key: %s", ex.what());
     }
+  } else if (property == "ESP.restart") {
+    debugI("Received request to restart ESP");
+    delay(500);
+    try {
+      ESP.restart();
+    } catch (const std::exception& ex) {
+      debugE("Failed to reboot: %s", ex.what());
+    }
   } else {
     debugE("Unhandled property - %s",property.c_str());
   }
