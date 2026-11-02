@@ -802,6 +802,20 @@ bool SpaInterface::readStatus() {
     // along with the other unavoidable delays can cause the status of
     // properties to bounce in certain UI's (apple devices, home assistant, etc)
 
+    const ulong start = millis();
+    // wait for port to be available for a max of 1 second
+    while (port.available() == 0 and (millis() - start < 1000)) { delay(10); }
+    if (port.available() == 0) {
+        debugE("No data available to read from the serial port");
+        // If we return false, the next update will occur in one second, which is too fast.
+        // Given that we have no data, it seems likely there is a problem with the serial connection.
+        // So we will slow down the update frequency.
+        _nextUpdateDelay = _updateFrequency * 1000;
+        _lastUpdate = millis();
+        _resultRegistersDirty = false; // Mark the registers as NOT dirty so that we don't try to read them again until the next update cycle.
+        return true; // Return true to force a delay since we have no data to read.
+    }
+
     debugD("Reading registers -");
 
     int field = 0;
@@ -982,8 +996,8 @@ void SpaInterface::loop(){
 
     const ulong now = millis();
     if (now - _lastWaitMessage >= 1000) {
-        debugV("Waiting... %u ms", millis());
-        _lastWaitMessage = millis();
+        debugV("Waiting... now: %ums, lastUpdate: %ums, nextUpdateDelay: %ums", now, _lastUpdate, _nextUpdateDelay);
+        _lastWaitMessage = now;
     }
 
     if (_resultRegistersDirty) {
