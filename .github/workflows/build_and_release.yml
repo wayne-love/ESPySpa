@@ -7,14 +7,24 @@ on:
   push:
   workflow_dispatch:
 
+# Default to read-only permissions.
+permissions:
+  contents: read
+
 jobs:
   pre_job:
     runs-on: ubuntu-latest
-    # If we push a commit with a new tag, it triggers two workflows.
-    #  one for the new commit, one for the new tag.
-    # This detects if multiple concurrent workflows are running.
+
+    # If a commit and its tag trigger separate workflows,
+    # prefer the tag workflow.
     outputs:
-      concurrent_workflows: ${{ steps.skip_check.outputs.should_skip }}
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+
+    # Grant only the permissions required by the skip-check action.
+    permissions:
+      actions: write
+      contents: read
+
     steps:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@v5
@@ -23,41 +33,80 @@ jobs:
           do_not_skip: '["pull_request", "workflow_dispatch", "schedule"]'
 
   build:
+    name: Build ${{ matrix.platform }}
     needs: pre_job
-    # If there are current workflows running, we want to run the one with the tag.
-    # Therefore, the other workflow(s) are skipped.
-    if: needs.pre_job.outputs.concurrent_workflows == 'false' || (needs.pre_job.outputs.concurrent_workflows == 'true' && github.ref_type == 'tag')
+
+    # Run normal builds unless a duplicate is detected.
+    # Always allow the tag workflow to build firmware.
+    if: >-
+      needs.pre_job.outputs.should_skip == 'false' ||
+      (
+        needs.pre_job.outputs.should_skip == 'true' &&
+        github.ref_type == 'tag'
+      )
+
     strategy:
+      fail-fast: false
       matrix:
         platform: [esp32dev, espa-v1, espa-v2]
+
     uses: ./.github/workflows/build_firmware.yml
     with:
       platform: ${{ matrix.platform }}
+
+    # Remove this if the reusable workflow does not need secrets.
     secrets: inherit
 
   release:
     name: Release
-    # Optionally limit releases to the mast branch. We might want beta releases from other branches.
-    #if: startsWith(github.event.ref, 'refs/tags/v') && github.ref == 'refs/heads/master'
-    # Create a release if we have a tag that starts with v. E.g. v0.1.0 or v0.1.1-beta
-    if: startsWith(github.event.ref, 'refs/tags/v')
     needs: build
+
+    # Only publish releases for version tags beginning with "v".
+    if: >-
+      github.ref_type == 'tag' &&
+      startsWith(github.ref, 'refs/tags/v')
+
+    runs-on: ubuntu-latest
+
     permissions:
       contents: write
-    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repo for CHANGELOG
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: firmware
           merge-multiple: true
-      #- name: Display structure of downloaded files
-      #  run: ls -Rla firmware/
-      # New release uses the tag as the release name and CHANGELOG.md as the body.
+
+      - name: Verify firmware artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for platform in esp32dev espa-v1 espa-v2; do
+            for suffix in factory ota; do
+              file="firmware/firmware_${platform}_${suffix}.bin"
+
+              if [[ ! -s "$file" ]]; then
+                echo "::error::Missing or empty firmware artifact: $file"
+                exit 1
+              fi
+            done
+
+            if [[ ! -s "firmware/spiffs_${platform}.bin" && ! -s "firmware/littlefs_${platform}.bin" ]]; then
+              echo "::error::Missing or empty SPIFFS/LittleFS artifact for ${platform}"
+              exit 1
+            fi
+          done
+
+          echo "Firmware artifacts:"
+          ls -lh firmware/*.bin
+
       - name: Create release
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@v1.21.0
         with:
           allowUpdates: true
           artifacts: "firmware/*.bin"

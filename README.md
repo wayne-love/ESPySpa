@@ -4,7 +4,7 @@ SpaNet serial to mqtt bridge, including HomeAssitant autodiscovery.
 
 Developed for the ESP32 Dev board but should work on any ESP32 platform. By default uses UART2 for communications with the SpaNet controller.
 
-Discussion on this (and other) SpaNet projects can be found here https://discord.com/channels/967940763595980900/967940763595980903
+Discussion on this (and other) SpaNet projects can be found here [https://discord.com/channels/967940763595980900/967940763595980903](https://discord.gg/ggjBVdZENz)
 
 ## Configuration
 On first boot or whenever the enable key is press the board will enter hotspot mode.  Connect to the hotspot to configure wifi & mqtt settings.  

@@ -4,14 +4,14 @@
 #include <Arduino.h>
 #include <SPIFFS.h>
 #include <Update.h>
+#include <ESPAsyncWebServer.h>
 
 #include "SpaInterface.h"
 #include "SpaUtils.h"
 #include "Config.h"
 #include "MQTTClientWrapper.h"
-#include "ESPAsyncWebServer.h"
 
-extern RemoteDebug Debug;
+extern WebRemoteDebug Debug;
 
 class WebUI {
     public:
@@ -28,6 +28,11 @@ class WebUI {
           _setSpaCallback = f;
         }
         void begin();
+
+        /// @brief Push the latest spa status to all connected SPA WebSocket clients.
+        /// Call this from the main application whenever spa state changes.
+        void notifySpaUpdated();
+
         bool initialised = false;
 
     private:
@@ -35,10 +40,71 @@ class WebUI {
         SpaInterface *_spa;
         Config *_config;
         MQTTClientWrapper *_mqttClient;
+        AsyncWebSocket _appSocket{"/ws"};
+        AsyncWebSocket _debugSocket{"/debug/ws"};
+
         void (*_wifiManagerCallback)() = nullptr;
         void (*_setSpaCallback)(const String, const String) = nullptr;
 
         const char* getError();
+
+        void configureAppWebSocket();
+        void configureDebugWebSocket();
+
+        void handleAppWebSocketEvent(
+            AsyncWebSocket* server,
+            AsyncWebSocketClient* client,
+            AwsEventType type,
+            void* arg,
+            uint8_t* data,
+            size_t len
+        );
+
+        void handleAppWebSocketData(
+            AsyncWebSocketClient* client,
+            AwsFrameInfo* info,
+            uint8_t* data,
+            size_t len
+        );
+
+        void processAppCommand(
+            AsyncWebSocketClient* client,
+            const String& command
+        );
+
+        void sendMessage(
+            const String& type,
+            const String& dataJson = "null",
+            const String& message = "",
+            AsyncWebSocketClient* client = nullptr
+        );
+        bool sendStatus(AsyncWebSocketClient* client = nullptr);
+        void sendConfig(AsyncWebSocketClient* client);
+        String buildConfigJson() const;
+        String jsonEscape(const String& value) const;
+        String urlDecode(const String& value) const;
+        bool applyFormEncodedConfig(const String& formData);
+
+        void handleDebugWebSocketEvent(
+            AsyncWebSocket* server,
+            AsyncWebSocketClient* client,
+            AwsEventType type,
+            void* arg,
+            uint8_t* data,
+            size_t len
+        );
+
+        void handleDebugWebSocketData(
+            AsyncWebSocketClient* client,
+            AwsFrameInfo* info,
+            uint8_t* data,
+            size_t len
+        );
+
+        bool processDebugCommand(
+            const String& command,
+            AsyncWebSocketClient* client
+        );
 
         // hard-coded FOTA page in case file system gets wiped
         static constexpr const char *fotaPage PROGMEM = R"(

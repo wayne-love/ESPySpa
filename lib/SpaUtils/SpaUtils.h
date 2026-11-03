@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include <RemoteDebug.h>
+#include "WebRemoteDebug.h"
 #include <time.h>
 #include <TimeLib.h>
 #include "SpaInterface.h"
@@ -15,7 +15,7 @@
 #define xstr(a) str(a)
 #define str(a) #a
 
-extern RemoteDebug Debug;
+extern WebRemoteDebug Debug;
 
 String convertToTime(int data);
 int convertToInteger(String &timeStr);
