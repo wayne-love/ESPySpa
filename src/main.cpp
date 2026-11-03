@@ -858,7 +858,7 @@ void setup() {
     pinMode(GP_PIN, INPUT_PULLUP);
   #endif
 
-  #if !defined(ESP32_C3)
+  #if SERIAL_DEBUG_ENABLED==1
     Serial.begin(115200);
   #endif
 
@@ -871,12 +871,8 @@ void setup() {
     delay(100);  // Extra settling time for USB
   #endif
   
-  #if defined(ESP32_C3) // ESP32-C3 can not support serial output since it only has 1 uart
-    Debug.setSerialEnabled(false);
-  #else
-    Serial.setDebugOutput(true);
-    Debug.setSerialEnabled(true);
-  #endif
+  Serial.setDebugOutput(SERIAL_DEBUG_ENABLED==1);
+  Debug.setSerialEnabled(SERIAL_DEBUG_ENABLED==1);
 
   si.begin();  // Initialize SpaInterface serial communication
 
