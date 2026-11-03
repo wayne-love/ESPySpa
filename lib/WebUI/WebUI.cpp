@@ -12,7 +12,6 @@ const char * WebUI::getError() {
 
 void WebUI::begin() {
     configureAppWebSocket();
-    configureDebugWebSocket();
 
     server.on("/reboot", HTTP_GET, [&](AsyncWebServerRequest *request) {
         debugD("uri: %s, client IP: %s", request->url().c_str(), request->client()->remoteIP().toString().c_str());
@@ -21,10 +20,13 @@ void WebUI::begin() {
         response->addHeader("Connection", "close");
         request->client()->setNoDelay(true);
         request->send(response);
-        request->client()->close();
         debugD("Rebooting...");
-        delay(200);
-        ESP.restart();
+        if (_setSpaCallback == nullptr) {
+            delay(200);
+            ESP.restart();
+        } else {
+            _setSpaCallback("ESP.restart", "true");
+        }
     });
 
     server.on("/fota", HTTP_GET, [&](AsyncWebServerRequest *request) {
@@ -37,10 +39,23 @@ void WebUI::begin() {
         request->send(SPIFFS, "/www/config.htm");
     });
 
+    struct FotaUploadState {
+        int updateType = U_FLASH;
+        String error;
+    };
+
     server.on("/fota", HTTP_POST, [this](AsyncWebServerRequest *request) {
         debugD("uri: %s, client IP: %s", request->url().c_str(), request->client()->remoteIP().toString().c_str());
-        if (Update.hasError()) {
-            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", String("Update error: ") + String(this->getError()));
+        FotaUploadState *state = static_cast<FotaUploadState *>(request->_tempObject);
+        String error = state != nullptr ? state->error : String();
+        if (error.length() == 0 && Update.hasError()) {
+            error = String("Update error: ") + String(this->getError());
+        }
+        delete state;
+        request->_tempObject = nullptr;
+
+        if (error.length() > 0) {
+            AsyncWebServerResponse *response = request->beginResponse(500, "text/plain", error);
             response->addHeader("Connection", "close");
             request->send(response);
         } else {
@@ -50,39 +65,70 @@ void WebUI::begin() {
             request->send(response);
         }
     }, [this](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
-        if (index == 0) {
-            static int updateType = U_FLASH; // Default to firmware update
+        FotaUploadState *state = static_cast<FotaUploadState *>(request->_tempObject);
+        if (state == nullptr) {
+            state = new FotaUploadState();
+            request->_tempObject = state;
+        }
+        if (state->error.length() > 0) return;
 
+        auto failUpload = [state](const String &message) {
+            state->error = message;
+            Update.abort();
+        };
+
+        if (index == 0) {
             if (request->hasArg("updateType")) {
                 String type = request->arg("updateType");
                 if (type == "filesystem") {
-                    updateType = U_SPIFFS;
+                    state->updateType = U_SPIFFS;
                     debugD("Filesystem update selected.");
                 } else if (type == "application") {
-                    updateType = U_FLASH;
+                    state->updateType = U_FLASH;
                     debugD("Application (firmware) update selected.");
                 } else {
                     debugD("Unknown update type: %s", type.c_str());
-                    //server->send(400, "text/plain", "Invalid update type");
-                    //return;
+                    failUpload(String("Unknown update type: ") + type);
+                    return;
                 }
             } else {
                 debugD("No update type specified. Defaulting to application update.");
             }
 
             debugD("Update: %s", filename.c_str());
-            if (!Update.begin(UPDATE_SIZE_UNKNOWN, updateType)) { // start with max available size
-                debugD("Update Error: %s", this->getError());
+            if (!Update.begin(UPDATE_SIZE_UNKNOWN, state->updateType)) { // start with max available size
+                if (Update.getError() == UPDATE_ERROR_NO_PARTITION && state->updateType == U_SPIFFS) {
+                    debugD("Filesystem update failed due to missing partition. Attempting to format SPIFFS...");
+                    if (SPIFFS.format()) {
+                        debugD("File system formatted successfully. Retrying update...");
+                        if (!Update.begin(UPDATE_SIZE_UNKNOWN, state->updateType)) {
+                            debugD("Update Begin Error after formatting: %s", this->getError());
+                            failUpload(String("Update Begin Error after formatting: ") + String(this->getError()));
+                            return;
+                        }
+                    } else {
+                        debugD("Failed to format FS.");
+                        failUpload("Failed to format FS.");
+                        return;
+                    }
+                } else {
+                    debugD("Update Begin Error: %s", this->getError());
+                    failUpload(String("Update Begin Error: ") + String(this->getError()));
+                    return;
+                }
             }
         }
         if (Update.write(data, len) != len) {
-            debugD("Update Error: %s", this->getError());
+            debugD("Update Write Error: %s", this->getError());
+            failUpload(String("Update Write Error: ") + String(this->getError()));
+            return;
         }
         if (final) {
             if (Update.end(true)) { // true to set the size to the current progress
                 debugD("Update Success: %u\n", index + len);
             } else {
-                debugD("Update Error: %s", this->getError());
+                debugD("Update End Error: %s", this->getError());
+                failUpload(String("Update End Error: ") + String(this->getError()));
             }
         }
     });
@@ -119,7 +165,7 @@ void WebUI::begin() {
         if (generateStatusJson(*_spa, *_mqttClient, json, true)) {
             response = request->beginResponse(200, "application/json", json);
         } else {
-            response = request->beginResponse(200, "text/plain", "Error generating json");
+            response = request->beginResponse(500, "text/plain", "Error generating json");
         }
         response->addHeader("Connection", "close");
         request->send(response);
@@ -161,6 +207,15 @@ void WebUI::begin() {
 
     // As a fallback we try to load from /www any requested URL
     server.serveStatic("/", SPIFFS, "/www/");
+    server.onNotFound([](AsyncWebServerRequest *request) {
+        if (SPIFFS.totalBytes() == 0 || request->url() == "/") {
+            AsyncWebServerResponse *response = request->beginResponse(302, "text/plain", "Redirecting to firmware update page");
+            response->addHeader("Location", "/fota");
+            request->send(response);
+        } else {
+            request->send(404, "text/plain", "Not found");
+        }
+    });
 
     server.begin();
 
@@ -279,8 +334,12 @@ void WebUI::processAppCommand(
 
     if (command == "reboot") {
         sendMessage("ack", "null", "Rebooting ESP...", client);
-        delay(200);
-        ESP.restart();
+        if (_setSpaCallback == nullptr) {
+            delay(200);
+            ESP.restart();
+        } else {
+            _setSpaCallback("ESP.restart", "true");
+        }
         return;
     }
 
@@ -372,16 +431,19 @@ void WebUI::sendConfig(AsyncWebSocketClient* client) {
 }
 
 String WebUI::buildConfigJson() const {
-    String configJson = "{";
-    configJson += "\"spaName\":\"" + jsonEscape(_config->SpaName.getValue()) + "\",";
-    configJson += "\"softAPAlwaysOn\":" + String(_config->SoftAPAlwaysOn.getValue() ? "true" : "false") + ",";
-    configJson += "\"softAPPassword\":\"" + jsonEscape(_config->SoftAPPassword.getValue()) + "\",";
-    configJson += "\"mqttServer\":\"" + jsonEscape(_config->MqttServer.getValue()) + "\",";
-    configJson += "\"mqttPort\":" + String(_config->MqttPort.getValue()) + ",";
-    configJson += "\"mqttUsername\":\"" + jsonEscape(_config->MqttUsername.getValue()) + "\",";
-    configJson += "\"mqttPassword\":\"" + jsonEscape(_config->MqttPassword.getValue()) + "\",";
-    configJson += "\"spaPollFrequency\":" + String(_config->SpaPollFrequency.getValue());
-    configJson += "}";
+    JsonDocument json;
+    json["spaName"] = _config->SpaName.getValue();
+    json["softAPAlwaysOn"] = _config->SoftAPAlwaysOn.getValue();
+    json["softAPPassword"] = _config->SoftAPPassword.getValue();
+    json["mqttServer"] = _config->MqttServer.getValue();
+    json["mqttPort"] = _config->MqttPort.getValue();
+    json["mqttUsername"] = _config->MqttUsername.getValue();
+    json["mqttPassword"] = _config->MqttPassword.getValue();
+    json["spaPollFrequency"] = _config->SpaPollFrequency.getValue();
+
+    String configJson;
+    configJson.reserve(measureJson(json) + 1);
+    serializeJson(json, configJson);
     return configJson;
 }
 
@@ -394,10 +456,20 @@ String WebUI::jsonEscape(const String& value) const {
         switch (c) {
             case '\\': escaped += "\\\\"; break;
             case '"': escaped += "\\\""; break;
+            case '\b': escaped += "\\b"; break;
+            case '\f': escaped += "\\f"; break;
             case '\n': escaped += "\\n"; break;
             case '\r': escaped += "\\r"; break;
             case '\t': escaped += "\\t"; break;
-            default: escaped += c; break;
+            default:
+                if (static_cast<uint8_t>(c) < 0x20) {
+                    char unicodeEscape[7];
+                    snprintf(unicodeEscape, sizeof(unicodeEscape), "\\u%04x", static_cast<uint8_t>(c));
+                    escaped += unicodeEscape;
+                } else {
+                    escaped += c;
+                }
+                break;
         }
     }
 
@@ -468,200 +540,4 @@ bool WebUI::applyFormEncodedConfig(const String& formData) {
     _config->SoftAPAlwaysOn.setValue(softAPAlwaysOn);
     _config->writeConfig();
     return true;
-}
-
-void WebUI::configureDebugWebSocket() {
-    /*
-    * Give WebRemoteDebug access to the WebSocket, without giving it
-    * ownership of the web server.
-    */
-    Debug.attachWebSocket(&_debugSocket);
-
-    _debugSocket.onEvent(
-        [this](
-            AsyncWebSocket* server,
-            AsyncWebSocketClient* client,
-            AwsEventType type,
-            void* arg,
-            uint8_t* data,
-            size_t len
-        ) {
-            handleDebugWebSocketEvent(
-                server,
-                client,
-                type,
-                arg,
-                data,
-                len
-            );
-        }
-    );
-
-    server.addHandler(&_debugSocket);
-
-}
-
-void WebUI::handleDebugWebSocketEvent(
-    AsyncWebSocket* server,
-    AsyncWebSocketClient* client,
-    AwsEventType type,
-    void* arg,
-    uint8_t* data,
-    size_t len
-) {
-    debugD("handleDebugWebSocketEvent: type=%d, client ip=%s, client id=%u, data len=%zu", type, client->remoteIP().toString().c_str(), client->id(), len);
-    (void)server;
-
-    switch (type) {
-        case WS_EVT_CONNECT: {
-            String message =
-                "Connected to ESP32 debug WebSocket; level=";
-
-            message += WebRemoteDebug::levelName(
-                Debug.getWebDebugLevel()
-            );
-
-            message += ". Send 'help' for commands.";
-
-            client->text(message);
-            break;
-        }
-
-        case WS_EVT_DATA:
-            handleDebugWebSocketData(
-                client,
-                static_cast<AwsFrameInfo*>(arg),
-                data,
-                len
-            );
-            break;
-
-        case WS_EVT_DISCONNECT:
-        case WS_EVT_PONG:
-        case WS_EVT_ERROR:
-        default:
-            break;
-    }
-}
-
-void WebUI::handleDebugWebSocketData(
-    AsyncWebSocketClient* client,
-    AwsFrameInfo* info,
-    uint8_t* data,
-    size_t len
-) {
-    if (
-        info == nullptr ||
-        !info->final ||
-        info->index != 0 ||
-        info->len != len ||
-        info->opcode != WS_TEXT
-    ) {
-        return;
-    }
-
-    String command;
-    command.reserve(len);
-
-    for (size_t i = 0; i < len; ++i) {
-        command += static_cast<char>(data[i]);
-    }
-
-    command.trim();
-
-    if (!processDebugCommand(command, client)) {
-        client->text(
-            "Unknown command: " + command
-        );
-    }
-}
-
-bool WebUI::processDebugCommand(
-    const String& command,
-    AsyncWebSocketClient* client
-) {
-    String normalisedCommand = command;
-    normalisedCommand.trim();
-    normalisedCommand.toLowerCase();
-
-    if (normalisedCommand == "help") {
-        client->text(
-            "Commands: help, status, level verbose, "
-            "level debug, level info, level warning, "
-            "level error, level any, silence, reboot"
-        );
-
-        return true;
-    }
-
-    if (normalisedCommand == "status") {
-        String response = "WebSocket clients=";
-        response += String(Debug.webClientCount());
-        response += ", level=";
-        response += WebRemoteDebug::levelName(
-            Debug.getWebDebugLevel()
-        );
-        response += ", silenced=";
-        response += Debug.isWebSilenced()
-            ? "yes"
-            : "no";
-
-        client->text(response);
-        return true;
-    }
-
-    if (normalisedCommand == "silence" || normalisedCommand == "s") {
-        /*
-        * Send the acknowledgement before silencing.
-        */
-        if (Debug.isWebSilenced()) {
-            client->text("WebSocket logging resumed");
-        } else {
-            client->text("WebSocket logging silenced");
-        }
-        Debug.setWebSilenced(!Debug.isWebSilenced());
-        return true;
-    }
-
-    if (normalisedCommand == "reboot") {
-        client->text("Rebooting ESP32...");
-        delay(200);
-        ESP.restart();
-        return true;
-    }
-
-    if (normalisedCommand.startsWith("level ") || normalisedCommand.length() == 1) {
-        String requestedLevel;
-        if (normalisedCommand.length() > 1) {
-            requestedLevel = normalisedCommand.substring(6);
-
-            requestedLevel.trim();
-        } else {
-            requestedLevel = normalisedCommand;
-        }
-
-        const int parsedLevel =
-            WebRemoteDebug::parseLevel(requestedLevel);
-
-        if (parsedLevel < 0) {
-            client->text("Unknown debug level");
-            return true;
-        }
-
-        Debug.setWebDebugLevel(
-            static_cast<uint8_t>(parsedLevel)
-        );
-
-        String response =
-            "WebSocket debug level set to ";
-
-        response += WebRemoteDebug::levelName(
-            Debug.getWebDebugLevel()
-        );
-
-        client->text(response);
-        return true;
-    }
-
-    return false;
 }

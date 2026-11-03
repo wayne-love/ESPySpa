@@ -3,7 +3,7 @@
 
 #include <WiFiClient.h>
 #include <exception>
-#include "WebRemoteDebug.h"
+#include <RemoteDebug.h>
 #include <WiFiManager.h>
 #include <ESPmDNS.h>
 #include <SPIFFS.h>
@@ -19,7 +19,7 @@
 #include "ESPAsyncWebServer.h"
 
 unsigned long bootStartMillis;  // To track when the device started
-WebRemoteDebug Debug;
+RemoteDebug Debug;
 
 SpaInterface si;
 Config config;
@@ -55,7 +55,9 @@ String mqttStatusTopic = "";
 String mqttSet = "";
 String mqttAvailability = "";
 
-// String spaSerialNumber = "";
+ulong mqttReconnectDelayMs = 1000;
+constexpr ulong MQTT_RECONNECT_INITIAL_MS = 1000;
+constexpr ulong MQTT_RECONNECT_MAX_MS = 60000;
 
 
 /// @brief Flag to indicate that the mqtt configuration has changed and therefore the MQTT
@@ -63,6 +65,7 @@ String mqttAvailability = "";
 bool updateMqtt = false;
 /// @brief Flag to indicate that the Wi-Fi configuration has changed and therefore the Wi-Fi
 bool updateSoftAP = false;
+bool updateSpaIdentity = false;
 bool setSpaCallbackReady = false;
 String spaCallbackProperty;
 String spaCallbackValue;
@@ -161,8 +164,7 @@ void configChangeCallbackString(const char* name, String value) {
   else if (strcmp(name, "MqttPort") == 0) updateMqtt = true;
   else if (strcmp(name, "MqttUsername") == 0) updateMqtt = true;
   else if (strcmp(name, "MqttPassword") == 0) updateMqtt = true;
-  else if (strcmp(name, "SpaName") == 0) { } //TODO - Changing the SpaName currently requires the user to:
-                                  // delete the entities in MQTT then reboot the ESP
+  else if (strcmp(name, "SpaName") == 0) updateSpaIdentity = true;
   else if (strcmp(name, "SoftAPPassword") == 0) updateSoftAP = true;
 }
 
@@ -531,6 +533,14 @@ void mqttHaAutoDiscovery() {
   generateSelectAdJSON(output, ADConf, spa, discoveryTopic, si.LockMode);
   mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
 
+  ADConf.displayName = "Sanitise";
+  ADConf.valueTemplate = "{{ 'ON' if value_json.status.state == 'W.CLN' else 'OFF' }}";
+  ADConf.propertyId = "sanitise";
+  ADConf.deviceClass = "";
+  ADConf.entityCategory = "";
+  generateSwitchAdJSON(output, ADConf, spa, discoveryTopic);
+  mqttClient.publish(discoveryTopic.c_str(), output.c_str(), true);
+
 }
 
 #pragma region MQTT Publish / Subscribe
@@ -786,6 +796,20 @@ void setSpaProperty(String property, String p) {
     } catch (const std::exception& ex) {
       debugE("Failed to send keypad up: %s", ex.what());
     }
+  } else if (property == "sanitise") {
+    try {
+      si.sendKey(SpaInterface::SpaKey::Sanitise);
+    } catch (const std::exception& ex) {
+      debugE("Failed to send sanitise key: %s", ex.what());
+    }
+  } else if (property == "ESP.restart") {
+    debugI("Received request to restart ESP");
+    delay(500);
+    try {
+      ESP.restart();
+    } catch (const std::exception& ex) {
+      debugE("Failed to reboot: %s", ex.what());
+    }
   } else {
     debugE("Unhandled property - %s",property.c_str());
   }
@@ -846,6 +870,35 @@ static String getUID() {
     char buf[13];
     snprintf(buf, sizeof(buf), "%012llX", mac);
     return String(buf);
+}
+
+void applySpaIdentityChange() {
+  String hostname = sanitizeHostname(config.SpaName.getValue());
+  if (hostname.length() == 0) {
+    hostname = "eSpa";
+  }
+
+  debugI("Applying new spa identity: %s", hostname.c_str());
+
+  // Stop services that advertise or depend on the old hostname.
+  MDNS.end();
+  mqttClient.disconnect();
+  WiFi.softAPdisconnect(true);
+  WiFi.disconnect();
+
+  WiFi.setHostname(hostname.c_str());
+  if (config.SoftAPAlwaysOn.getValue()) {
+    WiFi.mode(WIFI_AP_STA);
+    WiFi.softAPConfig(IPAddress(169,254,1,1), IPAddress(169,254,1,1), IPAddress(255,255,255,0));
+    WiFi.softAP(hostname.c_str(), config.SoftAPPassword.getValue().c_str());
+  } else {
+    WiFi.mode(WIFI_STA);
+  }
+
+  WiFi.begin();
+  wifiRestoredFlag = false;
+  autoDiscoveryPublished = false;
+  mqttLastConnect = 0;
 }
 
 
@@ -921,7 +974,7 @@ void setup() {
     }
   }
 
-  Debug.begin(WiFi.getHostname(), WebRemoteDebug::DEBUG);  // Hostname seems to be for display purposes only, no functional impact.
+  Debug.begin(WiFi.getHostname(), RemoteDebug::DEBUG);  // Hostname seems to be for display purposes only, no functional impact.
   Debug.setResetCmdEnabled(true);  // This seems to be not needed to be in Setup.
   Debug.showTime(true);
   Debug.showProfiler(true);
@@ -929,10 +982,14 @@ void setup() {
 
   Debug.showWebProfiler(true);
   Debug.showWebDebugLevel(true);
+  Debug.beginWebSocket(ui.getWebServer(), "", "/debug");
+
+  //Debug.setPassword("eSpaDebug");  // Set a password for the telnet server.
 
   mqttClient.setServer(config.MqttServer.getValue(), config.MqttPort.getValue());
   mqttClient.setCallback(mqttCallback);
   mqttClient.setBufferSize(2048);
+  mqttClient.setSocketTimeout(2);
 
   bootStartMillis = millis();  // Record the current boot time in milliseconds
 
@@ -996,7 +1053,7 @@ void loop() {
       wifiRestored();
     }
     if (delayedStart) {
-      delayedStart = !(bootTime + 10000 < millis());
+      delayedStart = !(millis() - bootTime > 10000);
     } else {
       si.loop();
 
@@ -1017,10 +1074,15 @@ void loop() {
 */
 
         if (!mqttClient.connected()) {  // MQTT broker reconnect if not connected
-          if (millis() - mqttLastConnect > 1000) {
+          if (millis() - mqttLastConnect >= mqttReconnectDelayMs) {
             blinker.setState(STATE_MQTT_NOT_CONNECTED);
             
-            debugW("MQTT not connected, attempting connection to %s:%i", config.MqttServer.getValue(), config.MqttPort.getValue());
+            debugW(
+              "MQTT not connected, attempting connection to %s:%i (retry delay %lu ms)",
+              config.MqttServer.getValue().c_str(),
+              config.MqttPort.getValue(),
+              mqttReconnectDelayMs
+            );
             mqttLastConnect = millis();
 /*
             String macAddress = WiFi.macAddress();
@@ -1028,6 +1090,7 @@ void loop() {
 */
             if (mqttClient.connect(getUID().c_str(), config.MqttUsername.getValue(), config.MqttPassword.getValue(), mqttAvailability.c_str(),2,true,"offline")) {
               debugI("MQTT connected");
+              mqttReconnectDelayMs = MQTT_RECONNECT_INITIAL_MS;
     
               String subTopic = mqttBase+"set/#";
               debugI("Subscribing to topic %s", subTopic.c_str());
@@ -1036,7 +1099,10 @@ void loop() {
               mqttClient.publish(mqttAvailability.c_str(),"online",true);
               autoDiscoveryPublished = false;
             } else {
-              debugW("MQTT connection failed");
+              debugW("MQTT connection failed, state: %i", mqttClient.state());
+              mqttReconnectDelayMs = mqttReconnectDelayMs >= MQTT_RECONNECT_MAX_MS / 2
+                ? MQTT_RECONNECT_MAX_MS
+                : mqttReconnectDelayMs * 2;
             }
 
           }
@@ -1062,7 +1128,16 @@ void loop() {
     debugD("Changing MQTT settings...");
     mqttClient.disconnect();
     mqttClient.setServer(config.MqttServer.getValue(), config.MqttPort.getValue());
+    mqttReconnectDelayMs = MQTT_RECONNECT_INITIAL_MS;
+    mqttLastConnect = 0;
     updateMqtt = false;
+  }
+
+  if (updateSpaIdentity) {
+    applySpaIdentityChange();
+    updateSpaIdentity = false;
+    // applySpaIdentityChange() already recreates the SoftAP with the new name.
+    updateSoftAP = false;
   }
 
   if (updateSoftAP) {
