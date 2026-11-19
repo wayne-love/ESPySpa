@@ -5,12 +5,12 @@
 #include <functional>
 #include <stdexcept>
 #include <vector>
-#include "WebRemoteDebug.h"
+#include <RemoteDebug.h>
 #include <time.h>
 #include <TimeLib.h>
 
 
-extern WebRemoteDebug Debug;
+extern RemoteDebug Debug;
 #define FAILEDREADFREQUENCY 1000 //(ms) Frequency to retry on a failed read of the status registers.
 #define V2FIRMWARE_STRING "SW V2" // String to identify V2 firmware
 template <typename T, size_t N>
@@ -100,8 +100,11 @@ class SpaInterface {
         /// serial port and prints the response via RemoteDebug.
         static void _processDebugCommand();
 
-        /// @brief Stores millis time at which next update should occur
-        unsigned long _nextUpdateDue = 0;
+        /// @brief Used to adjust the delay between status updates if we have been sending commands to the spa.
+        unsigned long _nextUpdateDelay = 0;
+
+        /// @brief Stores millis time when last update was performed.  Used to determine if next update is due.
+        unsigned long _lastUpdate = 0;
 
         /// @brief False until first successful read of the registers.
         bool _initialised = false;
@@ -565,7 +568,8 @@ class SpaInterface {
             Up,       ///< W08 — Keypad Up
             Ok,       ///< W09 — Keypad OK / Confirm
             Down,     ///< W10 — Keypad Down
-            Invert    ///< W11 — Keypad Invert display
+            Invert,   ///< W11 — Keypad Invert display
+            Sanitise, ///< W12 — Keypad Sanitise
         };
 
         /// @brief Simulate a keypad button press on the spa controller.

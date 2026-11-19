@@ -4,9 +4,9 @@
 #include <Preferences.h>
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include "WebRemoteDebug.h"
+#include <RemoteDebug.h>
 
-extern WebRemoteDebug Debug;
+extern RemoteDebug Debug;
 
 template <typename T>
 class Setting {

@@ -32,12 +32,20 @@ def merge_bin_action(source, target, env):
         # Be defensive about header names: some CSVs use '# Name' while
         # others use 'Name' (and offsets may be 'Offset' or ' Offset').
         try:
+            # Read the partition CSV file ignoring any leading comment lines
             with open(partition_csv, "r") as csvfile:
-                reader = csv.DictReader(csvfile, skipinitialspace=True)
+                lines = csvfile.readlines()
+                header_index = next(
+                    (index for index in range(len(lines) - 1, -1, -1)
+                     if lines[index].lstrip().startswith("#")),
+                    0,
+                )
+                reader = csv.DictReader(lines[header_index:], skipinitialspace=True)
+                print("partition_table:\n", "".join(lines[header_index:]))
                 for row in reader:
                     # Try several possible header names to avoid KeyError
                     name = (row.get("# Name") or row.get("Name") or row.get("name"))
-                    if name == fs_image_name:
+                    if name == fs_image_name or (name == "spiffs" and fs_image_name == "littlefs"):
                         offset = (row.get("Offset") or row.get(" Offset") or row.get("offset") or 0)
                         if isinstance(offset, str):
                             offset = offset.strip()
@@ -56,14 +64,14 @@ def merge_bin_action(source, target, env):
             '"$OBJCOPY"',
             "--chip",
             board_config.get("build.mcu", "esp32"),
-            "merge_bin",
+            "merge-bin",
             "-o",
             merged_bin,
-            "--flash_mode",
+            "--flash-mode",
             "${__get_board_flash_mode(__env__)}",
-            "--flash_freq",
+            "--flash-freq",
             "${__get_board_f_flash(__env__)}",
-            "--flash_size",
+            "--flash-size",
             board_config.get("upload.flash_size", "4MB"),
             *flash_images,
         ]

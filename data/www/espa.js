@@ -270,7 +270,12 @@ function updateTempSetPoint() {
 }
 
 function sendCurrentTime() {
-    const status_datetime = new Date(Date() + ' UTC').toISOString().slice(0, 19).replace('T', ' ');
+    const now = new Date();
+    const pad2 = value => String(value).padStart(2, '0');
+    const status_datetime =
+        `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())} ` +
+        `${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`;
+
     sendSpaSetting('status_datetime', status_datetime);
 }
 
@@ -423,12 +428,9 @@ $(document).ready(function () {
 
         // Trigger reboot only if all provided uploads were successful
         if ((!appFile || appSuccess) && (!fsFile || fsSuccess)) {
-            $('#fotaModal').modal('hide');
             setTimeout(() => reboot('The firmware has been updated successfully. The spa will now restart to apply the changes.'), 500);
-        } else {
-            showAlert('One or more uploads failed.', 'alert-danger', 'Error');
         }
-
+        $('#fotaModal').modal('hide');
         document.getElementById('updateForm').reset();
       });
 
@@ -454,12 +456,13 @@ $(document).ready(function () {
                 }, false);
                 return xhr;
             },
-            success: function (data) {
+            success: function () {
                 showAlert('The firmware has been uploaded.', 'alert-success', 'Firmware uploaded');
                 resolve(true);
             },
-            error: function () {
-                showAlert('The firmware update failed. Please try again.', 'alert-danger', 'Error');
+            error: function (data) {
+                data.responseText = data.responseText || 'Unknown error';
+                showAlert('The firmware update failed. ' + data.responseText, 'alert-danger', 'Error');
                 resolve(false);
             }
             });
@@ -647,7 +650,6 @@ function connectDebugSocket() {
 
     debugSocket.onopen = function () {
         $('#debugStatus').text('Connected');
-        sendDebugCommand('status');
     };
     debugSocket.onmessage = event => appendDebugLog(event.data);
     debugSocket.onclose = function () {
@@ -688,9 +690,9 @@ $(document).ready(function () {
         debugLogLines = [];
         $('#debugLog').text('');
     });
-    $('#debugLevel').change(event => sendDebugCommand('level ' + event.target.value));
-    $('#debugSilence').click(() => sendDebugCommand('silence'));
-    $('#debugReboot').click(() => sendDebugCommand('reboot'));
+    $('#debugLevel').change(event => sendDebugCommand(event.target.value.charAt(0)));
+    $('#debugSilence').click(() => sendDebugCommand('s'));
+    $('#debugReboot').click(() => sendDebugCommand('reset'));
     $('#debugSend').click(function () {
         sendDebugCommand($('#debugCommand').val());
         $('#debugCommand').val('');
