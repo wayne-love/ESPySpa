@@ -59,7 +59,7 @@ jobs:
 
           build_dir=".pio/build/$PLATFORM"
 
-          for file in firmware.bin firmware_factory.bin spiffs.bin; do
+          for file in firmware.bin firmware_factory.bin littlefs.bin; do
             if [[ ! -f "$build_dir/$file" ]]; then
               echo "::error::Expected firmware file not found: $build_dir/$file"
               echo "Files present in build directory:"
@@ -81,8 +81,8 @@ jobs:
           mv "$build_dir/firmware_factory.bin" \
              "firmware_${PLATFORM}_factory.bin"
 
-          mv "$build_dir/spiffs.bin" \
-             "spiffs_${PLATFORM}.bin"
+          mv "$build_dir/littlefs.bin" \
+             "littlefs_${PLATFORM}.bin"
 
           ls -lh *_${PLATFORM}*.bin
 

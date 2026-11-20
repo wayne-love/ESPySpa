@@ -2,7 +2,7 @@
 #define WEBUI_H
 
 #include <Arduino.h>
-#include <SPIFFS.h>
+#include <LittleFS.h>
 #include <Update.h>
 #include <ESPAsyncWebServer.h>
 

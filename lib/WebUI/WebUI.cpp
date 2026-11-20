@@ -36,7 +36,7 @@ void WebUI::begin() {
 
     server.on("/config", HTTP_GET, [&](AsyncWebServerRequest *request) {
         debugD("uri: %s, client IP: %s", request->url().c_str(), request->client()->remoteIP().toString().c_str());
-        request->send(SPIFFS, "/www/config.htm");
+        request->send(LittleFS, "/www/config.htm");
     });
 
     struct FotaUploadState {
@@ -98,8 +98,8 @@ void WebUI::begin() {
             debugD("Update: %s", filename.c_str());
             if (!Update.begin(UPDATE_SIZE_UNKNOWN, state->updateType)) { // start with max available size
                 if (Update.getError() == UPDATE_ERROR_NO_PARTITION && state->updateType == U_SPIFFS) {
-                    debugD("Filesystem update failed due to missing partition. Attempting to format SPIFFS...");
-                    if (SPIFFS.format()) {
+                    debugD("Filesystem update failed due to missing partition. Attempting to format FS...");
+                    if (LittleFS.format()) {
                         debugD("File system formatted successfully. Retrying update...");
                         if (!Update.begin(UPDATE_SIZE_UNKNOWN, state->updateType)) {
                             debugD("Update Begin Error after formatting: %s", this->getError());
@@ -205,15 +205,37 @@ void WebUI::begin() {
         request->send(response);
     });
 
+    if (LittleFS.begin()) {
+        debugD("Mounted LittleFS");
+    } else {
+        debugE("Error mounting LittleFS");
+    }
     // As a fallback we try to load from /www any requested URL
-    server.serveStatic("/", SPIFFS, "/www/");
+    server
+        .serveStatic("/", LittleFS, "/www/")
+        .setDefaultFile("index.htm")
+        .setTryGzipFirst(true);
     server.onNotFound([](AsyncWebServerRequest *request) {
-        if (SPIFFS.totalBytes() == 0 || request->url() == "/") {
+        if (LittleFS.totalBytes() == 0 || request->url() == "/") {
             AsyncWebServerResponse *response = request->beginResponse(302, "text/plain", "Redirecting to firmware update page");
             response->addHeader("Location", "/fota");
             request->send(response);
         } else {
-            request->send(404, "text/plain", "Not found");
+            if (request->url() == "/vendor/bootstrap/bootstrap.min.css") {
+                AsyncWebServerResponse *response = request->beginResponse(302, "text/plain", "Redirecting to vendor page");
+                response->addHeader("Location", "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css");
+                request->send(response);
+            } else if (request->url() == "/vendor/bootstrap/bootstrap.bundle.min.js") {
+                AsyncWebServerResponse *response = request->beginResponse(302, "text/plain", "Redirecting to vendor page");
+                response->addHeader("Location", "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js");
+                request->send(response);
+            } else if (request->url() == "/vendor/jquery/jquery-3.7.1.min.js") {
+                AsyncWebServerResponse *response = request->beginResponse(302, "text/plain", "Redirecting to vendor page");
+                response->addHeader("Location", "https://code.jquery.com/jquery-3.7.1.min.js");
+                request->send(response);
+            } else {
+                request->send(404, "text/plain", "Not found");
+            }
         }
     });
 
